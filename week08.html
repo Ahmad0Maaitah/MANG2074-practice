@@ -384,6 +384,8 @@ window.MANG = (function(){
     o.bars=function(xs,ys,color,bw){ctx.fillStyle=color;var y0=py(0);for(var i=0;i<xs.length;i++){var X=px(xs[i]),Y=py(ys[i]);ctx.fillRect(X-bw/2,Math.min(Y,y0),bw,Math.max(Math.abs(Y-y0),1));}return o;};
     o.dots=function(xs,ys,color,r){ctx.fillStyle=color;for(var i=0;i<xs.length;i++){ctx.beginPath();ctx.arc(px(xs[i]),py(ys[i]),r||3.5,0,6.2832);ctx.fill();}return o;};
     o.hline=function(v,color,dash){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.5;if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(pad.l,py(v));ctx.lineTo(w-pad.r,py(v));ctx.stroke();ctx.restore();return o;};
+    o.vline=function(v,color,dash){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.5;if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(px(v),pad.t);ctx.lineTo(px(v),h-pad.b);ctx.stroke();ctx.restore();return o;};
+    o.band=function(xs,lo,hi,color){ctx.fillStyle=color;ctx.beginPath();var i;for(i=0;i<xs.length;i++){var X=px(xs[i]),Y=py(hi[i]);if(i===0)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);}for(i=xs.length-1;i>=0;i--){ctx.lineTo(px(xs[i]),py(lo[i]));}ctx.closePath();ctx.fill();return o;};
     o.text=function(s,x,y,color,align){ctx.fillStyle=color||'#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign=align||'left';ctx.fillText(s,x,y);return o;};
     return o;
   }
