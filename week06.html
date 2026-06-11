@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MANG2074 · Week 6 — Forecasting</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--panel2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#fbbf24;--good:#34d399;--bad:#f87171;--font:'Segoe UI',system-ui,sans-serif;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.6;}
+header{position:sticky;top:0;z-index:10;background:var(--panel);display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid #334155;flex-wrap:wrap;gap:6px;}
+header .brand{font-weight:600;}
+header .wk{color:var(--muted);font-size:.95rem;margin-left:10px;}
+header a{color:var(--accent);text-decoration:none;}
+main{max-width:1000px;margin:0 auto;padding:8px 20px;}
+.card{background:var(--panel);border-radius:14px;padding:20px;margin:20px 0;}
+h2{font-size:1.3rem;margin:0 0 12px;}
+.intro{color:var(--muted);margin:18px 2px 0;}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:12px 0;}
+.ctl{background:var(--panel2);border-radius:8px;padding:8px 12px;font-size:.9rem;}
+.ctl label{display:block;color:var(--muted);font-size:.8rem;}
+.ctl .val{color:var(--accent2);font-weight:600;margin-left:6px;}
+input[type=range]{width:130px;accent-color:var(--accent);vertical-align:middle;}
+button{background:var(--accent);color:#0f172a;border:none;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer;font-family:var(--font);font-size:.95rem;}
+button:hover{filter:brightness(1.1);}
+button.alt{background:var(--panel2);color:var(--text);}
+button.on{outline:2px solid var(--accent2);}
+button:disabled{opacity:.45;cursor:default;}
+canvas{width:100%;background:var(--panel);border:1px solid #334155;border-radius:8px;display:block;margin:10px 0;}
+select{background:var(--panel2);color:var(--text);border:1px solid #334155;border-radius:6px;padding:4px 8px;font-family:var(--font);font-size:.9rem;}
+pre select{color:var(--accent2);font-family:Consolas,'Courier New',monospace;font-size:.88rem;padding:2px 6px;}
+.notice{background:var(--panel2);border-left:4px solid var(--accent2);border-radius:8px;padding:12px 16px;margin-top:14px;font-size:.95rem;}
+table{border-collapse:collapse;width:100%;font-size:.9rem;margin:10px 0 2px;}
+th,td{border:1px solid #334155;padding:5px 10px;text-align:left;}
+th{color:var(--muted);}
+td.win{color:var(--good);font-weight:700;}
+.scorebar{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0;font-weight:600;}
+.scorebar b{color:var(--accent2);}
+.feedback{border-radius:8px;padding:10px 14px;margin-top:10px;display:none;}
+.feedback.good{display:block;background:rgba(52,211,153,.12);border:1px solid var(--good);}
+.feedback.bad{display:block;background:rgba(248,113,113,.12);border:1px solid var(--bad);}
+pre{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px;overflow-x:auto;font-size:.88rem;line-height:1.55;font-family:Consolas,'Courier New',monospace;}
+.q{border-top:1px solid #334155;padding-top:14px;margin-top:14px;}
+.q .res{margin-left:10px;font-weight:600;}
+.langtog button.on{outline:2px solid var(--accent2);}
+.statgrid{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0;}
+.stat{background:var(--panel2);border-radius:8px;padding:6px 14px;}
+.stat .v{font-size:1.05rem;font-weight:700;color:var(--accent);}
+.stat .k{font-size:.76rem;color:var(--muted);}
+footer{max-width:1000px;margin:30px auto 0;padding:0 20px 40px;color:var(--muted);font-size:.85rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
+@media(max-width:720px){.controls{align-items:stretch;}}
+</style>
+</head>
+<body>
+<header>
+  <div><span class="brand">MANG2074 · Financial Econometrics 1</span><span class="wk">Week 6 — Forecasting</span></div>
+  <a href="index.html">← All topics</a>
+</header>
+<main>
+<p class="intro">A model is only as good as its out-of-sample forecasts. Here you split a 20-year monthly series (synthetic UK-house-price-style growth) into training and hold-out samples, watch dynamic and static forecasts behave very differently, and judge models by RMSE and MAE — then go head-to-head against an AR(1) in the Forecast Duel.</p>
+
+<section class="card">
+<h2>🔬 Simulation — Out-of-sample test bench</h2>
+<p style="font-size:.92rem;color:var(--muted)">Data: monthly annual-growth series, Jan 2005 – Dec 2024 (n = 240), generated once from yₜ = 0.5 + 1.1yₜ₋₁ − 0.3yₜ₋₂ + εₜ, σ = 0.8 (unconditional mean 2.5%). The model is estimated by OLS on the training window only.</p>
+<div class="controls">
+  <span class="ctl"><label>Train/test split</label><input type="range" id="sSplit" min="144" max="228" step="6" value="192"><span class="val" id="vSplit"></span></span>
+  <span class="ctl"><label>Forecast type</label>
+    <button id="bDyn" class="alt on" style="padding:5px 10px">Dynamic (multi-step)</button>
+    <button id="bStat" class="alt" style="padding:5px 10px">Static (one-step)</button></span>
+  <span class="ctl"><label>Model</label>
+    <select id="selModel">
+      <option value="ar1">AR(1)</option>
+      <option value="ar2" selected>AR(2)</option>
+      <option value="mean">Mean (benchmark)</option>
+    </select></span>
+</div>
+<div class="statgrid" id="fitStats"></div>
+<canvas id="cMain"></canvas>
+<table id="tblErr"></table>
+<div class="notice"><b>What to notice.</b> <span id="simNote"></span></div>
+</section>
+
+<section class="card">
+<h2>🎮 Game: Forecast Duel</h2>
+<p>You vs the AR(1). Each round shows the last 40 observations of a fresh AR series. Slide your point forecast for the <b>next</b> value and lock it in — the fitted AR(1) forecasts simultaneously. Beat or tie its absolute error: <b>+10</b>. Beat it 3 rounds running: <b>+15 bonus</b>. 10 rounds.</p>
+<div class="scorebar">
+  <span>Round <b id="gRound">–</b>/10</span><span>Score <b id="gScore">0</b></span>
+  <span>Win streak <b id="gStreak">0</b></span><span>Best <b id="gBest">–</b></span>
+</div>
+<canvas id="gChart"></canvas>
+<div class="controls">
+  <span class="ctl" style="flex:1;min-width:260px"><label>Your forecast for t+1 (drag): <span class="val" id="gVal">–</span></label>
+  <input type="range" id="gSlide" min="0" max="1" step="0.05" value="0" style="width:100%" disabled></span>
+  <button id="gLock" disabled>🔒 Lock in</button>
+</div>
+<div class="feedback" id="gFeed"></div>
+<div style="margin-top:12px"><button id="gMain">▶ Start game</button></div>
+</section>
+
+<section class="card">
+<h2>⌨️ Code challenges</h2>
+<p>Fill the blank in each snippet. Toggle Python (statsmodels) / R (stats + forecast). Score: <span style="color:var(--accent2)">x/6</span> top-right.</p>
+<div id="quiz"></div>
+</section>
+</main>
+
+<footer>
+  <span>MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah</span>
+  <span><a href="week05.html">← Week 5</a>·<a href="week07.html">Week 7 →</a></span>
+</footer>
+
+<script>
+window.MANG = (function(){
+  'use strict';
+  function mulberry32(seed){var a=seed>>>0;return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
+  function gauss(rng){return function(){var u=0,v=0;while(u===0)u=rng();while(v===0)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};}
+  function Chart(canvas,height){
+    var dpr=window.devicePixelRatio||1;
+    var w=canvas.clientWidth||canvas.parentNode.clientWidth||600,h=height||220;
+    canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.height=h+'px';
+    var ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+    var pad={l:46,r:12,t:14,b:26},xmin=0,xmax=1,ymin=0,ymax=1;
+    function px(x){return pad.l+(x-xmin)/(xmax-xmin)*(w-pad.l-pad.r);}
+    function py(y){return h-pad.b-(y-ymin)/(ymax-ymin)*(h-pad.t-pad.b);}
+    var o={ctx:ctx,w:w,h:h,px:px,py:py,pad:pad};
+    o.range=function(a,b,c,d){xmin=a;xmax=b;ymin=c;ymax=d;if(xmax===xmin)xmax=xmin+1;if(ymax===ymin){ymax=ymin+1;ymin=ymin-1;}return o;};
+    o.clear=function(){ctx.fillStyle='#1e293b';ctx.fillRect(0,0,w,h);return o;};
+    o.axes=function(xt,yt,fx,fy){ctx.strokeStyle='#334155';ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.lineWidth=1;
+      yt.forEach(function(v){var y=py(v);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.textAlign='right';ctx.fillText(fy?fy(v):String(v),pad.l-5,y+4);});
+      xt.forEach(function(v){var x=px(v);ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,h-pad.b);ctx.stroke();ctx.textAlign='center';ctx.fillText(fx?fx(v):String(v),x,h-pad.b+15);});
+      return o;};
+    o.line=function(xs,ys,color,width){ctx.strokeStyle=color;ctx.lineWidth=width||2;ctx.lineJoin='round';ctx.beginPath();for(var i=0;i<xs.length;i++){var X=px(xs[i]),Y=py(ys[i]);if(i===0)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);}ctx.stroke();return o;};
+    o.dots=function(xs,ys,color,r){ctx.fillStyle=color;for(var i=0;i<xs.length;i++){ctx.beginPath();ctx.arc(px(xs[i]),py(ys[i]),r||3.5,0,6.2832);ctx.fill();}return o;};
+    o.hline=function(v,color,dash){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1;if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(pad.l,py(v));ctx.lineTo(w-pad.r,py(v));ctx.stroke();ctx.restore();return o;};
+    o.vline=function(v,color,dash){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.5;if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(px(v),pad.t);ctx.lineTo(px(v),h-pad.b);ctx.stroke();ctx.restore();return o;};
+    o.band=function(xs,lo,hi,color){ctx.fillStyle=color;ctx.beginPath();var i;for(i=0;i<xs.length;i++){var X=px(xs[i]),Y=py(hi[i]);if(i===0)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);}for(i=xs.length-1;i>=0;i--){ctx.lineTo(px(xs[i]),py(lo[i]));}ctx.closePath();ctx.fill();return o;};
+    o.text=function(s,x,y,color,align){ctx.fillStyle=color||'#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign=align||'left';ctx.fillText(s,x,y);return o;};
+    return o;
+  }
+  function mean(x){var s=0;for(var i=0;i<x.length;i++)s+=x[i];return s/x.length;}
+  function sd(x){var m=mean(x),s=0;for(var i=0;i<x.length;i++)s+=(x[i]-m)*(x[i]-m);return Math.sqrt(s/(x.length-1));}
+  function fmt(v,d){return Number(v).toFixed(d===undefined?2:d);}
+  function ticks(min,max,n){n=n||5;var span=max-min;if(span<=0)return [min];var step=Math.pow(10,Math.floor(Math.log(span/n)/Math.LN10));var err=span/n/step;if(err>=7.5)step*=10;else if(err>=3.5)step*=5;else if(err>=1.5)step*=2;var out=[];for(var v=Math.ceil(min/step)*step;v<=max+1e-9;v+=step)out.push(Math.round(v*1e6)/1e6);return out;}
+  function solve(A,b){var n=b.length,i,j,k,M=[];
+    for(i=0;i<n;i++){M.push(A[i].slice());M[i].push(b[i]);}
+    for(i=0;i<n;i++){var p=i;for(j=i+1;j<n;j++)if(Math.abs(M[j][i])>Math.abs(M[p][i]))p=j;
+      var tmp=M[i];M[i]=M[p];M[p]=tmp;
+      for(j=i+1;j<n;j++){var f=M[j][i]/M[i][i];for(k=i;k<=n;k++)M[j][k]-=f*M[i][k];}}
+    var x=new Array(n);
+    for(i=n-1;i>=0;i--){var s=M[i][n];for(j=i+1;j<n;j++)s-=M[i][j]*x[j];x[i]=s/M[i][i];}
+    return x;}
+  function ols(X,y){var k=X[0].length,A=[],b=[],i,j,t;
+    for(i=0;i<k;i++){A.push(new Array(k).fill(0));b.push(0);}
+    for(t=0;t<y.length;t++){for(i=0;i<k;i++){b[i]+=X[t][i]*y[t];for(j=0;j<k;j++)A[i][j]+=X[t][i]*X[t][j];}}
+    var beta=solve(A,b),sse=0;
+    for(t=0;t<y.length;t++){var f=0;for(i=0;i<k;i++)f+=beta[i]*X[t][i];sse+=(y[t]-f)*(y[t]-f);}
+    return {beta:beta,sigma2:sse/(y.length-k)};}
+  function grade(pct){
+    if(pct>=70)return '🥇 First — frame this and email it to your seminar tutor.';
+    if(pct>=60)return '🥈 2:1 — solidly employable. The City beckons.';
+    if(pct>=50)return '🥉 2:2 — a “Desmond”. Mean reversion deserves another look.';
+    if(pct>=40)return '3rd — you turned up, statistically speaking.';
+    return 'Fail — even the naive mean forecast is filing a complaint. Resit advised.';
+  }
+  function quiz(containerId,questions){
+    var box=document.getElementById(containerId);
+    var lang='py';
+    var state=questions.map(function(){return {done:false,ok:false};});
+    var tog=document.createElement('div');tog.className='langtog controls';
+    var bp=document.createElement('button');bp.textContent='Python';bp.className='on';
+    var br=document.createElement('button');br.textContent='R';br.className='alt';
+    var sc=document.createElement('span');sc.style.fontWeight='600';sc.style.marginLeft='auto';sc.style.color='#fbbf24';
+    tog.appendChild(bp);tog.appendChild(br);tog.appendChild(sc);box.appendChild(tog);
+    var list=document.createElement('div');box.appendChild(list);
+    bp.onclick=function(){lang='py';bp.className='on';br.className='alt';render();};
+    br.onclick=function(){lang='r';br.className='on';bp.className='alt';render();};
+    function render(){
+      list.innerHTML='';
+      var nOk=0,nDone=0;
+      questions.forEach(function(q,i){
+        var v=q[lang],st=state[i];
+        if(st.done){nDone++;if(st.ok)nOk++;}
+        var d=document.createElement('div');d.className='q';
+        var h=document.createElement('div');h.innerHTML='<b>'+(i+1)+'. '+q.title+'</b>';d.appendChild(h);
+        var pre=document.createElement('pre');
+        var parts=v.code.split('___');
+        pre.appendChild(document.createTextNode(parts[0]));
+        var sel=null;
+        if(st.done){
+          var fill=document.createElement('span');fill.textContent=v.opts[v.correct];
+          fill.style.color=st.ok?'#34d399':'#f87171';fill.style.fontWeight='700';
+          pre.appendChild(fill);
+        }else{
+          sel=document.createElement('select');
+          var o0=document.createElement('option');o0.value='';o0.textContent='— ??? —';sel.appendChild(o0);
+          v.opts.forEach(function(op,j){var o=document.createElement('option');o.value=String(j);o.textContent=op;sel.appendChild(o);});
+          pre.appendChild(sel);
+        }
+        pre.appendChild(document.createTextNode(parts[1]));
+        d.appendChild(pre);
+        var row=document.createElement('div');
+        var res=document.createElement('span');res.className='res';
+        var why=document.createElement('div');why.className='notice';why.style.display='none';why.style.marginTop='8px';why.textContent=v.why;
+        if(st.done){
+          res.textContent=st.ok?'✓ Correct':'✗ Wrong — answer: '+v.opts[v.correct];
+          res.style.color=st.ok?'#34d399':'#f87171';
+          why.style.display='block';
+          row.appendChild(res);
+        }else{
+          var btn=document.createElement('button');btn.textContent='Check';
+          btn.onclick=function(){if(sel.value==='')return;st.done=true;st.ok=(Number(sel.value)===v.correct);render();};
+          row.appendChild(btn);row.appendChild(res);
+        }
+        d.appendChild(row);d.appendChild(why);
+        list.appendChild(d);
+      });
+      sc.textContent='Score: '+nOk+'/'+questions.length+(nDone<questions.length?' ('+(questions.length-nDone)+' to go)':'');
+    }
+    render();
+  }
+  return {mulberry32:mulberry32,gauss:gauss,Chart:Chart,mean:mean,sd:sd,fmt:fmt,ticks:ticks,solve:solve,ols:ols,grade:grade,quiz:quiz};
+})();
+
+/* ---------- SECTION A: out-of-sample test bench ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  /* fixed seeded AR(2) series: c=0.5, phi1=1.1, phi2=-0.3, sigma=0.8, n=240 monthly */
+  var N=240,SEED=987654321;
+  var y=(function(){
+    var rng=M.mulberry32(SEED),g=M.gauss(rng),burn=150,arr=[],y1=2.5,y2=2.5;
+    for(var t=0;t<N+burn;t++){
+      var v=0.5+1.1*y1-0.3*y2+0.8*g();
+      arr.push(v);y2=y1;y1=v;
+    }
+    return arr.slice(burn);
+  })();
+  function dateOf(i){var yy=2005+Math.floor(i/12),mm=i%12;
+    return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mm]+' '+yy;}
+  var sSplit=document.getElementById('sSplit'),vSplit=document.getElementById('vSplit'),
+      selModel=document.getElementById('selModel'),bDyn=document.getElementById('bDyn'),bStat=document.getElementById('bStat'),
+      fitStats=document.getElementById('fitStats'),tblErr=document.getElementById('tblErr'),simNote=document.getElementById('simNote');
+  var dynamic=true;
+  function fitModel(model,split){
+    var X=[],t,Y=[];
+    if(model==='mean'){for(t=0;t<split;t++){X.push([1]);Y.push(y[t]);}}
+    else if(model==='ar1'){for(t=1;t<split;t++){X.push([1,y[t-1]]);Y.push(y[t]);}}
+    else {for(t=2;t<split;t++){X.push([1,y[t-1],y[t-2]]);Y.push(y[t]);}}
+    return M.ols(X,Y);
+  }
+  function forecast(model,fit,split,dyn){
+    var H=N-split,beta=fit.beta,s2=fit.sigma2,fc=[],se=[],h,t;
+    if(model==='mean'){
+      for(h=0;h<H;h++){fc.push(beta[0]);se.push(Math.sqrt(s2));}
+      return {fc:fc,se:se};
+    }
+    var phi1=beta[1],phi2=(model==='ar2')?beta[2]:0,c=beta[0];
+    if(dyn){
+      var psi=[1],sum=1,l1=y[split-1],l2=y[split-2];
+      for(h=0;h<H;h++){
+        var f=c+phi1*l1+phi2*l2;
+        fc.push(f);
+        se.push(Math.sqrt(s2*sum));
+        /* psi for NEXT horizon */
+        var nextPsi=phi1*psi[psi.length-1]+(psi.length>=2?phi2*psi[psi.length-2]:0);
+        psi.push(nextPsi);sum+=nextPsi*nextPsi;
+        l2=l1;l1=f;
+      }
+    }else{
+      for(t=split;t<N;t++){
+        fc.push(c+phi1*y[t-1]+phi2*y[t-2]);
+        se.push(Math.sqrt(s2));
+      }
+    }
+    return {fc:fc,se:se};
+  }
+  function errStats(fc,split){
+    var se=0,ae=0,H=fc.length;
+    for(var h=0;h<H;h++){var e=y[split+h]-fc[h];se+=e*e;ae+=Math.abs(e);}
+    return {rmse:Math.sqrt(se/H),mae:ae/H};
+  }
+  function draw(){
+    var split=+sSplit.value,model=selModel.value;
+    vSplit.textContent=dateOf(split-1)+' · train '+split+' / test '+(N-split);
+    bDyn.className=dynamic?'alt on':'alt';bStat.className=dynamic?'alt':'alt on';
+    var fit=fitModel(model,split);
+    var res=forecast(model,fit,split,dynamic);
+    var benchFit=fitModel('mean',split);
+    var bench=forecast('mean',benchFit,split,dynamic);
+    /* stats chips */
+    var chips='';
+    function chip(k,v){return '<span class="stat"><span class="v">'+v+'</span><br><span class="k">'+k+'</span></span>';}
+    if(model==='mean')chips=chip('ȳ (train mean)',M.fmt(fit.beta[0]))+chip('σ̂',M.fmt(Math.sqrt(fit.sigma2)));
+    else if(model==='ar1')chips=chip('ĉ',M.fmt(fit.beta[0]))+chip('φ̂₁',M.fmt(fit.beta[1]))+chip('σ̂',M.fmt(Math.sqrt(fit.sigma2)))+chip('implied mean ĉ/(1−φ̂₁)',M.fmt(fit.beta[0]/(1-fit.beta[1])));
+    else chips=chip('ĉ',M.fmt(fit.beta[0]))+chip('φ̂₁',M.fmt(fit.beta[1]))+chip('φ̂₂',M.fmt(fit.beta[2]))+chip('σ̂',M.fmt(Math.sqrt(fit.sigma2)))+chip('implied mean',M.fmt(fit.beta[0]/(1-fit.beta[1]-fit.beta[2])));
+    fitStats.innerHTML=chips;
+    /* chart */
+    var lo=Math.min.apply(null,y),hi=Math.max.apply(null,y);
+    res.fc.forEach(function(f,h){lo=Math.min(lo,f-1.96*res.se[h]);hi=Math.max(hi,f+1.96*res.se[h]);});
+    var m=(hi-lo)*0.06;
+    var c=M.Chart(document.getElementById('cMain'),280);
+    c.range(0,N-1,lo-m,hi+m).clear();
+    var xticks=[0,48,96,144,192,239];
+    c.axes(xticks,M.ticks(lo-m,hi+m,5),function(v){return dateOf(v).slice(-4);},function(v){return M.fmt(v,0);});
+    /* interval fan */
+    var hx=[],fl=[],fu=[];
+    for(var h=0;h<res.fc.length;h++){hx.push(split+h);fl.push(res.fc[h]-1.96*res.se[h]);fu.push(res.fc[h]+1.96*res.se[h]);}
+    c.band(hx,fl,fu,'rgba(251,191,36,0.16)');
+    var xs=[];for(var i=0;i<N;i++)xs.push(i);
+    c.line(xs,y,'#38bdf8',1.5);
+    c.line(hx,res.fc,'#fbbf24',2.2);
+    c.vline(split,'#94a3b8',[6,4]);
+    c.hline(0,'#334155');
+    c.text('actual',c.pad.l+6,c.pad.t+4,'#38bdf8');
+    c.text('forecast + 95% fan',c.pad.l+50,c.pad.t+4,'#fbbf24');
+    c.text('split: '+dateOf(split-1)+' →',c.px(split)+5,c.pad.t+16,'#94a3b8');
+    /* error table */
+    var e1=errStats(res.fc,split),e2=errStats(bench.fc,split);
+    var mName=model==='ar1'?'AR(1)':(model==='ar2'?'AR(2)':'Mean');
+    var w1=e1.rmse<=e2.rmse;
+    tblErr.innerHTML='<tr><th>Hold-out accuracy ('+(dynamic?'dynamic':'static')+', '+(N-split)+' months)</th><th>RMSE</th><th>MAE</th></tr>'+
+      '<tr><td>'+mName+(model==='mean'?' (you picked the benchmark itself)':'')+'</td><td class="'+(w1?'win':'')+'">'+M.fmt(e1.rmse,3)+'</td><td class="'+(e1.mae<=e2.mae?'win':'')+'">'+M.fmt(e1.mae,3)+'</td></tr>'+
+      '<tr><td>Naive mean benchmark</td><td class="'+(w1?'':'win')+'">'+M.fmt(e2.rmse,3)+'</td><td class="'+(e1.mae<=e2.mae?'':'win')+'">'+M.fmt(e2.mae,3)+'</td></tr>';
+    /* notice */
+    var txt;
+    if(model==='mean')txt='The mean model forecasts a flat line at ȳ = '+M.fmt(fit.beta[0])+' with a constant ±1.96σ̂ interval. It ignores all dynamics — that is why it is the benchmark to beat.';
+    else if(dynamic){
+      var mu=fit.beta[0]/(1-fit.beta[1]-(model==='ar2'?fit.beta[2]:0));
+      txt='Dynamic (multi-step) forecasts feed forecasts back in as lags, so they decay geometrically towards the unconditional mean ĉ/(1−φ̂₁'+(model==='ar2'?'−φ̂₂':'')+') = '+M.fmt(mu)+' and stay there. The 95% fan widens with the horizon — variance σ̂²·Σψⱼ² — then flattens at the unconditional variance. Long-horizon AR forecasts are basically “the mean, plus humility”.';
+    }else txt='Static (one-step-ahead) forecasts use the ACTUAL previous observations at every step, so the forecast hugs the data and the interval stays fixed at ±1.96σ̂. It looks impressive, but it is answering an easier question: each forecast only ever looks one month ahead.';
+    if(model!=='mean'&&!w1)txt+=' Right now the benchmark is winning on RMSE — at long horizons a parsimonious mean is hard to beat, a classic forecasting lesson.';
+    simNote.textContent=txt;
+  }
+  bDyn.onclick=function(){dynamic=true;draw();};
+  bStat.onclick=function(){dynamic=false;draw();};
+  sSplit.addEventListener('input',draw);
+  selModel.addEventListener('input',draw);
+  window.addEventListener('resize',draw);
+  draw();
+})();
+
+/* ---------- SECTION B: Forecast Duel ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG,KEY='mang2074_w06_best';
+  var elRound=document.getElementById('gRound'),elScore=document.getElementById('gScore'),elStreak=document.getElementById('gStreak'),
+      elBest=document.getElementById('gBest'),elFeed=document.getElementById('gFeed'),btnMain=document.getElementById('gMain'),
+      btnLock=document.getElementById('gLock'),slide=document.getElementById('gSlide'),gVal=document.getElementById('gVal');
+  var st={mode:'idle',round:0,score:0,winStreak:0,cur:null};
+  var best=localStorage.getItem(KEY);
+  elBest.textContent=best===null?'–':best;
+  function newRound(){
+    st.round++;st.mode='play';
+    var seed=(Math.random()*4294967296)>>>0,rng=M.mulberry32(seed),g=M.gauss(rng);
+    var phi=0.4+0.5*rng();if(rng()<0.2)phi=-phi;
+    var mu=-1+2*rng(),c=mu*(1-phi);
+    var burn=100,T=61,arr=[],prev=mu;
+    for(var t=0;t<T+burn;t++){var v=c+phi*prev+g();arr.push(v);prev=v;}
+    arr=arr.slice(burn);
+    /* fit AR(1) by OLS on first 60 obs */
+    var X=[],Y=[];
+    for(t=1;t<60;t++){X.push([1,arr[t-1]]);Y.push(arr[t]);}
+    var fit=M.ols(X,Y);
+    var modelFc=fit.beta[0]+fit.beta[1]*arr[59];
+    st.cur={y:arr,phi:phi,mu:mu,fit:fit,modelFc:modelFc,truth:arr[60],guess:null};
+    var shown=arr.slice(20,60);
+    var lo=Math.min.apply(null,shown),hi=Math.max.apply(null,shown);
+    slide.min=String(Math.floor((lo-1)*10)/10);slide.max=String(Math.ceil((hi+1)*10)/10);
+    slide.step='0.05';slide.value=String(arr[59].toFixed(2));slide.disabled=false;
+    btnLock.disabled=false;btnMain.style.display='none';
+    elRound.textContent=String(st.round);
+    elFeed.className='feedback';elFeed.innerHTML='';
+    drawRound(false);
+  }
+  function drawRound(reveal){
+    if(!st.cur)return;
+    var arr=st.cur.y,shown=arr.slice(20,60),n=shown.length;
+    var guess=parseFloat(slide.value);
+    var lo=Math.min.apply(null,shown),hi=Math.max.apply(null,shown);
+    lo=Math.min(lo,guess,reveal?st.cur.truth:guess,reveal?st.cur.modelFc:guess);
+    hi=Math.max(hi,guess,reveal?st.cur.truth:guess,reveal?st.cur.modelFc:guess);
+    var m=(hi-lo)*0.1+0.3;
+    var c=M.Chart(document.getElementById('gChart'),240);
+    c.range(0,n+1.5,lo-m,hi+m).clear();
+    c.axes(M.ticks(0,n,5),M.ticks(lo-m,hi+m,4),function(v){return v>=n?'t+1':(v===n-1?'t':'t−'+(n-1-v));},function(v){return M.fmt(v,1);});
+    var sm=M.mean(shown);
+    c.hline(sm,'#94a3b8',[5,4]);
+    c.text('sample mean '+M.fmt(sm),c.pad.l+6,c.py(sm)-5,'#94a3b8');
+    var xs=[];for(var i=0;i<n;i++)xs.push(i);
+    c.line(xs,shown,'#38bdf8',1.7);
+    /* your guess at x=n (i.e. t+1) */
+    c.dots([n],[guess],'#fbbf24',5);
+    c.text('you',c.px(n)+6,c.py(guess)+4,'#fbbf24');
+    if(reveal){
+      c.dots([n],[st.cur.modelFc],'#38bdf8',5);
+      c.text('AR(1)',c.px(n)+6,c.py(st.cur.modelFc)+4,'#38bdf8');
+      c.dots([n],[st.cur.truth],'#34d399',6);
+      c.text('truth',c.px(n)+6,c.py(st.cur.truth)+4,'#34d399');
+    }
+  }
+  function lockIn(){
+    if(st.mode!=='play')return;
+    st.mode='shown';
+    slide.disabled=true;btnLock.disabled=true;
+    var guess=parseFloat(slide.value);
+    st.cur.guess=guess;
+    var ue=Math.abs(guess-st.cur.truth),me=Math.abs(st.cur.modelFc-st.cur.truth);
+    var win=ue<=me+1e-9,pts=0,bonus=0;
+    if(win){st.winStreak++;pts=10;if(st.winStreak%3===0)bonus=15;}
+    else st.winStreak=0;
+    st.score+=pts+bonus;
+    elScore.textContent=String(st.score);elStreak.textContent=String(st.winStreak);
+    var f=st.cur.fit,phiHat=f.beta[1],muHat=f.beta[0]/(1-f.beta[1]);
+    var mrLine='Mean reversion: with φ̂ = '+M.fmt(phiHat)+', the optimal forecast pulls '+M.fmt(100*(1-Math.abs(phiHat)),0)+'% of the way back from the last value towards the long-run mean '+M.fmt(muHat)+' — extreme observations usually come back.';
+    elFeed.className='feedback '+(win?'good':'bad');
+    elFeed.innerHTML='<b>'+(win?'✓ You '+(ue<me?'beat':'tied')+' the model! +'+pts+(bonus?' (+'+bonus+' streak bonus 🔥)':''):'✗ The AR(1) wins this one.')+'</b><br>'+
+      'Your error: '+M.fmt(ue,3)+' · AR(1) error: '+M.fmt(me,3)+' (its forecast: '+M.fmt(st.cur.modelFc)+', truth: '+M.fmt(st.cur.truth)+')<br>'+mrLine;
+    drawRound(true);
+    btnMain.textContent=st.round>=10?'🏁 Finish':'Next round ▶';
+    btnMain.style.display='inline-block';
+  }
+  function finish(){
+    st.mode='idle';
+    var maxPts=145,pct=100*st.score/maxPts;
+    var prev=Number(localStorage.getItem(KEY)||-1);
+    if(st.score>prev){localStorage.setItem(KEY,String(st.score));elBest.textContent=String(st.score);}
+    else if(prev>=0)elBest.textContent=String(prev);
+    elFeed.className='feedback good';
+    elFeed.innerHTML='<b>Duel over — '+st.score+' points ('+M.fmt(pct,0)+'% of the maximum '+maxPts+').</b><br>Verdict: '+M.grade(pct)+(st.score>prev?'<br>🎉 New personal best!':'')+
+      '<br><span style="color:var(--muted)">Moral: a boring AR(1) that respects mean reversion is shockingly hard to beat consistently — that is the whole point of benchmark models.</span>';
+    btnMain.textContent='↻ Play again';btnMain.style.display='inline-block';
+  }
+  slide.addEventListener('input',function(){gVal.textContent=M.fmt(parseFloat(slide.value));if(st.mode==='play')drawRound(false);});
+  btnLock.onclick=lockIn;
+  btnMain.onclick=function(){
+    if(st.mode==='idle'){st.round=0;st.score=0;st.winStreak=0;elScore.textContent='0';elStreak.textContent='0';newRound();}
+    else if(st.mode==='shown'){if(st.round>=10)finish();else newRound();}
+  };
+  window.addEventListener('resize',function(){if(st.cur)drawRound(st.mode==='shown');});
+})();
+
+/* ---------- SECTION C: code challenges ---------- */
+(function(){
+  'use strict';
+  var Q=[
+    {title:'Splitting the sample by date',
+     py:{code:"split = '2019-12'\ntrain = y.loc[:split]      # estimation sample (to Dec 2019, inclusive)\ntest  = y.loc[___]         # hold-out sample",
+         opts:["'2020-01':",":'2020-01'","split:","'2020-01'"],correct:0,
+         why:"y.loc['2020-01':] takes everything from Jan 2020 onwards. Note pandas label slicing is INCLUSIVE at both ends — y.loc[split:] would put Dec 2019 in both samples."},
+     r:{code:'train <- window(y, end = c(2019, 12))   # estimation sample\ntest  <- window(y, ___)                 # hold-out sample',
+        opts:['start = c(2020, 1)','end = c(2020, 1)','start = 2020.12','frequency = 12'],correct:0,
+        why:'window() subsets a ts object by date: start = c(2020, 1) keeps Jan 2020 onwards. Never split a time series randomly — order matters.'}},
+    {title:'Producing multi-step (dynamic) forecasts',
+     py:{code:'fit = ARIMA(train, order=(2, 0, 0)).fit()\nfc = fit.___(steps=len(test))   # multi-step forecast object\nmean_fc = fc.predicted_mean',
+         opts:['get_forecast','fittedvalues','simulate','resid'],correct:0,
+         why:'get_forecast returns a results object holding the point forecasts AND their standard errors / intervals; .forecast() gives only the point values.'},
+     r:{code:'fit <- arima(train, order = c(2, 0, 0))\nfc <- ___(fit, n.ahead = length(test))\nfc$pred    # point forecasts;  fc$se = standard errors',
+        opts:['predict','fitted','residuals','simulate'],correct:0,
+        why:'predict(fit, n.ahead = h) iterates the AR equation forward, feeding forecasts back in as lags — that is what makes it dynamic.'}},
+    {title:'95% forecast intervals',
+     py:{code:'ci = fc.___(alpha=0.05)            # 95% interval, one row per horizon\nlower, upper = ci.iloc[:, 0], ci.iloc[:, 1]',
+         opts:['conf_int','summary','se_mean','predict'],correct:0,
+         why:'conf_int(alpha=0.05) returns the 95% band: forecast ± 1.96 × se(h). For dynamic forecasts se(h) grows with the horizon — the fan.'},
+     r:{code:'upper <- fc$pred + ___ * fc$se     # 95% upper band\nlower <- fc$pred - 1.96 * fc$se',
+        opts:['1.96','1.645','2.576','0.95'],correct:0,
+        why:'95% two-sided ⇒ z = 1.96. (1.645 is the 90% two-sided / 95% one-sided value; 2.576 gives 99%.)'}},
+    {title:'Computing RMSE and MAE',
+     py:{code:'err  = test - mean_fc\nrmse = np.sqrt(___)\nmae  = np.mean(np.abs(err))',
+         opts:['np.mean(err**2)','np.sum(err)','np.mean(err)**2','np.var(test)'],correct:0,
+         why:'RMSE = √(mean of SQUARED errors). np.mean(err)**2 squares the average instead — positive and negative errors would cancel.'},
+     r:{code:'err  <- test - fc$pred\nrmse <- sqrt(___)\nmae  <- mean(abs(err))',
+        opts:['mean(err^2)','sum(err)','mean(err)^2','var(test)'],correct:0,
+        why:'RMSE squares first, then averages, then roots — large misses are punished more than under MAE. Compare both across models.'}},
+    {title:'Static (one-step-ahead) forecasts over the test sample',
+     py:{code:'# Keep the trained parameters, give the model the test data,\n# and read off one-step-ahead predictions:\nres2 = fit.___(test)              # statsmodels: re-use params on new data\nstatic_fc = res2.fittedvalues',
+         opts:['apply','forecast','refit','transform'],correct:0,
+         why:'res.apply(new_data) attaches the test sample WITHOUT re-estimating; its fitted values are then one-step-ahead (static) forecasts using actual lags.'},
+     r:{code:'# forecast package: re-apply the trained model to the test data\nfit2 <- Arima(test, model = ___)\nstatic_fc <- fitted(fit2)   # one-step-ahead forecasts',
+        opts:['fit','"arima"','TRUE','c(2, 0, 0)'],correct:0,
+        why:'Passing model = fit re-uses the coefficients estimated on the training data; fitted() then returns one-step-ahead forecasts on the test sample.'}},
+    {title:'A simple exponential smoothing rival',
+     py:{code:'from statsmodels.tsa.holtwinters import ___\nses = SimpleExpSmoothing(train).fit()\nprint(ses.forecast(12))   # flat forecast at the smoothed level',
+         opts:['SimpleExpSmoothing','ExponentialMA','HoltWinters','SES'],correct:0,
+         why:'SimpleExpSmoothing lives in statsmodels.tsa.holtwinters. SES forecasts are flat — a weighted average of the past with geometrically decaying weights.'},
+     r:{code:'library(forecast)\nfc_ses <- ___(train, h = 12)   # simple exponential smoothing\naccuracy(fc_ses, test)',
+        opts:['ses','sma','tslm','arfima'],correct:0,
+        why:'ses() fits simple exponential smoothing and forecasts h steps; accuracy() then reports RMSE/MAE against the hold-out, just like our table.'}}
+  ];
+  MANG.quiz('quiz',Q);
+})();
+</script>
+</body>
+</html>

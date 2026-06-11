@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MANG2074 · Week 5 — ARMA Models</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--panel2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#fbbf24;--good:#34d399;--bad:#f87171;--font:'Segoe UI',system-ui,sans-serif;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.6;}
+header{position:sticky;top:0;z-index:10;background:var(--panel);display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid #334155;flex-wrap:wrap;gap:6px;}
+header .brand{font-weight:600;}
+header .wk{color:var(--muted);font-size:.95rem;margin-left:10px;}
+header a{color:var(--accent);text-decoration:none;}
+main{max-width:1000px;margin:0 auto;padding:8px 20px;}
+.card{background:var(--panel);border-radius:14px;padding:20px;margin:20px 0;}
+h2{font-size:1.3rem;margin:0 0 12px;}
+.intro{color:var(--muted);margin:18px 2px 0;}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:12px 0;}
+.ctl{background:var(--panel2);border-radius:8px;padding:8px 12px;font-size:.9rem;}
+.ctl label{display:block;color:var(--muted);font-size:.8rem;}
+.ctl .val{color:var(--accent2);font-weight:600;margin-left:6px;}
+input[type=range]{width:130px;accent-color:var(--accent);vertical-align:middle;}
+input:disabled{opacity:.35;}
+.ctl.off{opacity:.45;}
+button{background:var(--accent);color:#0f172a;border:none;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer;font-family:var(--font);font-size:.95rem;}
+button:hover{filter:brightness(1.1);}
+button.alt{background:var(--panel2);color:var(--text);}
+button:disabled{opacity:.45;cursor:default;}
+canvas{width:100%;background:var(--panel);border:1px solid #334155;border-radius:8px;display:block;margin:10px 0;}
+select{background:var(--panel2);color:var(--text);border:1px solid #334155;border-radius:6px;padding:4px 8px;font-family:var(--font);font-size:.9rem;}
+pre select{color:var(--accent2);font-family:Consolas,'Courier New',monospace;font-size:.88rem;padding:2px 6px;}
+.notice{background:var(--panel2);border-left:4px solid var(--accent2);border-radius:8px;padding:12px 16px;margin-top:14px;font-size:.95rem;}
+table{border-collapse:collapse;width:100%;font-size:.88rem;margin:10px 0 2px;}
+th,td{border:1px solid #334155;padding:5px 10px;text-align:left;}
+th{color:var(--muted);}
+.scorebar{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0;font-weight:600;}
+.scorebar b{color:var(--accent2);}
+.feedback{border-radius:8px;padding:10px 14px;margin-top:10px;display:none;}
+.feedback.good{display:block;background:rgba(52,211,153,.12);border:1px solid var(--good);}
+.feedback.bad{display:block;background:rgba(248,113,113,.12);border:1px solid var(--bad);}
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;}
+.choices button{background:var(--panel2);color:var(--text);}
+pre{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px;overflow-x:auto;font-size:.88rem;line-height:1.55;font-family:Consolas,'Courier New',monospace;}
+.q{border-top:1px solid #334155;padding-top:14px;margin-top:14px;}
+.q .res{margin-left:10px;font-weight:600;}
+.langtog button.on{outline:2px solid var(--accent2);}
+.statgrid{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0;}
+.stat{background:var(--panel2);border-radius:8px;padding:6px 14px;}
+.stat .v{font-size:1.05rem;font-weight:700;color:var(--accent);}
+.stat .k{font-size:.76rem;color:var(--muted);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+footer{max-width:1000px;margin:30px auto 0;padding:0 20px 40px;color:var(--muted);font-size:.85rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
+@media(max-width:720px){.grid2{grid-template-columns:1fr;}.choices{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div><span class="brand">MANG2074 · Financial Econometrics 1</span><span class="wk">Week 5 — ARMA Models</span></div>
+  <a href="index.html">← All topics</a>
+</header>
+<main>
+<p class="intro">AR, MA and ARMA processes each leave a distinctive fingerprint in the ACF and PACF — and reading those fingerprints is how econometricians choose a model. This week you drive the ARMA machine, learn the identification rules, then test yourself by unmasking hidden processes from their correlograms alone.</p>
+
+<section class="card">
+<h2>🔬 Simulation — The ARMA machine</h2>
+<div class="controls">
+  <span class="ctl"><label>Model</label>
+    <select id="selModel">
+      <option value="ar" selected>AR(1): y&#8348; = φ&#8321;y&#8348;&#8331;&#8321; + ε&#8348;</option>
+      <option value="ma">MA(1): y&#8348; = ε&#8348; + θ&#8321;ε&#8348;&#8331;&#8321;</option>
+      <option value="arma">ARMA(1,1)</option>
+      <option value="wn">White noise</option>
+      <option value="rw">Random walk</option>
+    </select></span>
+  <span class="ctl" id="boxPhi"><label>φ&#8321; (AR coefficient)</label><input type="range" id="sPhi" min="-0.95" max="0.95" step="0.05" value="0.7"><span class="val" id="vPhi">0.70</span></span>
+  <span class="ctl" id="boxTheta"><label>θ&#8321; (MA coefficient)</label><input type="range" id="sTheta" min="-0.95" max="0.95" step="0.05" value="0.5"><span class="val" id="vTheta">0.50</span></span>
+  <span class="ctl"><label>n (sample size)</label><input type="range" id="sN" min="100" max="1000" step="50" value="300"><span class="val" id="vN">300</span></span>
+  <span class="ctl"><label>σ (shock s.d.)</label><input type="range" id="sSig" min="0.2" max="3" step="0.1" value="1"><span class="val" id="vSig">1.0</span></span>
+  <button id="btnRegen">🎲 Regenerate</button>
+</div>
+<canvas id="cSeries"></canvas>
+<div class="grid2">
+  <canvas id="cAcf"></canvas>
+  <canvas id="cPacf"></canvas>
+</div>
+<div class="notice"><b>What to notice.</b> <span id="simNote"></span>
+<table>
+<tr><th>Process</th><th>ACF</th><th>PACF</th></tr>
+<tr><td>AR(p)</td><td>tails off — geometric decay (oscillating if φ&lt;0)</td><td><b>cuts off</b> after lag p</td></tr>
+<tr><td>MA(q)</td><td><b>cuts off</b> after lag q</td><td>tails off</td></tr>
+<tr><td>ARMA(p,q)</td><td>tails off</td><td>tails off</td></tr>
+<tr><td>White noise</td><td>≈ 0 at every lag</td><td>≈ 0 at every lag</td></tr>
+<tr><td>Random walk</td><td>starts ≈ 1, dies away roughly linearly</td><td>single spike ≈ 1 at lag 1</td></tr>
+</table>
+As φ&#8321; → 1 the AR(1) becomes ever more persistent; at φ&#8321; = 1 exactly it <i>is</i> the random walk — non-stationary, so the usual ACF theory no longer applies and the series must be differenced.</div>
+</section>
+
+<section class="card">
+<h2>🎮 Game: Match the Correlogram</h2>
+<p>A hidden process generated each round. Read its ACF and PACF (sample size 300, dashed bands = ±1.96/√n) and name the culprit. +10 per correct answer, growing streak bonus. 10 rounds.</p>
+<div class="scorebar">
+  <span>Round <b id="gRound">–</b>/10</span><span>Score <b id="gScore">0</b></span>
+  <span>Streak <b id="gStreak">0</b></span><span>Best <b id="gBest">–</b></span>
+</div>
+<label style="font-size:.9rem;color:var(--muted)"><input type="checkbox" id="gShow" checked> also show the raw series (hint mode)</label>
+<canvas id="gcSeries"></canvas>
+<div class="grid2">
+  <canvas id="gcAcf"></canvas>
+  <canvas id="gcPacf"></canvas>
+</div>
+<div class="choices" id="gChoices"></div>
+<div class="feedback" id="gFeed"></div>
+<div style="margin-top:12px"><button id="gMain">▶ Start game</button></div>
+</section>
+
+<section class="card">
+<h2>⌨️ Code challenges</h2>
+<p>Fill the blank in each snippet. Toggle between Python (statsmodels) and R — the same six skills in both languages. Score: <span style="color:var(--accent2)">x/6</span> shown top-right.</p>
+<div id="quiz"></div>
+</section>
+</main>
+
+<footer>
+  <span>MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah</span>
+  <span><a href="week04.html">← Week 4</a>·<a href="week06.html">Week 6 →</a></span>
+</footer>
+
+<script>
+window.MANG = (function(){
+  'use strict';
+  function mulberry32(seed){var a=seed>>>0;return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
+  function gauss(rng){return function(){var u=0,v=0;while(u===0)u=rng();while(v===0)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};}
+  function Chart(canvas,height){
+    var dpr=window.devicePixelRatio||1;
+    var w=canvas.clientWidth||canvas.parentNode.clientWidth||600,h=height||220;
+    canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.height=h+'px';
+    var ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+    var pad={l:46,r:12,t:14,b:26},xmin=0,xmax=1,ymin=0,ymax=1;
+    function px(x){return pad.l+(x-xmin)/(xmax-xmin)*(w-pad.l-pad.r);}
+    function py(y){return h-pad.b-(y-ymin)/(ymax-ymin)*(h-pad.t-pad.b);}
+    var o={ctx:ctx,w:w,h:h,px:px,py:py,pad:pad};
+    o.range=function(a,b,c,d){xmin=a;xmax=b;ymin=c;ymax=d;if(xmax===xmin)xmax=xmin+1;if(ymax===ymin){ymax=ymin+1;ymin=ymin-1;}return o;};
+    o.clear=function(){ctx.fillStyle='#1e293b';ctx.fillRect(0,0,w,h);return o;};
+    o.axes=function(xt,yt,fx,fy){ctx.strokeStyle='#334155';ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.lineWidth=1;
+      yt.forEach(function(v){var y=py(v);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.textAlign='right';ctx.fillText(fy?fy(v):String(v),pad.l-5,y+4);});
+      xt.forEach(function(v){var x=px(v);ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,h-pad.b);ctx.stroke();ctx.textAlign='center';ctx.fillText(fx?fx(v):String(v),x,h-pad.b+15);});
+      return o;};
+    o.line=function(xs,ys,color,width){ctx.strokeStyle=color;ctx.lineWidth=width||2;ctx.lineJoin='round';ctx.beginPath();for(var i=0;i<xs.length;i++){var X=px(xs[i]),Y=py(ys[i]);if(i===0)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);}ctx.stroke();return o;};
+    o.bars=function(xs,ys,color,bw){ctx.fillStyle=color;var y0=py(0);for(var i=0;i<xs.length;i++){var X=px(xs[i]),Y=py(ys[i]);ctx.fillRect(X-bw/2,Math.min(Y,y0),bw,Math.max(Math.abs(Y-y0),1));}return o;};
+    o.dots=function(xs,ys,color,r){ctx.fillStyle=color;for(var i=0;i<xs.length;i++){ctx.beginPath();ctx.arc(px(xs[i]),py(ys[i]),r||3.5,0,6.2832);ctx.fill();}return o;};
+    o.hline=function(v,color,dash){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1;if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(pad.l,py(v));ctx.lineTo(w-pad.r,py(v));ctx.stroke();ctx.restore();return o;};
+    o.vline=function(v,color,dash){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1;if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(px(v),pad.t);ctx.lineTo(px(v),h-pad.b);ctx.stroke();ctx.restore();return o;};
+    o.hband=function(lo,hi,color){ctx.fillStyle=color;ctx.fillRect(pad.l,Math.min(py(lo),py(hi)),w-pad.l-pad.r,Math.abs(py(hi)-py(lo)));return o;};
+    o.band=function(xs,lo,hi,color){ctx.fillStyle=color;ctx.beginPath();var i;for(i=0;i<xs.length;i++){var X=px(xs[i]),Y=py(hi[i]);if(i===0)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);}for(i=xs.length-1;i>=0;i--){ctx.lineTo(px(xs[i]),py(lo[i]));}ctx.closePath();ctx.fill();return o;};
+    o.text=function(s,x,y,color,align){ctx.fillStyle=color||'#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign=align||'left';ctx.fillText(s,x,y);return o;};
+    return o;
+  }
+  function acf(x,K){var n=x.length,m=0,i;for(i=0;i<n;i++)m+=x[i];m/=n;var c0=0;for(i=0;i<n;i++)c0+=(x[i]-m)*(x[i]-m);c0/=n;var out=[1];for(var k=1;k<=K;k++){var ck=0;for(i=k;i<n;i++)ck+=(x[i]-m)*(x[i-k]-m);ck/=n;out.push(c0>0?ck/c0:0);}return out;}
+  function pacf(rho,K){var prev=[],out=[],phi,j;for(var k=1;k<=K;k++){if(k===1){phi=[rho[1]];}else{var num=rho[k],den=1;for(j=1;j<k;j++){num-=prev[j-1]*rho[k-j];den-=prev[j-1]*rho[j];}var a=Math.abs(den)>1e-12?num/den:0;phi=[];for(j=1;j<k;j++)phi.push(prev[j-1]-a*prev[k-1-j]);phi.push(a);}out.push(phi[k-1]);prev=phi.slice();}return out;}
+  function mean(x){var s=0;for(var i=0;i<x.length;i++)s+=x[i];return s/x.length;}
+  function sd(x){var m=mean(x),s=0;for(var i=0;i<x.length;i++)s+=(x[i]-m)*(x[i]-m);return Math.sqrt(s/(x.length-1));}
+  function fmt(v,d){return Number(v).toFixed(d===undefined?2:d);}
+  function ticks(min,max,n){n=n||5;var span=max-min;if(span<=0)return [min];var step=Math.pow(10,Math.floor(Math.log(span/n)/Math.LN10));var err=span/n/step;if(err>=7.5)step*=10;else if(err>=3.5)step*=5;else if(err>=1.5)step*=2;var out=[];for(var v=Math.ceil(min/step)*step;v<=max+1e-9;v+=step)out.push(Math.round(v*1e6)/1e6);return out;}
+  function grade(pct){
+    if(pct>=70)return '🥇 First — frame this and email it to your seminar tutor.';
+    if(pct>=60)return '🥈 2:1 — solidly employable. The City beckons.';
+    if(pct>=50)return '🥉 2:2 — a “Desmond”. The correlograms deserve another look.';
+    if(pct>=40)return '3rd — you turned up, statistically speaking.';
+    return 'Fail — the residuals had more structure than your answers. Resit advised.';
+  }
+  function quiz(containerId,questions){
+    var box=document.getElementById(containerId);
+    var lang='py';
+    var state=questions.map(function(){return {done:false,ok:false};});
+    var tog=document.createElement('div');tog.className='langtog controls';
+    var bp=document.createElement('button');bp.textContent='Python';bp.className='on';
+    var br=document.createElement('button');br.textContent='R';br.className='alt';
+    var sc=document.createElement('span');sc.style.fontWeight='600';sc.style.marginLeft='auto';sc.style.color='#fbbf24';
+    tog.appendChild(bp);tog.appendChild(br);tog.appendChild(sc);box.appendChild(tog);
+    var list=document.createElement('div');box.appendChild(list);
+    bp.onclick=function(){lang='py';bp.className='on';br.className='alt';render();};
+    br.onclick=function(){lang='r';br.className='on';bp.className='alt';render();};
+    function render(){
+      list.innerHTML='';
+      var nOk=0,nDone=0;
+      questions.forEach(function(q,i){
+        var v=q[lang],st=state[i];
+        if(st.done){nDone++;if(st.ok)nOk++;}
+        var d=document.createElement('div');d.className='q';
+        var h=document.createElement('div');h.innerHTML='<b>'+(i+1)+'. '+q.title+'</b>';d.appendChild(h);
+        var pre=document.createElement('pre');
+        var parts=v.code.split('___');
+        pre.appendChild(document.createTextNode(parts[0]));
+        var sel=null;
+        if(st.done){
+          var fill=document.createElement('span');fill.textContent=v.opts[v.correct];
+          fill.style.color=st.ok?'#34d399':'#f87171';fill.style.fontWeight='700';
+          pre.appendChild(fill);
+        }else{
+          sel=document.createElement('select');
+          var o0=document.createElement('option');o0.value='';o0.textContent='— ??? —';sel.appendChild(o0);
+          v.opts.forEach(function(op,j){var o=document.createElement('option');o.value=String(j);o.textContent=op;sel.appendChild(o);});
+          pre.appendChild(sel);
+        }
+        pre.appendChild(document.createTextNode(parts[1]));
+        d.appendChild(pre);
+        var row=document.createElement('div');
+        var res=document.createElement('span');res.className='res';
+        var why=document.createElement('div');why.className='notice';why.style.display='none';why.style.marginTop='8px';why.textContent=v.why;
+        if(st.done){
+          res.textContent=st.ok?'✓ Correct':'✗ Wrong — answer: '+v.opts[v.correct];
+          res.style.color=st.ok?'#34d399':'#f87171';
+          why.style.display='block';
+          row.appendChild(res);
+        }else{
+          var btn=document.createElement('button');btn.textContent='Check';
+          btn.onclick=function(){if(sel.value==='')return;st.done=true;st.ok=(Number(sel.value)===v.correct);render();};
+          row.appendChild(btn);row.appendChild(res);
+        }
+        d.appendChild(row);d.appendChild(why);
+        list.appendChild(d);
+      });
+      sc.textContent='Score: '+nOk+'/'+questions.length+(nDone<questions.length?' ('+(questions.length-nDone)+' to go)':'');
+    }
+    render();
+  }
+  return {mulberry32:mulberry32,gauss:gauss,Chart:Chart,acf:acf,pacf:pacf,mean:mean,sd:sd,fmt:fmt,ticks:ticks,grade:grade,quiz:quiz};
+})();
+
+/* ---------- shared generator for this page ---------- */
+(function(){
+  'use strict';
+  window.MANG.genARMA=function(model,phi,theta,n,sig,seed){
+    var rng=MANG.mulberry32(seed),g=MANG.gauss(rng);
+    var burn=(model==='rw')?0:100,N=n+burn,y=new Array(N);
+    var prevE=0,prevY=0;
+    for(var t=0;t<N;t++){
+      var et=sig*g(),v;
+      if(model==='wn')v=et;
+      else if(model==='ar')v=phi*prevY+et;
+      else if(model==='ma')v=et+theta*prevE;
+      else if(model==='arma')v=phi*prevY+et+theta*prevE;
+      else v=prevY+et;
+      y[t]=v;prevY=v;prevE=et;
+    }
+    return y.slice(burn);
+  };
+  window.MANG.theoAcf=function(model,phi,theta,K){
+    var out=[],k;
+    if(model==='ar'){for(k=1;k<=K;k++)out.push(Math.pow(phi,k));}
+    else if(model==='ma'){var r1=theta/(1+theta*theta);for(k=1;k<=K;k++)out.push(k===1?r1:0);}
+    else if(model==='arma'){var rho1=(1+phi*theta)*(phi+theta)/(1+2*phi*theta+theta*theta);var r=rho1;for(k=1;k<=K;k++){out.push(r);r*=phi;}}
+    else if(model==='wn'){for(k=1;k<=K;k++)out.push(0);}
+    else return null; /* random walk: theoretical ACF undefined (non-stationary) */
+    return out;
+  };
+  window.MANG.drawCorrelogram=function(canvas,vals,n,title,theo,height){
+    var c=MANG.Chart(canvas,height||200);
+    var K=vals.length;
+    c.range(0,K+1,-1,1).clear();
+    c.hband(-1.96/Math.sqrt(n),1.96/Math.sqrt(n),'rgba(56,189,248,0.13)');
+    c.axes([0,5,10,15,20],[-1,-0.5,0,0.5,1],function(v){return String(v);},function(v){return MANG.fmt(v,1);});
+    c.hline(0,'#94a3b8');
+    c.hline(1.96/Math.sqrt(n),'#94a3b8',[4,4]);
+    c.hline(-1.96/Math.sqrt(n),'#94a3b8',[4,4]);
+    var xs=[],i;for(i=0;i<K;i++)xs.push(i+1);
+    var bw=Math.max(3,(c.px(1)-c.px(0))*0.5);
+    var clipped=vals.map(function(v){return Math.max(-1,Math.min(1,v));});
+    c.bars(xs,clipped,'#38bdf8',bw);
+    if(theo)c.dots(xs,theo,'#fbbf24',3.5);
+    c.text(title,c.pad.l+6,c.pad.t+4,'#e2e8f0');
+    if(theo)c.text('● theoretical',c.w-c.pad.r-78,c.pad.t+4,'#fbbf24');
+    return c;
+  };
+})();
+
+/* ---------- SECTION A: simulation ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  var selModel=document.getElementById('selModel'),sPhi=document.getElementById('sPhi'),sTheta=document.getElementById('sTheta'),
+      sN=document.getElementById('sN'),sSig=document.getElementById('sSig');
+  var vPhi=document.getElementById('vPhi'),vTheta=document.getElementById('vTheta'),vN=document.getElementById('vN'),vSig=document.getElementById('vSig');
+  var note=document.getElementById('simNote');
+  var seed=20260611;
+  function noticeFor(model,phi,theta,n){
+    var f=M.fmt;
+    if(model==='wn')return 'Pure white noise: every sample autocorrelation should sit inside the ±1.96/√n = ±'+f(1.96/Math.sqrt(n),2)+' bands (about 1 in 20 will poke out by chance — that is exactly what a 5% test means).';
+    if(model==='ar'){
+      var t='AR(1) with φ₁ = '+f(phi)+': the theoretical ACF is φᵏ — so '+f(phi)+', '+f(phi*phi)+', '+f(Math.pow(phi,3))+', … tailing off geometrically'+(phi<0?' while alternating in sign (negative φ flips the sign every lag)':'')+'. The PACF cuts off dead after lag 1.';
+      if(Math.abs(phi)>=0.9)t+=' With |φ₁| this close to 1 the decay is glacial — high persistence, one small step from a random walk.';
+      return t;
+    }
+    if(model==='ma')return 'MA(1) with θ₁ = '+f(theta)+': the theoretical ACF is θ/(1+θ²) = '+f(theta/(1+theta*theta))+' at lag 1 and exactly 0 beyond — the ACF cuts off. The PACF instead tails off'+(theta>0?' with alternating signs':'')+'. Mirror image of the AR(1).';
+    if(model==='arma')return 'ARMA(1,1) with φ₁ = '+f(phi)+', θ₁ = '+f(theta)+': ρ₁ = (1+φθ)(φ+θ)/(1+2φθ+θ²) = '+f((1+phi*theta)*(phi+theta)/(1+2*phi*theta+theta*theta))+', then ρₖ = φρₖ₋₁. Both ACF and PACF tail off — neither cuts off cleanly, the tell-tale of a mixed model.';
+    return 'Random walk: yₜ = yₜ₋₁ + εₜ is non-stationary (variance grows with t), so the theoretical ACF is undefined — no orange dots. The sample ACF starts near 1 and declines roughly linearly: the classic unit-root signature. First-difference it and you are back to white noise.';
+  }
+  function draw(){
+    var model=selModel.value,phi=+sPhi.value,theta=+sTheta.value,n=+sN.value,sig=+sSig.value;
+    vPhi.textContent=M.fmt(phi);vTheta.textContent=M.fmt(theta);vN.textContent=String(n);vSig.textContent=M.fmt(sig,1);
+    var usePhi=(model==='ar'||model==='arma'),useTheta=(model==='ma'||model==='arma');
+    sPhi.disabled=!usePhi;sTheta.disabled=!useTheta;
+    document.getElementById('boxPhi').className=usePhi?'ctl':'ctl off';
+    document.getElementById('boxTheta').className=useTheta?'ctl':'ctl off';
+    var y=M.genARMA(model,phi,theta,n,sig,seed);
+    var lo=Math.min.apply(null,y),hi=Math.max.apply(null,y),m=(hi-lo)*0.08||1;
+    var c=M.Chart(document.getElementById('cSeries'),210);
+    c.range(0,n-1,lo-m,hi+m).clear();
+    c.axes(M.ticks(0,n-1,6),M.ticks(lo-m,hi+m,4),null,function(v){return M.fmt(v,1);});
+    c.hline(0,'#94a3b8',[4,4]);
+    var xs=[];for(var i=0;i<n;i++)xs.push(i);
+    c.line(xs,y,'#38bdf8',1.6);
+    c.text('Simulated series  yₜ   (t = 1…'+n+')',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+    var ac=M.acf(y,20),pc=M.pacf(ac,20);
+    var theo=M.theoAcf(model,phi,theta,20);
+    M.drawCorrelogram(document.getElementById('cAcf'),ac.slice(1),n,'Sample ACF (bars) · theoretical (dots)',theo);
+    M.drawCorrelogram(document.getElementById('cPacf'),pc,n,'Sample PACF',null);
+    note.textContent=noticeFor(model,phi,theta,n);
+  }
+  document.getElementById('btnRegen').onclick=function(){seed=(Math.random()*4294967296)>>>0;draw();};
+  [selModel,sPhi,sTheta,sN,sSig].forEach(function(el){el.addEventListener('input',draw);});
+  window.addEventListener('resize',draw);
+  draw();
+})();
+
+/* ---------- SECTION B: game ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG,KEY='mang2074_w05_best';
+  var LABELS=['White noise','AR(1), φ > 0','AR(1), φ < 0','MA(1)','ARMA(1,1)','Random walk'];
+  var GIVE=[
+    'no bar escapes the ±1.96/√n bands in either plot (beyond the odd 1-in-20 fluke).',
+    'the ACF tails off geometrically and stays positive, while the PACF shows a single positive spike at lag 1.',
+    'the ACF alternates −, +, −, + while shrinking, and the PACF has one big negative spike at lag 1.',
+    'the ACF cuts off dead after lag 1, while the PACF tails off gradually — the mirror image of an AR(1).',
+    'both the ACF and the PACF tail off gradually; neither cuts off cleanly, so you need both an AR and an MA part.',
+    'the ACF starts near 1 and declines almost linearly — the non-stationary, unit-root fingerprint (and the series itself wanders without a fixed mean).'
+  ];
+  var elRound=document.getElementById('gRound'),elScore=document.getElementById('gScore'),elStreak=document.getElementById('gStreak'),
+      elBest=document.getElementById('gBest'),elFeed=document.getElementById('gFeed'),btnMain=document.getElementById('gMain'),
+      chkShow=document.getElementById('gShow'),chBox=document.getElementById('gChoices');
+  var btns=LABELS.map(function(lab,i){
+    var b=document.createElement('button');b.textContent=lab;b.disabled=true;
+    b.onclick=function(){answer(i);};chBox.appendChild(b);return b;
+  });
+  var st={mode:'idle',round:0,score:0,streak:0,cur:null};
+  var best=localStorage.getItem(KEY);
+  elBest.textContent=best===null?'–':best;
+  function newRound(){
+    st.round++;st.mode='play';
+    var seed=(Math.random()*4294967296)>>>0;
+    var rng=M.mulberry32(seed);
+    var type=Math.floor(rng()*6);
+    var phi=0,theta=0,model='wn';
+    if(type===1){model='ar';phi=0.5+0.4*rng();}
+    else if(type===2){model='ar';phi=-(0.5+0.4*rng());}
+    else if(type===3){model='ma';theta=(rng()<0.5?-1:1)*(0.5+0.4*rng());}
+    else if(type===4){model='arma';phi=0.4+0.4*rng();theta=0.3+0.4*rng();}
+    else if(type===5){model='rw';}
+    var y=M.genARMA(model,phi,theta,300,1,(seed+7)>>>0);
+    st.cur={type:type,phi:phi,theta:theta,y:y};
+    elRound.textContent=String(st.round);
+    elFeed.className='feedback';elFeed.innerHTML='';
+    btns.forEach(function(b){b.disabled=false;b.style.outline='none';});
+    btnMain.style.display='none';
+    drawRound();
+  }
+  function drawRound(){
+    if(!st.cur)return;
+    var y=st.cur.y,n=y.length;
+    var cs=document.getElementById('gcSeries');
+    cs.style.display=chkShow.checked?'block':'none';
+    if(chkShow.checked){
+      var lo=Math.min.apply(null,y),hi=Math.max.apply(null,y),m=(hi-lo)*0.08||1;
+      var c=M.Chart(cs,160);
+      c.range(0,n-1,lo-m,hi+m).clear();
+      c.axes(M.ticks(0,n-1,6),M.ticks(lo-m,hi+m,3),null,function(v){return M.fmt(v,1);});
+      c.hline(0,'#94a3b8',[4,4]);
+      var xs=[];for(var i=0;i<n;i++)xs.push(i);
+      c.line(xs,y,'#38bdf8',1.4);
+      c.text('Mystery series',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+    }
+    var ac=M.acf(y,20),pc=M.pacf(ac,20);
+    M.drawCorrelogram(document.getElementById('gcAcf'),ac.slice(1),n,'Sample ACF',null);
+    M.drawCorrelogram(document.getElementById('gcPacf'),pc,n,'Sample PACF',null);
+  }
+  function answer(i){
+    if(st.mode!=='play')return;
+    st.mode='shown';
+    btns.forEach(function(b){b.disabled=true;});
+    btns[st.cur.type].style.outline='2px solid #34d399';
+    var correct=(i===st.cur.type);
+    var pts=0;
+    if(correct){st.streak++;pts=10+Math.min(2*(st.streak-1),10);st.score+=pts;}
+    else st.streak=0;
+    elScore.textContent=String(st.score);elStreak.textContent=String(st.streak);
+    var truth=LABELS[st.cur.type],parm='';
+    if(st.cur.type===1||st.cur.type===2)parm=' (φ₁ = '+M.fmt(st.cur.phi)+')';
+    else if(st.cur.type===3)parm=' (θ₁ = '+M.fmt(st.cur.theta)+')';
+    else if(st.cur.type===4)parm=' (φ₁ = '+M.fmt(st.cur.phi)+', θ₁ = '+M.fmt(st.cur.theta)+')';
+    elFeed.className='feedback '+(correct?'good':'bad');
+    elFeed.innerHTML=(correct?'<b>✓ Correct (+'+pts+(st.streak>1?', incl. streak bonus':'')+')</b> — ':'<b>✗ It was '+truth+parm+'.</b> ')+
+      'The giveaway: '+GIVE[st.cur.type]+(correct?' <span style="color:var(--muted)">'+truth+parm+'</span>':'');
+    btnMain.textContent=st.round>=10?'🏁 Finish':'Next round ▶';
+    btnMain.style.display='inline-block';
+  }
+  function finish(){
+    st.mode='idle';
+    var maxPts=170,pct=100*st.score/maxPts;
+    var prev=Number(localStorage.getItem(KEY)||-1);
+    if(st.score>prev){localStorage.setItem(KEY,String(st.score));elBest.textContent=String(st.score);}
+    else if(prev>=0)elBest.textContent=String(prev);
+    elFeed.className='feedback good';
+    elFeed.innerHTML='<b>Game over — '+st.score+' points ('+M.fmt(pct,0)+'% of the maximum '+maxPts+').</b><br>Verdict: '+M.grade(pct)+(st.score>prev?'<br>🎉 New personal best!':'');
+    btnMain.textContent='↻ Play again';btnMain.style.display='inline-block';
+  }
+  btnMain.onclick=function(){
+    if(st.mode==='idle'){st.round=0;st.score=0;st.streak=0;elScore.textContent='0';elStreak.textContent='0';newRound();}
+    else if(st.mode==='shown'){if(st.round>=10)finish();else newRound();}
+  };
+  chkShow.onchange=drawRound;
+  window.addEventListener('resize',drawRound);
+})();
+
+/* ---------- SECTION C: code challenges ---------- */
+(function(){
+  'use strict';
+  var Q=[
+    {title:'Plotting the correlogram',
+     py:{code:'import matplotlib.pyplot as plt\nfrom statsmodels.graphics.tsaplots import ___\nplot_acf(y, lags=20)\nplot_pacf(y, lags=20)\nplt.show()',
+         opts:['plot_acf, plot_pacf','acf_plot, pacf_plot','correlogram','autocorr, partial_autocorr'],correct:0,
+         why:'statsmodels ships plot_acf and plot_pacf in statsmodels.graphics.tsaplots — they draw the bars and the ±1.96/√n significance bands for you.'},
+     r:{code:'# Correlogram of the series y\n___(y, lag.max = 20)\npacf(y, lag.max = 20)',
+        opts:['acf','plot_acf','autocorr','correlogram'],correct:0,
+        why:'Base R: acf() plots the autocorrelation function (with bands), pacf() the partial ACF. No package needed.'}},
+    {title:'Fitting an ARMA(1,1)',
+     py:{code:'from statsmodels.tsa.arima.model import ARIMA\nfit = ARIMA(y, order=___).fit()\nprint(fit.summary())',
+         opts:['(1, 1)','(1, 0, 1)','(p=1, q=1)','(0, 1, 0)'],correct:1,
+         why:'order=(p, d, q). An ARMA(1,1) on a stationary series is ARIMA(1,0,1) — d=0 because no differencing is needed.'},
+     r:{code:'fit <- arima(y, order = ___)\nfit',
+        opts:['c(1, 1)','c(1, 0, 1)','list(1, 1)','c(0, 1, 0)'],correct:1,
+        why:'order = c(p, d, q): c(1, 0, 1) is ARMA(1,1). c(0,1,0) would difference the data and fit nothing — a pure random walk model.'}},
+    {title:'Choosing a model with information criteria',
+     py:{code:'fits = {(p, q): ARIMA(y, order=(p, 0, q)).fit()\n        for p in range(3) for q in range(3)}\nbest = min(fits, key=lambda k: fits[k].___)',
+         opts:['aic','rsquared','nobs','pvalues'],correct:0,
+         why:'Pick the LOWEST AIC (or BIC): both reward fit but penalise extra parameters. R² always rises as you add terms, so it cannot choose.'},
+     r:{code:'fit1 <- arima(y, order = c(1, 0, 0))\nfit2 <- arima(y, order = c(1, 0, 1))\nic <- AIC(fit1, fit2)\nbest <- which.___(ic$AIC)',
+        opts:['min','max','abs','na'],correct:0,
+        why:'Lower AIC = better trade-off between fit and parsimony, so which.min picks the preferred model. BIC penalises parameters more heavily.'}},
+    {title:'Ljung–Box test on the residuals',
+     py:{code:'from statsmodels.stats.diagnostic import ___\nlb = acorr_ljungbox(fit.resid, lags=[10], return_df=True)\n# H0: no autocorrelation up to lag 10 -> want a LARGE p-value',
+         opts:['acorr_ljungbox','het_arch','durbin_watson','jarque_bera'],correct:0,
+         why:'acorr_ljungbox tests joint significance of residual autocorrelations. If p > 0.05 the ARMA model has soaked up the dynamics — good.'},
+     r:{code:'Box.test(residuals(fit), lag = 10, type = ___)\n# H0: no autocorrelation up to lag 10 -> want a LARGE p-value',
+        opts:['"Ljung-Box"','"Box-Pierce"','"portmanteau"','"LB"'],correct:0,
+        why:'type = "Ljung-Box" applies the small-sample correction to the Box–Pierce statistic; it is the standard choice for residual diagnostics.'}},
+    {title:'Stationarity condition for an AR(1)',
+     py:{code:'phi = fit.arparams[0]\nstationary = ___   # AR(1) covariance-stationarity condition',
+         opts:['abs(phi) < 1','phi < 1','phi > 0','phi**2 > 1'],correct:0,
+         why:'|φ| < 1 is required: shocks then die out at rate φᵏ. φ < 1 alone is not enough (φ = −1.2 would still explode in oscillations).'},
+     r:{code:'phi <- coef(fit)["ar1"]\nstationary <- ___   # AR(1) covariance-stationarity condition',
+        opts:['abs(phi) < 1','phi < 1','phi > 0','phi^2 > 1'],correct:0,
+        why:'|φ| < 1 keeps the variance finite: var(y) = σ²/(1−φ²). At |φ| = 1 the variance explodes — that is the random walk.'}},
+    {title:'Differencing a random-walk-like series',
+     py:{code:'# Prices look like a random walk: ACF dies off linearly from 1.\n# Difference first, then fit the ARMA to the returns:\ndy = y.___().dropna()\nfit = ARIMA(dy, order=(1, 0, 1)).fit()',
+         opts:['diff','cumsum','shift','rolling'],correct:0,
+         why:'y.diff() gives Δyₜ = yₜ − yₜ₋₁, which removes the unit root. cumsum would integrate (make it worse!), shift just lags the series.'},
+     r:{code:'# Prices look like a random walk: ACF dies off linearly from 1.\ndy <- ___(y)\nfit <- arima(dy, order = c(1, 0, 1))',
+        opts:['diff','cumsum','lag','scale'],correct:0,
+        why:'diff(y) returns yₜ − yₜ₋₁. Differencing once turns a random walk into stationary white noise; ARMA modelling is then valid.'}}
+  ];
+  MANG.quiz('quiz',Q);
+})();
+</script>
+</body>
+</html>

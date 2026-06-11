@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MANG2074 · Week 1 — Returns &amp; Distributions</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--panel2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#fbbf24;--good:#34d399;--bad:#f87171;--font:'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 var(--font)}
+header{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(15,23,42,.96);border-bottom:1px solid #334155;padding:10px 22px}
+header .brand{font-weight:700}
+header .brand small{display:block;font-weight:400;color:var(--muted);font-size:.82rem}
+header a{color:var(--accent);text-decoration:none;font-size:.95rem}
+header a:hover{text-decoration:underline}
+main{max-width:1000px;margin:0 auto;padding:22px 16px 10px}
+.intro{background:var(--panel2);border-radius:14px;padding:16px 20px;margin-bottom:22px}
+section{background:var(--panel);border-radius:14px;padding:20px;margin-bottom:26px}
+h2{font-size:1.3rem;margin:0 0 12px}
+h3{font-size:1.05rem;margin:18px 0 8px;color:var(--accent)}
+button{background:var(--accent);color:#0f172a;border:0;border-radius:8px;padding:9px 16px;font:600 .95rem var(--font);cursor:pointer}
+button:hover{filter:brightness(1.1)}
+button:disabled{opacity:.45;cursor:default;filter:none}
+button.alt{background:var(--panel2);color:var(--text);border:1px solid #475569}
+button.choice{background:var(--panel2);color:var(--text);border:1px solid #475569;margin:4px 6px 4px 0}
+button.choice:hover{border-color:var(--accent)}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px 18px;margin:6px 0 16px}
+.ctl{background:var(--panel2);border-radius:10px;padding:10px 14px}
+.ctl label{display:block;font-size:.88rem;color:var(--muted);margin-bottom:4px}
+.ctl label b{color:var(--text)}
+.ctl .val{color:var(--accent2);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select.ui{background:var(--panel2);color:var(--text);border:1px solid #475569;border-radius:8px;padding:6px 10px;font:.95rem var(--font);width:100%}
+canvas{display:block;width:100%;background:var(--panel);border:1px solid #334155;border-radius:10px;margin:10px 0}
+.charts2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
+.stat{background:var(--panel2);border-radius:10px;padding:8px 12px;text-align:center}
+.stat .k{font-size:.8rem;color:var(--muted)}
+.stat .v{font-size:1.12rem;font-weight:700;color:var(--accent)}
+.stat .v.good{color:var(--good)}
+.stat .v.bad{color:var(--bad)}
+.notice{background:var(--panel2);border-left:4px solid var(--accent2);border-radius:10px;padding:12px 16px;margin-top:14px;font-size:.95rem}
+.notice b{color:var(--accent2)}
+.hud{display:flex;gap:14px;flex-wrap:wrap;align-items:center;background:var(--panel2);border-radius:10px;padding:10px 14px;margin:12px 0}
+.hud .pill{background:var(--bg);border-radius:999px;padding:4px 14px;font-size:.9rem}
+.hud .pill b{color:var(--accent2)}
+.feedback{border-radius:10px;padding:12px 16px;margin:12px 0;font-size:.95rem;display:none}
+.feedback.good{display:block;background:rgba(52,211,153,.12);border-left:4px solid var(--good)}
+.feedback.bad{display:block;background:rgba(248,113,113,.12);border-left:4px solid var(--bad)}
+.feedback.info{display:block;background:var(--panel2);border-left:4px solid var(--accent)}
+.cc-card{background:var(--panel2);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.cc-prompt{margin-bottom:8px;font-size:.97rem}
+pre.code{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px 14px;font:.88rem/1.55 Consolas,'Courier New',monospace;color:#dbeafe;overflow-x:auto;white-space:pre-wrap}
+pre.code select{background:#1e293b;color:var(--accent2);border:1px solid #475569;border-radius:6px;padding:2px 6px;font:inherit}
+.cc-row{display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap}
+.cc-res{font-size:.92rem}
+.cc-res.ok{color:var(--good)}
+.cc-res.no{color:var(--bad)}
+.langtog{display:flex;gap:8px;margin-bottom:14px;align-items:center}
+.langtog button.on{outline:2px solid var(--accent2)}
+footer{max-width:1000px;margin:0 auto;padding:18px 16px 34px;color:var(--muted);font-size:.9rem;text-align:center}
+footer .nav{display:flex;justify-content:space-between;margin-bottom:10px}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline}
+@media(max-width:720px){.charts2{grid-template-columns:1fr}header{padding:10px 14px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">MANG2074 · Financial Econometrics 1<small>Week 1 — Returns &amp; Distributions</small></div>
+  <a href="index.html">← All topics</a>
+</header>
+<main>
+<div class="intro">
+  This week you turn prices into returns and ask the classic question: <em>are financial returns normally distributed?</em>
+  Play with drift, volatility and fat tails in the simulator, then test your eye in the game — can you spot non-normal returns
+  from a histogram and a time-series plot alone? Finish with the code you'd actually type in Python or R.
+</div>
+
+<!-- ============ SECTION A: SIMULATION ============ -->
+<section id="sim">
+<h2>🔬 Simulation — Price → Returns lab</h2>
+<p>Simulated daily log-returns: <code>r<sub>t</sub> = μ + σ·z<sub>t</sub></code>, where z is either standard normal or a standardised Student-t. Prices follow P<sub>t</sub> = P<sub>t−1</sub>·e<sup>r<sub>t</sub>/100</sup>.</p>
+<div class="controls">
+  <div class="ctl"><label><b>μ</b> drift (%/day): <span class="val" id="muV">0.03</span></label>
+    <input type="range" id="mu" min="-0.1" max="0.1" step="0.005" value="0.03"></div>
+  <div class="ctl"><label><b>σ</b> volatility (%/day): <span class="val" id="sigV">1.0</span></label>
+    <input type="range" id="sig" min="0.2" max="3" step="0.05" value="1"></div>
+  <div class="ctl"><label><b>Distribution</b> of z<sub>t</sub></label>
+    <select class="ui" id="dist"><option value="normal">Normal (thin tails)</option><option value="t">Student-t (fat tails)</option></select></div>
+  <div class="ctl"><label><b>ν</b> t degrees of freedom: <span class="val" id="dfV">5</span></label>
+    <input type="range" id="df" min="3" max="30" step="1" value="5"></div>
+  <div class="ctl"><label><b>N</b> observations: <span class="val" id="nV">1000</span></label>
+    <input type="range" id="nobs" min="250" max="5000" step="250" value="1000"></div>
+  <div class="ctl" style="display:flex;align-items:center"><button id="regen" style="width:100%">🎲 Regenerate</button></div>
+</div>
+<canvas id="priceC" style="height:210px"></canvas>
+<div class="charts2">
+  <canvas id="retC" style="height:185px"></canvas>
+  <canvas id="histC" style="height:185px"></canvas>
+</div>
+<div class="stats">
+  <div class="stat"><div class="k">mean (%/day)</div><div class="v" id="stMean">–</div></div>
+  <div class="stat"><div class="k">std. dev. (%)</div><div class="v" id="stSd">–</div></div>
+  <div class="stat"><div class="k">skewness S</div><div class="v" id="stSk">–</div></div>
+  <div class="stat"><div class="k">excess kurtosis K</div><div class="v" id="stKu">–</div></div>
+  <div class="stat"><div class="k">Jarque–Bera (crit 5.99)</div><div class="v" id="stJb">–</div></div>
+  <div class="stat"><div class="k">5% verdict</div><div class="v" id="stVer">–</div></div>
+</div>
+<div class="notice" id="simNotice"><b>What to notice:</b> …</div>
+</section>
+
+<!-- ============ SECTION B: GAME ============ -->
+<section id="game">
+<h2>🎮 Game: Normal or Not?</h2>
+<p>Each round you see the histogram and time-series of 750 daily returns. They come from <b>(i)</b> iid normal returns, <b>(ii)</b> fat-tailed Student-t returns, or <b>(iii)</b> GARCH-generated returns (the realistic kind). Call it: Normal or Not. <b>+10</b> per correct call, <b>+5</b> streak bonus from the 2nd consecutive hit. 10 rounds.</p>
+<div class="hud">
+  <button id="gStart">▶ Start game</button>
+  <span class="pill">Round <b id="gRound">0</b>/10</span>
+  <span class="pill">Score <b id="gScore">0</b></span>
+  <span class="pill">Streak <b id="gStreak">0</b></span>
+  <span class="pill">Best <b id="gBest">–</b></span>
+</div>
+<div class="charts2">
+  <canvas id="gSer" style="height:170px"></canvas>
+  <canvas id="gHist" style="height:170px"></canvas>
+</div>
+<div id="gBtns" style="display:none">
+  <button class="choice" id="gNorm">📏 Normal</button>
+  <button class="choice" id="gNot">🌪️ Not normal</button>
+</div>
+<div class="feedback" id="gFb"></div>
+</section>
+
+<!-- ============ SECTION C: CODE ============ -->
+<section id="codes">
+<h2>⌨️ Code challenges</h2>
+<div class="langtog">
+  <button id="ccPy" class="on">Python</button>
+  <button id="ccR" class="alt">R</button>
+  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/6</span>
+</div>
+<div id="cc-list"></div>
+</section>
+</main>
+
+<footer>
+  <div class="nav"><a href="index.html">← Home</a><a href="week02.html">Week 2: OLS, Hedge Ratios &amp; the CAPM →</a></div>
+  <div>MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah</div>
+</footer>
+
+<script>
+/* ===== Shared helpers (window.MANG) ===== */
+window.MANG = (function () {
+  'use strict';
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gauss(rng) { // Box–Muller
+    let u = 0; do { u = rng(); } while (u === 0);
+    const v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function fitCanvas(cv) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth || 600, h = cv.clientHeight || 200;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, W: w, H: h };
+  }
+  function fmt(v) {
+    if (!isFinite(v)) return '–';
+    const a = Math.abs(v);
+    if (a >= 1000) return v.toFixed(0);
+    if (a >= 10) return v.toFixed(1);
+    if (a === 0) return '0';
+    if (a < 0.01) return v.toExponential(1);
+    return v.toFixed(2);
+  }
+  function frame(ctx, W, H, xmin, xmax, ymin, ymax, opts) {
+    opts = opts || {};
+    const padL = opts.padL || 46, padR = 10, padT = opts.title ? 22 : 10, padB = 26;
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(0, 0, W, H);
+    const X = v => padL + (v - xmin) / ((xmax - xmin) || 1) * (W - padL - padR);
+    const Y = v => H - padB - (v - ymin) / ((ymax - ymin) || 1) * (H - padT - padB);
+    ctx.lineWidth = 1; ctx.font = '11px Segoe UI, sans-serif';
+    for (let i = 0; i <= 4; i++) {
+      const v = ymin + (ymax - ymin) * i / 4, y = Y(v);
+      ctx.strokeStyle = '#334155';
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+      ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'right'; ctx.fillText(fmt(v), padL - 6, y + 4);
+    }
+    for (let i = 0; i <= 4; i++) {
+      const v = xmin + (xmax - xmin) * i / 4, x = X(v);
+      ctx.strokeStyle = '#334155';
+      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
+      ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'center'; ctx.fillText(fmt(v), x, H - padB + 15);
+    }
+    if (opts.title) { ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'left'; ctx.fillText(opts.title, padL, 14); }
+    return { X: X, Y: Y, padL: padL, padR: padR, padT: padT, padB: padB };
+  }
+  function drawLine(ctx, f, xs, ys, color, width) {
+    ctx.strokeStyle = color; ctx.lineWidth = width || 2; ctx.beginPath();
+    for (let i = 0; i < xs.length; i++) {
+      const px = f.X(xs[i]), py = f.Y(ys[i]);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+  function drawDots(ctx, f, xs, ys, color, r) {
+    ctx.fillStyle = color;
+    for (let i = 0; i < xs.length; i++) {
+      ctx.beginPath(); ctx.arc(f.X(xs[i]), f.Y(ys[i]), r || 2.5, 0, 2 * Math.PI); ctx.fill();
+    }
+  }
+  function drawHist(ctx, W, H, data, nb, opts) {
+    opts = opts || {};
+    let lo = Infinity, hi = -Infinity;
+    for (const v of data) { if (v < lo) lo = v; if (v > hi) hi = v; }
+    if (lo === hi) { lo -= 1; hi += 1; }
+    const bw = (hi - lo) / nb, counts = new Array(nb).fill(0);
+    for (const v of data) {
+      let b = Math.floor((v - lo) / bw);
+      if (b >= nb) b = nb - 1; if (b < 0) b = 0;
+      counts[b]++;
+    }
+    const n = data.length;
+    let m = 0; for (const v of data) m += v; m /= n;
+    let s = 0; for (const v of data) s += (v - m) * (v - m); s = Math.sqrt(s / n);
+    let peak = 0; for (const c of counts) if (c > peak) peak = c;
+    if (opts.normal && s > 0) {
+      const pdfPeak = n * bw / (s * Math.sqrt(2 * Math.PI));
+      if (pdfPeak > peak) peak = pdfPeak;
+    }
+    const f = frame(ctx, W, H, lo, hi, 0, peak * 1.08, { title: opts.title || '' });
+    ctx.fillStyle = opts.color || '#38bdf8';
+    for (let b = 0; b < nb; b++) {
+      const x0 = f.X(lo + b * bw), x1 = f.X(lo + (b + 1) * bw), y = f.Y(counts[b]);
+      ctx.fillRect(x0 + 0.5, y, Math.max(1, x1 - x0 - 1), f.Y(0) - y);
+    }
+    if (opts.normal && s > 0) {
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= 120; i++) {
+        const x = lo + (hi - lo) * i / 120;
+        const pdf = n * bw * Math.exp(-0.5 * Math.pow((x - m) / s, 2)) / (s * Math.sqrt(2 * Math.PI));
+        const px = f.X(x), py = f.Y(pdf);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+    return f;
+  }
+  function stats(data) {
+    const n = data.length;
+    let m = 0; for (const v of data) m += v; m /= n;
+    let m2 = 0, m3 = 0, m4 = 0;
+    for (const v of data) { const d = v - m; m2 += d * d; m3 += d * d * d; m4 += d * d * d * d; }
+    m2 /= n; m3 /= n; m4 /= n;
+    const sd = Math.sqrt(m2);
+    const skew = m3 / Math.pow(m2, 1.5);
+    const exk = m4 / (m2 * m2) - 3;
+    const jb = n / 6 * (skew * skew + exk * exk / 4); // JB = n/6 (S^2 + K^2/4)
+    return { n: n, mean: m, sd: sd, skew: skew, exk: exk, jb: jb };
+  }
+  function tDraw(rng, df) { // standardised Student-t (unit variance, df>2)
+    let chi = 0;
+    for (let i = 0; i < df; i++) { const z = gauss(rng); chi += z * z; }
+    return gauss(rng) / Math.sqrt(chi / df) * Math.sqrt((df - 2) / df);
+  }
+  return { mulberry32: mulberry32, gauss: gauss, tDraw: tDraw, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, drawHist: drawHist, stats: stats, fmt: fmt };
+})();
+</script>
+
+<script>
+/* ===== SECTION A: Price → Returns lab ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  let seed = 20741;
+  let rets = [], prices = [];
+
+  function generate() {
+    const mu = parseFloat($('mu').value);
+    const sig = parseFloat($('sig').value);
+    const dist = $('dist').value;
+    const df = parseInt($('df').value, 10);
+    const n = parseInt($('nobs').value, 10);
+    const rng = M.mulberry32(seed);
+    rets = new Array(n); prices = new Array(n + 1);
+    prices[0] = 100;
+    for (let t = 0; t < n; t++) {
+      const z = (dist === 't') ? M.tDraw(rng, df) : M.gauss(rng);
+      rets[t] = mu + sig * z;
+      prices[t + 1] = prices[t] * Math.exp(rets[t] / 100);
+    }
+    redraw();
+  }
+
+  function redraw() {
+    const n = rets.length;
+    if (!n) return;
+    // price chart
+    let pc = M.fitCanvas($('priceC'));
+    let lo = Infinity, hi = -Infinity;
+    for (const p of prices) { if (p < lo) lo = p; if (p > hi) hi = p; }
+    const fp = M.frame(pc.ctx, pc.W, pc.H, 0, n, lo * 0.98, hi * 1.02, { title: 'Simulated price path  P(t), P(0)=100   (x = day)' });
+    const xs = prices.map((_, i) => i);
+    M.drawLine(pc.ctx, fp, xs, prices, '#38bdf8', 2);
+    // returns chart
+    const rc = M.fitCanvas($('retC'));
+    let mx = 0; for (const r of rets) if (Math.abs(r) > mx) mx = Math.abs(r);
+    const fr = M.frame(rc.ctx, rc.W, rc.H, 0, n, -mx * 1.1, mx * 1.1, { title: 'Daily returns r(t) %' });
+    rc.ctx.strokeStyle = '#475569';
+    rc.ctx.beginPath(); rc.ctx.moveTo(fr.X(0), fr.Y(0)); rc.ctx.lineTo(fr.X(n), fr.Y(0)); rc.ctx.stroke();
+    M.drawLine(rc.ctx, fr, rets.map((_, i) => i), rets, '#38bdf8', 1);
+    // histogram
+    const hc = M.fitCanvas($('histC'));
+    M.drawHist(hc.ctx, hc.W, hc.H, rets, 45, { normal: true, title: 'Histogram of returns + fitted normal curve (gold)' });
+    // stats
+    const st = M.stats(rets);
+    $('stMean').textContent = st.mean.toFixed(3);
+    $('stSd').textContent = st.sd.toFixed(3);
+    $('stSk').textContent = st.skew.toFixed(3);
+    $('stKu').textContent = st.exk.toFixed(3);
+    $('stJb').textContent = st.jb.toFixed(2);
+    const rej = st.jb > 5.99;
+    const ver = $('stVer');
+    ver.textContent = rej ? 'REJECT normality' : 'Cannot reject';
+    ver.className = 'v ' + (rej ? 'bad' : 'good');
+    // notice
+    const dist = $('dist').value, df = parseInt($('df').value, 10);
+    let msg = '<b>What to notice:</b> These returns are <b>iid</b> — notice there is <em>no volatility clustering</em>: ' +
+      'big moves are not followed by more big moves, unlike real market data. ';
+    if (dist === 't') {
+      const theo = df > 4 ? (6 / (df - 4)).toFixed(2) : '∞';
+      msg += 'You switched on <b>fat tails</b>: a standardised t(' + df + ') has theoretical excess kurtosis ' +
+        (df > 4 ? '6/(ν−4) = ' + theo : '∞ (ν ≤ 4!)') +
+        '. Sample K = ' + st.exk.toFixed(2) + ', so JB = n/6·(S² + K²/4) = ' + st.jb.toFixed(1) +
+        (rej ? ' ≫ 5.99 — normality is firmly rejected, exactly what we see with real daily returns.' : ' — try more observations or fewer df.');
+    } else {
+      msg += 'With truly normal returns, JB should exceed 5.99 only ~5% of the time. Hit <b>Regenerate</b> repeatedly: ' +
+        (rej ? 'this draw is one of the unlucky ~1-in-20 false rejections!' : 'most draws will not reject — here JB = ' + st.jb.toFixed(2) + ' &lt; 5.99.') +
+        ' Then switch to Student-t and watch the kurtosis (and JB) explode.';
+    }
+    $('simNotice').innerHTML = msg;
+  }
+
+  ['mu', 'sig', 'dist', 'df', 'nobs'].forEach(id => {
+    $(id).addEventListener('input', function () {
+      $('muV').textContent = parseFloat($('mu').value).toFixed(3);
+      $('sigV').textContent = parseFloat($('sig').value).toFixed(2);
+      $('dfV').textContent = $('df').value;
+      $('nV').textContent = $('nobs').value;
+      generate();
+    });
+  });
+  $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
+  window.addEventListener('resize', redraw);
+  generate();
+})();
+</script>
+
+<script>
+/* ===== SECTION B: Game — Normal or Not? ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const KEY = 'mang2074_w01_best';
+  const N = 750, ROUNDS = 10, MAX = ROUNDS * 10 + (ROUNDS - 1) * 5;
+  let round = 0, score = 0, streak = 0, cur = null, locked = true;
+
+  function bestLoad() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function bestSave(s) {
+    try {
+      const b = parseInt(localStorage.getItem(KEY) || '-1', 10);
+      if (s > b) localStorage.setItem(KEY, String(s));
+    } catch (e) { /* file:// quota etc. */ }
+  }
+  function showBest() { const b = bestLoad(); $('gBest').textContent = (b === null ? '–' : b); }
+
+  function garchSeries(rng, n, sd) {
+    const alpha = 0.13, beta = 0.84, omega = sd * sd * (1 - alpha - beta);
+    let s2 = sd * sd; const out = new Array(n);
+    for (let t = 0; t < n; t++) {
+      const e = Math.sqrt(s2) * M.gauss(rng);
+      out[t] = e;
+      s2 = omega + alpha * e * e + beta * s2; // GARCH(1,1)
+    }
+    return out;
+  }
+
+  function newRound() {
+    round++;
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const sd = 0.8 + rng() * 0.8;
+    const type = Math.floor(rng() * 3); // 0 normal, 1 t, 2 garch
+    let data, df = 0;
+    if (type === 0) { data = Array.from({ length: N }, () => sd * M.gauss(rng)); }
+    else if (type === 1) { df = 3 + Math.floor(rng() * 4); data = Array.from({ length: N }, () => sd * M.tDraw(rng, df)); }
+    else { data = garchSeries(rng, N, sd); }
+    cur = { type: type, df: df, data: data };
+    drawRound();
+    $('gRound').textContent = round;
+    $('gFb').className = 'feedback'; $('gFb').textContent = '';
+    locked = false;
+  }
+
+  function drawRound() {
+    if (!cur) return;
+    const data = cur.data;
+    const sc = M.fitCanvas($('gSer'));
+    let mx = 0; for (const r of data) if (Math.abs(r) > mx) mx = Math.abs(r);
+    const f = M.frame(sc.ctx, sc.W, sc.H, 0, N, -mx * 1.1, mx * 1.1, { title: 'Daily returns (%) — look for clustering & outliers' });
+    M.drawLine(sc.ctx, f, data.map((_, i) => i), data, '#38bdf8', 1);
+    const hc = M.fitCanvas($('gHist'));
+    M.drawHist(hc.ctx, hc.W, hc.H, data, 40, { normal: true, title: 'Histogram vs fitted normal (gold)' });
+  }
+
+  function answer(saidNormal) {
+    if (locked || !cur) return;
+    locked = true;
+    const isNormal = cur.type === 0;
+    const correct = (saidNormal === isNormal);
+    const st = M.stats(cur.data);
+    let pts = 0;
+    if (correct) { streak++; pts = 10 + (streak >= 2 ? 5 : 0); score += pts; } else { streak = 0; }
+    $('gScore').textContent = score; $('gStreak').textContent = streak;
+    const names = ['iid Normal', 'Student-t(' + cur.df + ') — fat tails', 'GARCH(1,1) — volatility clustering'];
+    let why;
+    if (cur.type === 0) {
+      why = 'No outlier spray, histogram hugs the normal curve, and the series has constant choppiness. Sample excess kurtosis = ' + st.exk.toFixed(2) + ' ≈ 0.';
+    } else if (cur.type === 1) {
+      why = 'Tell-tale: a few extreme spikes way beyond what the normal curve allows, and a peaked centre. Sample excess kurtosis = ' + st.exk.toFixed(2) + ' (normal would be ≈ 0). But notice: NO clustering — the big moves arrive at random times.';
+    } else {
+      why = 'Tell-tale: quiet spells then bursts of turbulence — volatility clustering, just like real markets. The marginal distribution is fat-tailed too (sample excess kurtosis = ' + st.exk.toFixed(2) + '), so JB rejects even though each shock is conditionally normal.';
+    }
+    const fb = $('gFb');
+    fb.className = 'feedback ' + (correct ? 'good' : 'bad');
+    fb.innerHTML = (correct ? '✅ Correct (+' + pts + ')' : '❌ Wrong') + ' — it was <b>' + names[cur.type] + '</b>. ' + why;
+    if (round >= ROUNDS) { finish(); } else { setTimeout(newRound, 2600); }
+  }
+
+  function grade(s) {
+    const p = 100 * s / MAX;
+    if (p >= 70) return '🥇 1st — First Class. The examiners suspect witchcraft.';
+    if (p >= 60) return '🥈 2:1 — Upper Second. Solid. Employable, even.';
+    if (p >= 50) return '🥉 2:2 — Lower Second. A classic “Desmond”. Room to grow.';
+    if (p >= 40) return '3rd — Third Class. You attended… occasionally?';
+    return 'Fail — your tail-spotting needs fatter practice. Resit recommended.';
+  }
+
+  function finish() {
+    bestSave(score); showBest();
+    setTimeout(function () {
+      const fb = $('gFb');
+      fb.className = 'feedback info';
+      fb.innerHTML = '🏁 <b>Game over!</b> Final score <b>' + score + '</b>/' + MAX + '. Grade: ' + grade(score) +
+        '<br>Press Start to play again — real markets are team “Not normal”, by the way.';
+      $('gBtns').style.display = 'none';
+      $('gStart').disabled = false;
+    }, 2600);
+  }
+
+  $('gStart').addEventListener('click', function () {
+    round = 0; score = 0; streak = 0;
+    $('gScore').textContent = 0; $('gStreak').textContent = 0;
+    $('gBtns').style.display = 'block';
+    $('gStart').disabled = true;
+    newRound();
+  });
+  $('gNorm').addEventListener('click', function () { answer(true); });
+  $('gNot').addEventListener('click', function () { answer(false); });
+  window.addEventListener('resize', drawRound);
+  showBest();
+})();
+</script>
+
+<script>
+/* ===== SECTION C: Code challenges ===== */
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const QS = [
+    {
+      prompt: 'Compute LOG returns from a pandas price series / R price vector.',
+      py: { code: 'import numpy as np\nret = np.log(prices / ___)', correct: 'prices.shift(1)', opts: ['prices.shift(1)', 'prices.shift(-1)', 'prices.diff(1)', 'prices.cumsum()'], expl: 'log(P_t / P_{t−1}): .shift(1) gives yesterday’s price aligned with today.' },
+      r: { code: 'ret <- ___', correct: 'diff(log(prices))', opts: ['diff(log(prices))', 'log(diff(prices))', 'diff(prices) / prices', 'exp(diff(prices))'], expl: 'Take logs first, then difference: log P_t − log P_{t−1}.' }
+    },
+    {
+      prompt: 'Compute SIMPLE (percentage) returns.',
+      py: { code: 'ret = prices.___', correct: 'pct_change()', opts: ['pct_change()', 'diff()', 'pct()', 'change()'], expl: '.pct_change() computes (P_t − P_{t−1}) / P_{t−1}; .diff() gives only the price change.' },
+      r: { code: 'ret <- prices / ___ - 1', correct: 'dplyr::lag(prices)', opts: ['dplyr::lag(prices)', 'dplyr::lead(prices)', 'rev(prices)', 'head(prices, -1)'], expl: 'Simple return = P_t / P_{t−1} − 1, so divide by the LAGGED price.' }
+    },
+    {
+      prompt: 'Print summary statistics (count, mean, sd, quartiles…) of the returns.',
+      py: { code: 'ret.___', correct: 'describe()', opts: ['describe()', 'summary()', 'stats()', 'profile()'], expl: 'pandas uses .describe(); summary() is the R idiom.' },
+      r: { code: '___(ret)', correct: 'summary', opts: ['summary', 'describe', 'stats', 'glance'], expl: 'Base-R summary() gives min/quartiles/mean/max; describe() is the pandas idiom.' }
+    },
+    {
+      prompt: 'Compute skewness and EXCESS kurtosis (normal ⇒ both ≈ 0).',
+      py: { code: 's = ret.skew()\nk = ___   # pandas already reports EXCESS kurtosis', correct: 'ret.kurt()', opts: ['ret.kurt()', 'ret.kurt() - 3', 'ret.moment(4)', 'ret.std()**4'], expl: 'pandas .kurt() returns kurtosis MINUS 3 already — do not subtract 3 again.' },
+      r: { code: 'library(moments)\ns <- skewness(ret)\nk <- ___   # moments::kurtosis() is RAW kurtosis', correct: 'kurtosis(ret) - 3', opts: ['kurtosis(ret) - 3', 'kurtosis(ret)', 'kurtosis(ret) / 3', 'kurtosis(ret) + 3'], expl: 'moments::kurtosis() gives raw kurtosis (normal = 3), so subtract 3 for EXCESS kurtosis.' }
+    },
+    {
+      prompt: 'Run the Jarque–Bera normality test: JB = n/6·(S² + K²/4) ~ χ²(2).',
+      py: { code: 'from statsmodels.stats.___ import jarque_bera\njb, pval, skew, kurt = jarque_bera(ret.dropna())', correct: 'stattools', opts: ['stattools', 'diagnostic', 'normtest', 'jarque'], expl: 'jarque_bera lives in statsmodels.stats.stattools; compare JB with χ²(2) crit 5.99.' },
+      r: { code: 'library(tseries)\n___(na.omit(ret))', correct: 'jarque.bera.test', opts: ['jarque.bera.test', 'jb.test', 'bera.test', 'normality.test'], expl: 'tseries::jarque.bera.test() — reject normality if p < 0.05.' }
+    },
+    {
+      prompt: 'Plot a histogram of the returns with 50 bins.',
+      py: { code: 'import matplotlib.pyplot as plt\nplt.___(ret.dropna(), bins=50)\nplt.show()', correct: 'hist', opts: ['hist', 'bar', 'histogram', 'plot_hist'], expl: 'plt.hist(data, bins=50); plt.bar() needs you to pre-compute the bins.' },
+      r: { code: 'hist(ret, ___ = 50, col = "steelblue")', correct: 'breaks', opts: ['breaks', 'bins', 'n', 'nbreaks'], expl: 'Base-R hist() calls them "breaks", not "bins" (that one trips everyone up).' }
+    }
+  ];
+  let lang = 'py';
+  const solved = new Array(QS.length).fill(false);
+
+  function shuffled(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function render() {
+    const wrap = $('cc-list');
+    wrap.innerHTML = '';
+    QS.forEach(function (q, i) {
+      const v = q[lang];
+      const card = document.createElement('div'); card.className = 'cc-card';
+      const p = document.createElement('div'); p.className = 'cc-prompt';
+      p.textContent = (i + 1) + '. ' + q.prompt + (solved[i] ? '  ✅' : '');
+      card.appendChild(p);
+      const pre = document.createElement('pre'); pre.className = 'code';
+      const parts = v.code.split('___');
+      pre.appendChild(document.createTextNode(parts[0]));
+      const sel = document.createElement('select');
+      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '▾ choose…'; sel.appendChild(ph);
+      shuffled(v.opts).forEach(function (o) {
+        const op = document.createElement('option'); op.value = o; op.textContent = o; sel.appendChild(op);
+      });
+      pre.appendChild(sel);
+      if (parts[1]) pre.appendChild(document.createTextNode(parts[1]));
+      card.appendChild(pre);
+      const row = document.createElement('div'); row.className = 'cc-row';
+      const btn = document.createElement('button'); btn.textContent = 'Check'; btn.className = 'alt';
+      const res = document.createElement('span'); res.className = 'cc-res';
+      btn.addEventListener('click', function () {
+        if (!sel.value) { res.className = 'cc-res no'; res.textContent = 'Pick an option first.'; return; }
+        if (sel.value === v.correct) {
+          res.className = 'cc-res ok'; res.textContent = '✓ ' + v.expl;
+          if (!solved[i]) { solved[i] = true; $('ccScore').textContent = solved.filter(Boolean).length; }
+          p.textContent = (i + 1) + '. ' + q.prompt + '  ✅';
+        } else {
+          res.className = 'cc-res no'; res.textContent = '✗ Not that one — ' + v.expl;
+        }
+      });
+      row.appendChild(btn); row.appendChild(res);
+      card.appendChild(row);
+      wrap.appendChild(card);
+    });
+  }
+  $('ccPy').addEventListener('click', function () { lang = 'py'; $('ccPy').className = 'on'; $('ccR').className = 'alt'; render(); });
+  $('ccR').addEventListener('click', function () { lang = 'r'; $('ccR').className = 'on'; $('ccPy').className = 'alt'; render(); });
+  render();
+})();
+</script>
+</body>
+</html>

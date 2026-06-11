@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MANG2074 · Week 4 — OLS Diagnostics: Regression Doctor</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--panel2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#fbbf24;--good:#34d399;--bad:#f87171;--font:'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 var(--font)}
+header{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(15,23,42,.96);border-bottom:1px solid #334155;padding:10px 22px}
+header .brand{font-weight:700}
+header .brand small{display:block;font-weight:400;color:var(--muted);font-size:.82rem}
+header a{color:var(--accent);text-decoration:none;font-size:.95rem}
+header a:hover{text-decoration:underline}
+main{max-width:1000px;margin:0 auto;padding:22px 16px 10px}
+.intro{background:var(--panel2);border-radius:14px;padding:16px 20px;margin-bottom:22px}
+section{background:var(--panel);border-radius:14px;padding:20px;margin-bottom:26px}
+h2{font-size:1.3rem;margin:0 0 12px}
+h3{font-size:1.05rem;margin:18px 0 8px;color:var(--accent)}
+button{background:var(--accent);color:#0f172a;border:0;border-radius:8px;padding:9px 16px;font:600 .95rem var(--font);cursor:pointer}
+button:hover{filter:brightness(1.1)}
+button:disabled{opacity:.45;cursor:default;filter:none}
+button.alt{background:var(--panel2);color:var(--text);border:1px solid #475569}
+button.choice{background:var(--panel2);color:var(--text);border:1px solid #475569;margin:4px 6px 4px 0}
+button.choice:hover{border-color:var(--accent)}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px 18px;margin:6px 0 16px}
+.ctl{background:var(--panel2);border-radius:10px;padding:10px 14px}
+.ctl label{display:block;font-size:.88rem;color:var(--muted);margin-bottom:4px}
+.ctl label b{color:var(--text)}
+.ctl .val{color:var(--accent2);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select.ui{background:var(--panel2);color:var(--text);border:1px solid #475569;border-radius:8px;padding:6px 10px;font:.95rem var(--font);width:100%}
+canvas{display:block;width:100%;background:var(--panel);border:1px solid #334155;border-radius:10px;margin:10px 0}
+.charts2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.notice{background:var(--panel2);border-left:4px solid var(--accent2);border-radius:10px;padding:12px 16px;margin-top:14px;font-size:.95rem}
+.notice b{color:var(--accent2)}
+.hud{display:flex;gap:14px;flex-wrap:wrap;align-items:center;background:var(--panel2);border-radius:10px;padding:10px 14px;margin:12px 0}
+.hud .pill{background:var(--bg);border-radius:999px;padding:4px 14px;font-size:.9rem}
+.hud .pill b{color:var(--accent2)}
+.feedback{border-radius:10px;padding:12px 16px;margin:12px 0;font-size:.95rem;display:none}
+.feedback.good{display:block;background:rgba(52,211,153,.12);border-left:4px solid var(--good)}
+.feedback.bad{display:block;background:rgba(248,113,113,.12);border-left:4px solid var(--bad)}
+.feedback.info{display:block;background:var(--panel2);border-left:4px solid var(--accent)}
+.cc-card{background:var(--panel2);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.cc-prompt{margin-bottom:8px;font-size:.97rem}
+pre.code{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px 14px;font:.88rem/1.55 Consolas,'Courier New',monospace;color:#dbeafe;overflow-x:auto;white-space:pre-wrap}
+pre.code select{background:#1e293b;color:var(--accent2);border:1px solid #475569;border-radius:6px;padding:2px 6px;font:inherit}
+.cc-row{display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap}
+.cc-res{font-size:.92rem}
+.cc-res.ok{color:var(--good)}
+.cc-res.no{color:var(--bad)}
+.langtog{display:flex;gap:8px;margin-bottom:14px;align-items:center}
+.langtog button.on{outline:2px solid var(--accent2)}
+.testrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel2);border-radius:8px;padding:8px 12px;margin:6px 0;font-size:.92rem;flex-wrap:wrap}
+.testrow .nm{font-weight:600;min-width:230px}
+.testrow .det{color:var(--muted);font-family:Consolas,monospace;font-size:.85rem}
+.light{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.light.pass{background:var(--good);box-shadow:0 0 7px var(--good)}
+.light.fail{background:var(--bad);box-shadow:0 0 7px var(--bad)}
+footer{max-width:1000px;margin:0 auto;padding:18px 16px 34px;color:var(--muted);font-size:.9rem;text-align:center}
+footer .nav{display:flex;justify-content:space-between;margin-bottom:10px}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline}
+@media(max-width:720px){.charts2{grid-template-columns:1fr}header{padding:10px 14px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">MANG2074 · Financial Econometrics 1<small>Week 4 — OLS Diagnostics: Regression Doctor</small></div>
+  <a href="index.html">← All topics</a>
+</header>
+<main>
+<div class="intro">
+  The Gauss–Markov assumptions don’t break loudly — they break in the residual plots. This week you deliberately infect a
+  regression with heteroscedasticity, autocorrelation, fat-tailed errors or the wrong functional form, watch the diagnostic
+  tests light up, and then play doctor: diagnose a hidden disease from four plots alone and prescribe the right remedy.
+</div>
+
+<!-- ============ SECTION A: SIMULATION ============ -->
+<section id="sim">
+<h2>🔬 Simulation — Break the assumptions</h2>
+<p>Baseline DGP (n = 150): <code>y = 2 + 1.5·x + u</code>. Pick a disease, infect the error term u, and watch the four plots and four tests react.</p>
+<div class="controls">
+  <div class="ctl"><label><b>Disease</b></label>
+    <select class="ui" id="disease">
+      <option value="healthy">😇 Healthy (all assumptions hold)</option>
+      <option value="hetero">📈 Heteroscedasticity — Var(u) ∝ x²</option>
+      <option value="auto">🔁 Autocorrelation — AR(1) errors</option>
+      <option value="nonnorm">🌪️ Non-normal errors — Student-t(3)</option>
+      <option value="nonlin">🪃 Non-linearity — y = β·x², fitted linear</option>
+    </select></div>
+  <div class="ctl"><label><b>ρ</b> AR(1) error persistence: <span class="val" id="rhoV">0.7</span> <span style="color:var(--muted)">(autocorrelation disease only)</span></label>
+    <input type="range" id="rho" min="0" max="0.95" step="0.05" value="0.7"></div>
+  <div class="ctl" style="display:flex;align-items:center"><button id="regen" style="width:100%">🎲 New sample</button></div>
+</div>
+<div class="charts2">
+  <canvas id="sP1" style="height:215px"></canvas>
+  <canvas id="sP2" style="height:215px"></canvas>
+  <canvas id="sP3" style="height:215px"></canvas>
+  <canvas id="sP4" style="height:215px"></canvas>
+</div>
+<h3>Diagnostic test panel (5% level)</h3>
+<div id="tests"></div>
+<div class="notice" id="simNotice"><b>What to notice:</b> …</div>
+</section>
+
+<!-- ============ SECTION B: GAME ============ -->
+<section id="game">
+<h2>🎮 Game: Regression Doctor</h2>
+<p>A patient walks in. You see ONLY the four diagnostic plots — no tests, no labels. First make the <b>diagnosis</b> (+10),
+then prescribe the <b>remedy</b> (+5). Streak bonus +5 for consecutive correct diagnoses. 10 rounds. Do no harm.</p>
+<div class="hud">
+  <button id="gStart">▶ Start clinic</button>
+  <span class="pill">Patient <b id="gRound">0</b>/10</span>
+  <span class="pill">Score <b id="gScore">0</b></span>
+  <span class="pill">Streak <b id="gStreak">0</b></span>
+  <span class="pill">Best <b id="gBest">–</b></span>
+</div>
+<div class="charts2">
+  <canvas id="gP1" style="height:185px"></canvas>
+  <canvas id="gP2" style="height:185px"></canvas>
+  <canvas id="gP3" style="height:185px"></canvas>
+  <canvas id="gP4" style="height:185px"></canvas>
+</div>
+<div id="gQ" style="font-weight:600;margin:10px 0"></div>
+<div id="gBtns"></div>
+<div class="feedback" id="gFb"></div>
+</section>
+
+<!-- ============ SECTION C: CODE ============ -->
+<section id="codes">
+<h2>⌨️ Code challenges</h2>
+<div class="langtog">
+  <button id="ccPy" class="on">Python</button>
+  <button id="ccR" class="alt">R</button>
+  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/6</span>
+</div>
+<div id="cc-list"></div>
+</section>
+</main>
+
+<footer>
+  <div class="nav"><a href="week03.html">← Week 3: Multiple Regression &amp; F-tests</a><a href="week05.html">Week 5: ARMA Models →</a></div>
+  <div>MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah</div>
+</footer>
+
+<script>
+/* ===== Shared helpers (window.MANG) ===== */
+window.MANG = (function () {
+  'use strict';
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gauss(rng) {
+    let u = 0; do { u = rng(); } while (u === 0);
+    const v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function tDraw(rng, df) { // standardised Student-t, unit variance (df>2)
+    let chi = 0;
+    for (let i = 0; i < df; i++) { const z = gauss(rng); chi += z * z; }
+    return gauss(rng) / Math.sqrt(chi / df) * Math.sqrt((df - 2) / df);
+  }
+  function fitCanvas(cv) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth || 600, h = cv.clientHeight || 200;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, W: w, H: h };
+  }
+  function fmt(v) {
+    if (!isFinite(v)) return '–';
+    const a = Math.abs(v);
+    if (a >= 1000) return v.toFixed(0);
+    if (a >= 10) return v.toFixed(1);
+    if (a === 0) return '0';
+    if (a < 0.01) return v.toExponential(1);
+    return v.toFixed(2);
+  }
+  function frame(ctx, W, H, xmin, xmax, ymin, ymax, opts) {
+    opts = opts || {};
+    const padL = opts.padL || 46, padR = 10, padT = opts.title ? 22 : 10, padB = 26;
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(0, 0, W, H);
+    const X = v => padL + (v - xmin) / ((xmax - xmin) || 1) * (W - padL - padR);
+    const Y = v => H - padB - (v - ymin) / ((ymax - ymin) || 1) * (H - padT - padB);
+    ctx.lineWidth = 1; ctx.font = '11px Segoe UI, sans-serif';
+    for (let i = 0; i <= 4; i++) {
+      const v = ymin + (ymax - ymin) * i / 4, y = Y(v);
+      ctx.strokeStyle = '#334155';
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+      ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'right'; ctx.fillText(fmt(v), padL - 6, y + 4);
+    }
+    for (let i = 0; i <= 4; i++) {
+      const v = xmin + (xmax - xmin) * i / 4, x = X(v);
+      ctx.strokeStyle = '#334155';
+      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
+      ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'center'; ctx.fillText(fmt(v), x, H - padB + 15);
+    }
+    if (opts.title) { ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'left'; ctx.fillText(opts.title, padL, 14); }
+    return { X: X, Y: Y, padL: padL, padR: padR, padT: padT, padB: padB };
+  }
+  function drawLine(ctx, f, xs, ys, color, width) {
+    ctx.strokeStyle = color; ctx.lineWidth = width || 2; ctx.beginPath();
+    for (let i = 0; i < xs.length; i++) {
+      const px = f.X(xs[i]), py = f.Y(ys[i]);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+  function drawDots(ctx, f, xs, ys, color, r) {
+    ctx.fillStyle = color;
+    for (let i = 0; i < xs.length; i++) {
+      ctx.beginPath(); ctx.arc(f.X(xs[i]), f.Y(ys[i]), r || 2.5, 0, 2 * Math.PI); ctx.fill();
+    }
+  }
+  function drawHist(ctx, W, H, data, nb, opts) {
+    opts = opts || {};
+    let lo = Infinity, hi = -Infinity;
+    for (const v of data) { if (v < lo) lo = v; if (v > hi) hi = v; }
+    if (lo === hi) { lo -= 1; hi += 1; }
+    const bw = (hi - lo) / nb, counts = new Array(nb).fill(0);
+    for (const v of data) {
+      let b = Math.floor((v - lo) / bw);
+      if (b >= nb) b = nb - 1; if (b < 0) b = 0;
+      counts[b]++;
+    }
+    const n = data.length;
+    let m = 0; for (const v of data) m += v; m /= n;
+    let s = 0; for (const v of data) s += (v - m) * (v - m); s = Math.sqrt(s / n);
+    let peak = 0; for (const c of counts) if (c > peak) peak = c;
+    if (opts.normal && s > 0) {
+      const pdfPeak = n * bw / (s * Math.sqrt(2 * Math.PI));
+      if (pdfPeak > peak) peak = pdfPeak;
+    }
+    const f = frame(ctx, W, H, lo, hi, 0, peak * 1.08, { title: opts.title || '' });
+    ctx.fillStyle = opts.color || '#38bdf8';
+    for (let b = 0; b < nb; b++) {
+      const x0 = f.X(lo + b * bw), x1 = f.X(lo + (b + 1) * bw), y = f.Y(counts[b]);
+      ctx.fillRect(x0 + 0.5, y, Math.max(1, x1 - x0 - 1), f.Y(0) - y);
+    }
+    if (opts.normal && s > 0) {
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= 120; i++) {
+        const x = lo + (hi - lo) * i / 120;
+        const pdf = n * bw * Math.exp(-0.5 * Math.pow((x - m) / s, 2)) / (s * Math.sqrt(2 * Math.PI));
+        const px = f.X(x), py = f.Y(pdf);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+    return f;
+  }
+  function stats(data) {
+    const n = data.length;
+    let m = 0; for (const v of data) m += v; m /= n;
+    let m2 = 0, m3 = 0, m4 = 0;
+    for (const v of data) { const d = v - m; m2 += d * d; m3 += d * d * d; m4 += d * d * d * d; }
+    m2 /= n; m3 /= n; m4 /= n;
+    const sd = Math.sqrt(m2);
+    const skew = m3 / Math.pow(m2, 1.5);
+    const exk = m4 / (m2 * m2) - 3;
+    const jb = n / 6 * (skew * skew + exk * exk / 4);
+    return { n: n, mean: m, sd: sd, skew: skew, exk: exk, jb: jb };
+  }
+  /* ---- matrix OLS for aux regressions ---- */
+  function matInv(A0) {
+    const n = A0.length;
+    const A = A0.map(function (row, i) {
+      return row.concat(Array.from({ length: n }, function (_, j) { return i === j ? 1 : 0; }));
+    });
+    for (let c = 0; c < n; c++) {
+      let p = c;
+      for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      const tmp = A[c]; A[c] = A[p]; A[p] = tmp;
+      const piv = A[c][c];
+      if (Math.abs(piv) < 1e-12) return null;
+      for (let j = 0; j < 2 * n; j++) A[c][j] /= piv;
+      for (let r = 0; r < n; r++) {
+        if (r === c) continue;
+        const fct = A[r][c];
+        if (fct === 0) continue;
+        for (let j = 0; j < 2 * n; j++) A[r][j] -= fct * A[c][j];
+      }
+    }
+    return A.map(function (row) { return row.slice(n); });
+  }
+  function olsK(X, y) {
+    const n = X.length, k = X[0].length;
+    const A = [], b = [];
+    for (let i = 0; i < k; i++) { A.push(new Array(k).fill(0)); b.push(0); }
+    for (let t = 0; t < n; t++) {
+      for (let i = 0; i < k; i++) {
+        b[i] += X[t][i] * y[t];
+        for (let j = 0; j < k; j++) A[i][j] += X[t][i] * X[t][j];
+      }
+    }
+    const Ai = matInv(A);
+    const beta = Ai.map(function (row) {
+      let s = 0; for (let j = 0; j < row.length; j++) s += row[j] * b[j]; return s;
+    });
+    let ybar = 0; for (let t = 0; t < n; t++) ybar += y[t]; ybar /= n;
+    let rss = 0, tss = 0;
+    const resid = new Array(n), fitted = new Array(n);
+    for (let t = 0; t < n; t++) {
+      let f = 0; for (let i = 0; i < k; i++) f += X[t][i] * beta[i];
+      fitted[t] = f; resid[t] = y[t] - f;
+      rss += resid[t] * resid[t]; tss += (y[t] - ybar) * (y[t] - ybar);
+    }
+    const s2 = rss / (n - k);
+    const se = beta.map(function (_, i) { return Math.sqrt(s2 * Ai[i][i]); });
+    return { beta: beta, se: se, rss: rss, tss: tss, r2: 1 - rss / tss, resid: resid, fitted: fitted, n: n, k: k };
+  }
+  /* ---- t distribution p-values ---- */
+  function logGamma(x) {
+    const g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    let y = x, tmp = x + 5.5;
+    tmp -= (x + 0.5) * Math.log(tmp);
+    let ser = 1.000000000190015;
+    for (let j = 0; j < 6; j++) { y += 1; ser += g[j] / y; }
+    return -tmp + Math.log(2.5066282746310005 * ser / x);
+  }
+  function betacf(a, b, x) {
+    const MAXIT = 200, EPS = 3e-12, FPMIN = 1e-300;
+    const qab = a + b, qap = a + 1, qam = a - 1;
+    let c = 1, d = 1 - qab * x / qap;
+    if (Math.abs(d) < FPMIN) d = FPMIN;
+    d = 1 / d; let h = d;
+    for (let m = 1; m <= MAXIT; m++) {
+      const m2 = 2 * m;
+      let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+      d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+      c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+      d = 1 / d; h *= d * c;
+      aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+      d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+      c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+      d = 1 / d;
+      const del = d * c; h *= del;
+      if (Math.abs(del - 1) < EPS) break;
+    }
+    return h;
+  }
+  function ibeta(a, b, x) {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    const bt = Math.exp(logGamma(a + b) - logGamma(a) - logGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+    if (x < (a + 1) / (a + b + 2)) return bt * betacf(a, b, x) / a;
+    return 1 - bt * betacf(b, a, 1 - x) / b;
+  }
+  function tCDF(t, df) {
+    const x = df / (df + t * t);
+    const p = 0.5 * ibeta(df / 2, 0.5, x);
+    return t > 0 ? 1 - p : p;
+  }
+  function tPval2(t, df) { return 2 * (1 - tCDF(Math.abs(t), df)); }
+  return { mulberry32: mulberry32, gauss: gauss, tDraw: tDraw, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, drawHist: drawHist, stats: stats, olsK: olsK, tPval2: tPval2, fmt: fmt };
+})();
+</script>
+
+<script>
+/* ===== Disease lab (shared by simulation and game) ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const N = 150;
+
+  // generate a patient: x in time order, y from chosen disease
+  function genPatient(rng, disease, rho) {
+    const x = [], y = [];
+    for (let t = 0; t < N; t++) x.push(10 * rng());
+    if (disease === 'auto') {
+      let u = 2 * M.gauss(rng); // stationary start: Var(u) = sigma_e^2/(1-rho^2) = 4
+      for (let t = 0; t < N; t++) {
+        u = rho * u + 2 * Math.sqrt(1 - rho * rho) * M.gauss(rng); // keeps unconditional sd = 2
+        y.push(2 + 1.5 * x[t] + u);
+      }
+    } else {
+      for (let t = 0; t < N; t++) {
+        let u;
+        if (disease === 'hetero') u = (0.25 + 0.4 * x[t]) * M.gauss(rng);       // sd ∝ x  -> Var ∝ x²
+        else if (disease === 'nonnorm') u = 2.2 * M.tDraw(rng, 3);              // fat tails
+        else u = 2 * M.gauss(rng);
+        if (disease === 'nonlin') y.push(1 + 0.3 * x[t] * x[t] + u);            // true model quadratic
+        else y.push(2 + 1.5 * x[t] + u);
+      }
+    }
+    // fit LINEAR model y = a + b x by OLS
+    const X = x.map(function (v) { return [1, v]; });
+    const fit = M.olsK(X, y);
+    return { x: x, y: y, fit: fit, disease: disease, rho: rho };
+  }
+
+  // diagnostics on the fitted linear model
+  function diagnose(p) {
+    const e = p.fit.resid, fv = p.fit.fitted, x = p.x, n = e.length;
+    // White LM: e² on [1, x, x²], LM = n·R² ~ χ²(2), crit 5.99
+    const e2 = e.map(function (v) { return v * v; });
+    const auxW = M.olsK(x.map(function (v) { return [1, v, v * v]; }), e2);
+    const white = n * auxW.r2;
+    // Durbin–Watson + asymptotic rho test
+    let num = 0, den = 0, rsum = 0, r2sum = 0;
+    for (let t = 0; t < n; t++) den += e[t] * e[t];
+    for (let t = 1; t < n; t++) { num += (e[t] - e[t - 1]) * (e[t] - e[t - 1]); rsum += e[t] * e[t - 1]; }
+    for (let t = 0; t < n; t++) r2sum += e[t] * e[t];
+    const dw = num / den;
+    const rhoHat = rsum / r2sum;
+    const zRho = rhoHat * Math.sqrt(n);
+    // Jarque–Bera on residuals
+    const jb = M.stats(e).jb;
+    // RESET: y on [1, x, yhat²]; t-test on yhat² coefficient
+    const auxR = M.olsK(x.map(function (v, i) { return [1, v, fv[i] * fv[i]]; }), p.y);
+    const tReset = auxR.beta[2] / auxR.se[2];
+    const pReset = M.tPval2(tReset, n - 3);
+    return {
+      white: white, whiteFail: white > 5.99,
+      dw: dw, rhoHat: rhoHat, zRho: zRho, dwFail: Math.abs(zRho) > 1.96,
+      jb: jb, jbFail: jb > 5.99,
+      tReset: tReset, pReset: pReset, resetFail: pReset < 0.05
+    };
+  }
+
+  // draw the 4 diagnostic plots into 4 canvases
+  function drawPatient(p, ids) {
+    const e = p.fit.resid, fv = p.fit.fitted, x = p.x, n = e.length;
+    // 1: scatter + fitted line
+    const c1 = M.fitCanvas(document.getElementById(ids[0]));
+    const ylo = Math.min.apply(null, p.y), yhi = Math.max.apply(null, p.y);
+    const f1 = M.frame(c1.ctx, c1.W, c1.H, 0, 10, ylo - (yhi - ylo) * 0.07, yhi + (yhi - ylo) * 0.07, { title: '1 · y vs x with OLS fitted line' });
+    M.drawDots(c1.ctx, f1, x, p.y, '#38bdf8', 2.5);
+    M.drawLine(c1.ctx, f1, [0, 10], [p.fit.beta[0], p.fit.beta[0] + 10 * p.fit.beta[1]], '#fbbf24', 2);
+    // 2: residuals vs fitted
+    const c2 = M.fitCanvas(document.getElementById(ids[1]));
+    let em = 0; for (const v of e) if (Math.abs(v) > em) em = Math.abs(v);
+    const flo = Math.min.apply(null, fv), fhi = Math.max.apply(null, fv);
+    const f2 = M.frame(c2.ctx, c2.W, c2.H, flo, fhi, -em * 1.1, em * 1.1, { title: '2 · residuals û vs fitted ŷ' });
+    c2.ctx.strokeStyle = '#475569';
+    c2.ctx.beginPath(); c2.ctx.moveTo(f2.X(flo), f2.Y(0)); c2.ctx.lineTo(f2.X(fhi), f2.Y(0)); c2.ctx.stroke();
+    M.drawDots(c2.ctx, f2, fv, e, '#38bdf8', 2.5);
+    // 3: residuals over time
+    const c3 = M.fitCanvas(document.getElementById(ids[2]));
+    const f3 = M.frame(c3.ctx, c3.W, c3.H, 0, n, -em * 1.1, em * 1.1, { title: '3 · residuals û over time t' });
+    c3.ctx.strokeStyle = '#475569';
+    c3.ctx.beginPath(); c3.ctx.moveTo(f3.X(0), f3.Y(0)); c3.ctx.lineTo(f3.X(n), f3.Y(0)); c3.ctx.stroke();
+    M.drawLine(c3.ctx, f3, e.map(function (_, i) { return i; }), e, '#38bdf8', 1.2);
+    // 4: residual histogram + normal
+    const c4 = M.fitCanvas(document.getElementById(ids[3]));
+    M.drawHist(c4.ctx, c4.W, c4.H, e, 30, { normal: true, title: '4 · residual histogram vs normal (gold)' });
+  }
+
+  window.MANG.lab = { genPatient: genPatient, diagnose: diagnose, drawPatient: drawPatient, N: N };
+})();
+</script>
+
+<script>
+/* ===== SECTION A: Break the assumptions ===== */
+(function () {
+  'use strict';
+  const M = window.MANG, L = M.lab;
+  const $ = id => document.getElementById(id);
+  let seed = 20744, patient = null;
+
+  const NOTES = {
+    healthy: 'All four lights should usually be green (each test still false-alarms ~5% of the time — regenerate to see it). Plot 2 is a structureless cloud, plot 3 is white noise, plot 4 matches the gold curve.',
+    hetero: '<b>Plot 2 exposes it</b>: the residual cloud fans out as ŷ (and x) grows — Var(u) rises with x². The White/BP light turns red because x and x² explain û². (JB often turns red too: a mixture of small- and large-variance normals is itself fat-tailed!) OLS coefficients stay unbiased, but the usual SEs are wrong → use White-robust SEs.',
+    auto: '<b>Plot 3 exposes it</b>: long runs of residuals on the same side of zero. DW ≈ 2(1−ρ̂), so with ρ = ' ,
+    nonnorm: '<b>Plot 4 exposes it</b>: a peaked centre and a few extreme outliers the gold normal curve can’t cover — JB blows up via the kurtosis term. With n large, inference survives via the CLT, but exact small-sample t/F results lean on normality.',
+    nonlin: '<b>Plots 1 and 2 expose it</b>: the line cuts through a curve, so residuals form a ∪/∩ pattern against fitted values. RESET adds ŷ² and finds it significant — the functional form is wrong; add x² or transform, don’t just fix the SEs. (White often lights up too, since the squared residuals track x² — one disease can trip several alarms, which is why doctors look at the plots.)'
+  };
+
+  function run() {
+    const d = $('disease').value;
+    const rho = parseFloat($('rho').value);
+    const rng = M.mulberry32(seed);
+    patient = L.genPatient(rng, d, rho);
+    redraw();
+  }
+
+  function redraw() {
+    if (!patient) return;
+    L.drawPatient(patient, ['sP1', 'sP2', 'sP3', 'sP4']);
+    const g = L.diagnose(patient);
+    const rows = [
+      { nm: 'White / BP heteroscedasticity LM = n·R²(aux)', det: 'LM = ' + g.white.toFixed(2) + '  vs  χ²(2) crit 5.99', fail: g.whiteFail },
+      { nm: 'Durbin–Watson autocorrelation', det: 'd = ' + g.dw.toFixed(2) + '  (≈ 2(1−ρ̂), ρ̂ = ' + g.rhoHat.toFixed(2) + '; ρ̂√n vs ±1.96)', fail: g.dwFail },
+      { nm: 'Jarque–Bera normality of residuals', det: 'JB = ' + g.jb.toFixed(2) + '  vs  χ²(2) crit 5.99', fail: g.jbFail },
+      { nm: 'RESET functional form (ŷ² term)', det: 't(ŷ²) = ' + g.tReset.toFixed(2) + ',  p = ' + g.pReset.toFixed(3), fail: g.resetFail }
+    ];
+    let html = '';
+    rows.forEach(function (r) {
+      html += '<div class="testrow"><span class="nm"><span class="light ' + (r.fail ? 'fail' : 'pass') + '"></span>' + r.nm +
+        '</span><span class="det">' + r.det + '</span><span style="color:var(--' + (r.fail ? 'bad' : 'good') + ');font-weight:700">' +
+        (r.fail ? 'FAIL' : 'PASS') + '</span></div>';
+    });
+    $('tests').innerHTML = html;
+    const d = patient.disease;
+    let note = NOTES[d];
+    if (d === 'auto') {
+      note += patient.rho.toFixed(2) + ' you expect d ≈ ' + (2 * (1 - patient.rho)).toFixed(2) +
+        ' (measured d = ' + g.dw.toFixed(2) + '). Slide ρ towards 0 and the light turns green. Remedy: Newey–West (HAC) standard errors or model the dynamics.';
+    }
+    $('simNotice').innerHTML = '<b>What to notice:</b> ' + note;
+  }
+
+  $('disease').addEventListener('input', run);
+  $('rho').addEventListener('input', function () {
+    $('rhoV').textContent = parseFloat($('rho').value).toFixed(2);
+    run();
+  });
+  $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; run(); });
+  window.addEventListener('resize', redraw);
+  run();
+})();
+</script>
+
+<script>
+/* ===== SECTION B: Game — Regression Doctor ===== */
+(function () {
+  'use strict';
+  const M = window.MANG, L = M.lab;
+  const $ = id => document.getElementById(id);
+  const KEY = 'mang2074_w04_best';
+  const ROUNDS = 10, MAX = ROUNDS * 15 + (ROUNDS - 1) * 5;
+  const DISEASES = ['healthy', 'hetero', 'auto', 'nonnorm', 'nonlin'];
+  const DNAMES = ['😇 Healthy — assumptions fine', '📈 Heteroscedasticity', '🔁 Autocorrelation (AR errors)', '🌪️ Non-normal errors', '🪃 Non-linearity / wrong functional form'];
+  const REMEDIES = ['White (robust/HC) standard errors', 'Newey–West (HAC) standard errors', 'Transform: add x² / use logs', 'Rely on the CLT (large n) — coefficients OK', 'Nothing — prescribe a biscuit and send them home'];
+  const CURE = { hetero: 0, auto: 1, nonlin: 2, nonnorm: 3, healthy: 4 };
+  const TELLS = {
+    healthy: 'flat structureless residual cloud in plot 2, white-noise plot 3, histogram matching the normal curve.',
+    hetero: 'the funnel in plot 2 — residual spread grows with the fitted value. That is variance changing with x, not outliers.',
+    auto: 'the long runs above/below zero in plot 3 — residuals remember their past (positive ρ). The other plots look innocent.',
+    nonnorm: 'plot 4: peaked centre + extreme outliers vs the gold curve, while plots 2 and 3 show no structure.',
+    nonlin: 'plot 1/2: the line slices a curve, so residuals trace a ∪ or ∩ against fitted values — systematic, not random.'
+  };
+  const WHY_CURE = {
+    hetero: 'OLS is still unbiased but the usual SEs lie — White/HC1 robust SEs fix inference without re-estimating β.',
+    auto: 'With autocorrelated errors the usual SEs are wrong; Newey–West HAC SEs are robust to both autocorrelation and heteroscedasticity.',
+    nonlin: 'Wrong functional form BIASES the coefficients — no robust SE can save you. Fix the model: add x², use logs.',
+    nonnorm: 'Non-normality doesn’t bias OLS or its SEs; with n = 150 the CLT makes the t-stats approximately valid anyway.',
+    healthy: 'All assumptions hold — doing anything else would be malpractice (and a waste of degrees of freedom).'
+  };
+  let round = 0, score = 0, streak = 0, cur = null, stage = 0, locked = true;
+
+  function bestLoad() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function bestSave(s) {
+    try {
+      const b = parseInt(localStorage.getItem(KEY) || '-1', 10);
+      if (s > b) localStorage.setItem(KEY, String(s));
+    } catch (e) { }
+  }
+  function showBest() { const b = bestLoad(); $('gBest').textContent = (b === null ? '–' : b); }
+
+  function newRound() {
+    round++;
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const d = DISEASES[Math.floor(rng() * DISEASES.length)];
+    const rho = 0.6 + rng() * 0.3;
+    cur = L.genPatient(rng, d, rho);
+    drawRound();
+    $('gRound').textContent = round;
+    $('gFb').className = 'feedback'; $('gFb').textContent = '';
+    stage = 0;
+    askDiagnosis();
+    locked = false;
+  }
+
+  function drawRound() { if (cur) L.drawPatient(cur, ['gP1', 'gP2', 'gP3', 'gP4']); }
+
+  function buttons(list, handler) {
+    const box = $('gBtns');
+    box.innerHTML = '';
+    list.forEach(function (txt, i) {
+      const b = document.createElement('button');
+      b.className = 'choice'; b.textContent = txt;
+      b.addEventListener('click', function () { handler(i); });
+      box.appendChild(b);
+    });
+  }
+
+  function askDiagnosis() {
+    $('gQ').textContent = 'Patient ' + round + ' — what is your diagnosis, doctor?';
+    buttons(DNAMES, answerDiag);
+  }
+
+  function answerDiag(i) {
+    if (locked || stage !== 0) return;
+    stage = 1;
+    const trueIdx = DISEASES.indexOf(cur.disease);
+    const correct = (i === trueIdx);
+    let pts = 0;
+    if (correct) { streak++; pts = 10 + (streak >= 2 ? 5 : 0); score += pts; } else { streak = 0; }
+    $('gScore').textContent = score; $('gStreak').textContent = streak;
+    const fb = $('gFb');
+    fb.className = 'feedback ' + (correct ? 'good' : 'bad');
+    fb.innerHTML = (correct ? '✅ Correct diagnosis (+' + pts + '). ' : '❌ Misdiagnosis — it was <b>' + DNAMES[trueIdx] + '</b>. ') +
+      'Tell-tale: ' + TELLS[cur.disease] + '<br><b>Now prescribe the remedy for ' + DNAMES[trueIdx] + ':</b>';
+    buttons(REMEDIES, answerCure);
+  }
+
+  function answerCure(i) {
+    if (stage !== 1) return;
+    stage = 2; locked = true;
+    const correct = (i === CURE[cur.disease]);
+    if (correct) score += 5;
+    $('gScore').textContent = score;
+    const fb = $('gFb');
+    fb.className = 'feedback ' + (correct ? 'good' : 'bad');
+    fb.innerHTML = (correct ? '✅ Right prescription (+5). ' : '❌ Wrong prescription — the right one was “' + REMEDIES[CURE[cur.disease]] + '”. ') +
+      WHY_CURE[cur.disease];
+    $('gBtns').innerHTML = '';
+    if (round >= ROUNDS) { finish(); } else { setTimeout(newRound, 3200); }
+  }
+
+  function grade(s) {
+    const p = 100 * s / MAX;
+    if (p >= 70) return '🥇 1st — First Class. The GMC (Gauss–Markov Council) approves your licence.';
+    if (p >= 60) return '🥈 2:1 — Upper Second. Competent registrar of regressions.';
+    if (p >= 50) return '🥉 2:2 — Lower Second. A survivable “Desmond”.';
+    if (p >= 40) return '3rd — Third Class. You prescribed Newey–West for a broken leg.';
+    return 'Fail — several regressions died of untreated heteroscedasticity. Resit recommended.';
+  }
+
+  function finish() {
+    bestSave(score); showBest();
+    setTimeout(function () {
+      const fb = $('gFb');
+      fb.className = 'feedback info';
+      fb.innerHTML = '🏁 <b>Clinic closed!</b> Final score <b>' + score + '</b>/' + MAX + '. Grade: ' + grade(score);
+      $('gQ').textContent = '';
+      $('gStart').disabled = false;
+    }, 3200);
+  }
+
+  $('gStart').addEventListener('click', function () {
+    round = 0; score = 0; streak = 0;
+    $('gScore').textContent = 0; $('gStreak').textContent = 0;
+    $('gStart').disabled = true;
+    newRound();
+  });
+  window.addEventListener('resize', drawRound);
+  showBest();
+})();
+</script>
+
+<script>
+/* ===== SECTION C: Code challenges ===== */
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const QS = [
+    {
+      prompt: 'Run the Breusch–Pagan test for heteroscedasticity on a fitted model.',
+      py: { code: 'from statsmodels.stats.diagnostic import ___\nlm, lm_pval, f, f_pval = het_breuschpagan(model.resid, model.model.exog)', correct: 'het_breuschpagan', opts: ['het_breuschpagan', 'breusch_pagan', 'het_bp', 'bp_test'], expl: 'het_breuschpagan(resid, exog) returns the LM stat = n·R² of the auxiliary regression.' },
+      r: { code: 'library(lmtest)\n___(model)', correct: 'bptest', opts: ['bptest', 'bp.test', 'breuschpagan', 'het.test'], expl: 'lmtest::bptest(model) — reject homoscedasticity if p < 0.05.' }
+    },
+    {
+      prompt: 'Re-estimate with WHITE (heteroscedasticity-robust) standard errors.',
+      py: { code: "model = sm.OLS(y, X).fit(cov_type='___')", correct: 'HC1', opts: ['HC1', 'WHITE', 'robust', 'HCSE'], expl: "cov_type='HC1' gives White’s robust SEs (HC0–HC3 are the variants); the betas don’t change, only the SEs." },
+      r: { code: 'library(lmtest); library(sandwich)\ncoeftest(model, vcov = ___(model, type = "HC1"))', correct: 'vcovHC', opts: ['vcovHC', 'vcovNW', 'hcVcov', 'robustSE'], expl: 'sandwich::vcovHC builds the White covariance matrix; coeftest re-does the t-tests with it.' }
+    },
+    {
+      prompt: 'Use NEWEY–WEST standard errors, robust to autocorrelation AND heteroscedasticity (5 lags).',
+      py: { code: "model = sm.OLS(y, X).fit(cov_type='___', cov_kwds={'maxlags': 5})", correct: 'HAC', opts: ['HAC', 'HC1', 'NW', 'AR5'], expl: "HAC = Heteroscedasticity-and-Autocorrelation-Consistent — that’s Newey–West; maxlags sets the truncation lag." },
+      r: { code: 'library(sandwich)\ncoeftest(model, vcov = ___(model, lag = 5))', correct: 'NeweyWest', opts: ['NeweyWest', 'vcovHC', 'HACvcov', 'neweywest()'], expl: 'sandwich::NeweyWest(model, lag = 5) — capital N, capital W.' }
+    },
+    {
+      prompt: 'Compute the Durbin–Watson statistic (d ≈ 2(1−ρ̂); d ≈ 2 means no autocorrelation).',
+      py: { code: 'from statsmodels.stats.stattools import durbin_watson\ndw = durbin_watson(___)', correct: 'model.resid', opts: ['model.resid', 'model.fittedvalues', 'model.params', 'y'], expl: 'DW is computed from the RESIDUALS: d = Σ(û_t − û_{t−1})² / Σû_t².' },
+      r: { code: 'library(lmtest)\n___(model)', correct: 'dwtest', opts: ['dwtest', 'durbinwatson', 'dw.test', 'dwstat'], expl: 'lmtest::dwtest(model) gives d plus a proper p-value.' }
+    },
+    {
+      prompt: 'Run Ramsey’s RESET test for functional-form misspecification.',
+      py: { code: 'from statsmodels.stats.diagnostic import linear_reset\nres = linear_reset(model, power=___, use_f=True)', correct: '2', opts: ['2', '1', '0', '0.5'], expl: 'power=2 adds ŷ² to the regression — significance means the linear form is wrong. power=1 would add nothing new.' },
+      r: { code: 'library(lmtest)\n___(model, power = 2)', correct: 'resettest', opts: ['resettest', 'reset.test', 'ramsey', 'formtest'], expl: 'lmtest::resettest(model, power = 2) tests the ŷ² (and higher) terms.' }
+    },
+    {
+      prompt: 'Compute Variance Inflation Factors to sniff out multicollinearity (VIF > 10 = trouble).',
+      py: { code: 'from statsmodels.stats.outliers_influence import ___\nvifs = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]', correct: 'variance_inflation_factor', opts: ['variance_inflation_factor', 'vif', 'VIF', 'inflation_factor'], expl: 'variance_inflation_factor(X, i) = 1/(1−R²ᵢ) from regressing column i on the others.' },
+      r: { code: 'library(car)\n___(model)', correct: 'vif', opts: ['vif', 'VIF', 'vifs', 'vif.test'], expl: 'car::vif(model), lower-case — one number per regressor.' }
+    }
+  ];
+  let lang = 'py';
+  const solved = new Array(QS.length).fill(false);
+
+  function shuffled(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function render() {
+    const wrap = $('cc-list');
+    wrap.innerHTML = '';
+    QS.forEach(function (q, i) {
+      const v = q[lang];
+      const card = document.createElement('div'); card.className = 'cc-card';
+      const p = document.createElement('div'); p.className = 'cc-prompt';
+      p.textContent = (i + 1) + '. ' + q.prompt + (solved[i] ? '  ✅' : '');
+      card.appendChild(p);
+      const pre = document.createElement('pre'); pre.className = 'code';
+      const parts = v.code.split('___');
+      pre.appendChild(document.createTextNode(parts[0]));
+      const sel = document.createElement('select');
+      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '▾ choose…'; sel.appendChild(ph);
+      shuffled(v.opts).forEach(function (o) {
+        const op = document.createElement('option'); op.value = o; op.textContent = o; sel.appendChild(op);
+      });
+      pre.appendChild(sel);
+      if (parts[1]) pre.appendChild(document.createTextNode(parts[1]));
+      card.appendChild(pre);
+      const row = document.createElement('div'); row.className = 'cc-row';
+      const btn = document.createElement('button'); btn.textContent = 'Check'; btn.className = 'alt';
+      const res = document.createElement('span'); res.className = 'cc-res';
+      btn.addEventListener('click', function () {
+        if (!sel.value) { res.className = 'cc-res no'; res.textContent = 'Pick an option first.'; return; }
+        if (sel.value === v.correct) {
+          res.className = 'cc-res ok'; res.textContent = '✓ ' + v.expl;
+          if (!solved[i]) { solved[i] = true; $('ccScore').textContent = solved.filter(Boolean).length; }
+          p.textContent = (i + 1) + '. ' + q.prompt + '  ✅';
+        } else {
+          res.className = 'cc-res no'; res.textContent = '✗ Not that one — ' + v.expl;
+        }
+      });
+      row.appendChild(btn); row.appendChild(res);
+      card.appendChild(row);
+      wrap.appendChild(card);
+    });
+  }
+  $('ccPy').addEventListener('click', function () { lang = 'py'; $('c

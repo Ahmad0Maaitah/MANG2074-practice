@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MANG2074 · Week 8 — Volatility &amp; VaR</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--panel2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#fbbf24;--good:#34d399;--bad:#f87171;--font:'Segoe UI',system-ui,sans-serif;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.6;}
+header{position:sticky;top:0;z-index:10;background:var(--panel);display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid #334155;flex-wrap:wrap;gap:6px;}
+header .brand{font-weight:600;}
+header .wk{color:var(--muted);font-size:.95rem;margin-left:10px;}
+header a{color:var(--accent);text-decoration:none;}
+main{max-width:1000px;margin:0 auto;padding:8px 20px;}
+.card{background:var(--panel);border-radius:14px;padding:20px;margin:20px 0;}
+h2{font-size:1.3rem;margin:0 0 12px;}
+h3{font-size:1.05rem;margin:18px 0 8px;}
+.intro{color:var(--muted);margin:18px 2px 0;}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:12px 0;}
+.ctl{background:var(--panel2);border-radius:8px;padding:8px 12px;font-size:.9rem;}
+.ctl label{display:block;color:var(--muted);font-size:.8rem;}
+.ctl .val{color:var(--accent2);font-weight:600;margin-left:6px;}
+.ctl.off{opacity:.45;}
+input[type=range]{width:120px;accent-color:var(--accent);vertical-align:middle;}
+input[type=number]{background:var(--panel2);color:var(--text);border:1px solid #334155;border-radius:6px;padding:4px 8px;width:120px;font-family:var(--font);}
+input:disabled{opacity:.35;}
+button{background:var(--accent);color:#0f172a;border:none;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer;font-family:var(--font);font-size:.95rem;}
+button:hover{filter:brightness(1.1);}
+button.alt{background:var(--panel2);color:var(--text);}
+button.on{outline:2px solid var(--accent2);}
+button:disabled{opacity:.45;cursor:default;}
+canvas{width:100%;background:var(--panel);border:1px solid #334155;border-radius:8px;display:block;margin:10px 0;}
+select{background:var(--panel2);color:var(--text);border:1px solid #334155;border-radius:6px;padding:4px 8px;font-family:var(--font);font-size:.9rem;}
+pre select{color:var(--accent2);font-family:Consolas,'Courier New',monospace;font-size:.88rem;padding:2px 6px;}
+.notice{background:var(--panel2);border-left:4px solid var(--accent2);border-radius:8px;padding:12px 16px;margin-top:14px;font-size:.95rem;}
+.formula{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px 16px;margin:10px 0;font-family:Consolas,'Courier New',monospace;font-size:.95rem;color:var(--accent2);overflow-x:auto;}
+.scorebar{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0;font-weight:600;}
+.scorebar b{color:var(--accent2);}
+.feedback{border-radius:8px;padding:10px 14px;margin-top:10px;display:none;}
+.feedback.good{display:block;background:rgba(52,211,153,.12);border:1px solid var(--good);}
+.feedback.bad{display:block;background:rgba(248,113,113,.12);border:1px solid var(--bad);}
+.feedback.mid{display:block;background:rgba(251,191,36,.10);border:1px solid var(--accent2);}
+pre{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px;overflow-x:auto;font-size:.88rem;line-height:1.55;font-family:Consolas,'Courier New',monospace;}
+.q{border-top:1px solid #334155;padding-top:14px;margin-top:14px;}
+.q .res{margin-left:10px;font-weight:600;}
+.langtog button.on{outline:2px solid var(--accent2);}
+.statgrid{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0;}
+.stat{background:var(--panel2);border-radius:8px;padding:6px 14px;}
+.stat .v{font-size:1.05rem;font-weight:700;color:var(--accent);}
+.stat .k{font-size:.76rem;color:var(--muted);}
+.verdict{display:inline-block;border-radius:8px;padding:6px 14px;font-weight:700;margin-top:6px;}
+.verdict.green{background:rgba(52,211,153,.15);color:var(--good);border:1px solid var(--good);}
+.verdict.yellow{background:rgba(251,191,36,.12);color:var(--accent2);border:1px solid var(--accent2);}
+.verdict.red{background:rgba(248,113,113,.15);color:var(--bad);border:1px solid var(--bad);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+footer{max-width:1000px;margin:30px auto 0;padding:0 20px 40px;color:var(--muted);font-size:.85rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
+@media(max-width:720px){.grid2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div><span class="brand">MANG2074 · Financial Econometrics 1</span><span class="wk">Week 8 — Volatility &amp; VaR</span></div>
+  <a href="index.html">← All topics</a>
+</header>
+<main>
+<p class="intro">Value-at-Risk answers one question: “How much could we lose tomorrow, on a bad day, with q% confidence?” Here you build VaR from the parametric formula, see how Student-t tails and GARCH clustering change the answer, backtest it Basel-style — then run a trading desk for ten days and find out whether the regulator smiles or frowns.</p>
+
+<section class="card">
+<h2>🔬 Simulation — VaR workbench</h2>
+<div class="controls">
+  <span class="ctl"><label>Portfolio value V (£)</label><input type="number" id="inV" value="1000000" min="1000" step="10000"></span>
+  <span class="ctl"><label>Confidence</label>
+    <button id="b95" class="alt" style="padding:5px 10px">95%</button>
+    <button id="b99" class="alt on" style="padding:5px 10px">99%</button></span>
+  <span class="ctl"><label>Distribution of shocks</label>
+    <select id="selDist"><option value="n">Normal</option><option value="t">Student-t</option></select></span>
+  <span class="ctl" id="boxDf"><label>ν (t degrees of freedom)</label><input type="range" id="sDf" min="3" max="10" step="1" value="5"><span class="val" id="vDf">5</span></span>
+  <span class="ctl"><label>σ (daily vol, %)</label><input type="range" id="sSig" min="0.2" max="4" step="0.1" value="1.2"><span class="val" id="vSig">1.2</span></span>
+  <span class="ctl"><label>μ (daily mean, %)</label><input type="range" id="sMu" min="-0.2" max="0.2" step="0.01" value="0.02"><span class="val" id="vMu">0.02</span></span>
+</div>
+<div class="formula" id="formula"></div>
+<div class="statgrid" id="vStats"></div>
+<canvas id="cBars"></canvas>
+<h3>📋 Backtest: would this VaR have survived the last 250 trading days?</h3>
+<p style="font-size:.92rem;color:var(--muted)">We simulate 250 days of GARCH(1,1) returns (α = 0.08, β = 0.89 — realistic clustering, same unconditional σ and μ as above, Gaussian shocks) and count how often the loss exceeded your fixed VaR.</p>
+<button id="btnBack">🎲 Run / re-run the 250-day backtest</button>
+<canvas id="cBack"></canvas>
+<div id="backVerdict"></div>
+<div class="notice"><b>What to notice.</b> <span id="simNote"></span></div>
+</section>
+
+<section class="card">
+<h2>🎮 Game: Risk Manager</h2>
+<p>You run a £1,000,000 desk for 10 days. Each round you see the last 60 days of returns (a GARCH process whose persistence changes every round) and must set tomorrow’s <b>99% VaR</b>. Tomorrow then happens. Scoring: <b>+15</b> no breach with tight capital (VaR ≤ 1.5× the optimal level), <b>+5</b> no breach but over-conservative, <b>−20</b> if breached.</p>
+<div class="scorebar">
+  <span>Round <b id="gRound">–</b>/10</span><span>Desk score <b id="gScore">0</b></span><span>Breaches <b id="gBreach">0</b></span><span>Best <b id="gBest">–</b></span>
+</div>
+<canvas id="gChart"></canvas>
+<div class="controls">
+  <span class="ctl" style="flex:1;min-width:260px"><label>Tomorrow’s 99% VaR: <span class="val" id="gVal">–</span></label>
+  <input type="range" id="gSlide" min="0.5" max="15" step="0.1" value="3" style="width:100%" disabled></span>
+  <button id="gLock" disabled>🔒 Set VaR</button>
+</div>
+<div class="feedback" id="gFeed"></div>
+<div style="margin-top:12px"><button id="gMain">▶ Start the 10-day stint</button></div>
+</section>
+
+<section class="card">
+<h2>⌨️ Code challenges</h2>
+<p>Fill the blank in each snippet. Toggle Python (scipy / numpy / arch) / R. Score: <span style="color:var(--accent2)">x/6</span> top-right.</p>
+<div id="quiz"></div>
+</section>
+</main>
+
+<footer>
+  <span>MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah</span>
+  <span><a href="week07.html">← Week 7</a>·<a href="week09.html">Week 9 →</a></span>
+</footer>
+
+<script>
+window.MANG = (function(){
+  'use strict';
+  function mulberry32(seed){var a=seed>>>0;return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
+  function gauss(rng){return function(){var u=0,v=0;while(u===0)u=rng();while(v===0)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};}
+  function Chart(canvas,height){
+    var dpr=window.devicePixelRatio||1;
+    var w=canvas.clientWidth||canvas.parentNode.clientWidth||600,h=height||220;
+    canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.height=h+'px';
+    var ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+    var pad={l:50,r:12,t:14,b:26},xmin=0,xmax=1,ymin=0,ymax=1;
+    function px(x){return pad.l+(x-xmin)/(xmax-xmin)*(w-pad.l-pad.r);}
+    function py(y){return h-pad.b-(y-ymin)/(ymax-ymin)*(h-pad.t-pad.b);}
+    var o={ctx:ctx,w:w,h:h,px:px,py:py,pad:pad};
+    o.range=function(a,b,c,d){xmin=a;xmax=b;ymin=c;ymax=d;if(xmax===xmin)xmax=xmin+1;if(ymax===ymin){ymax=ymin+1;ymin=ymin-1;}return o;};
+    o.clear=function(){ctx.fillStyle='#1e293b';ctx.fillRect(0,0,w,h);return o;};
+    o.axes=function(xt,yt,fx,fy){ctx.strokeStyle='#334155';ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.lineWidth=1;
+      yt.forEach(function(v){var y=py(v);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.textAlign='right';ctx.fillText(fy?fy(v):String(v),pad.l-5,y+4);});
+      xt.forEach(function(v){var x=px(v);ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,h-pad.b);ctx.stroke();ctx.textAlign='center';ctx.fillText(fx?fx(v):String(v),x,h-pad.b+15);});
+      return o;};
+    o.line=function(xs,ys,color,width){ctx.strokeStyle=color;ctx.lineWidth=width||2;ctx.lineJoin='round';ctx.beginPath();for(var i=0;i<xs.length;i++){var X=px(xs[i]),Y=py(ys[i]);if(i===0)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);}ctx.stroke();return o;};
+    o.bars=function(xs,ys,color,bw){ctx.fillStyle=color;var y0=py(0);for(var i=0;i<xs.length;i++){var X=px(xs[i]),Y=py(ys[i]);ctx.fillRect(X-bw/2,Math.min(Y,y0),bw,Math.max(Math.abs(Y-y0),1));}return o;};
+    o.dots=function(xs,ys,color,r){ctx.fillStyle=color;for(var i=0;i<xs.length;i++){ctx.beginPath();ctx.arc(px(xs[i]),py(ys[i]),r||3.5,0,6.2832);ctx.fill();}return o;};
+    o.hline=function(v,color,dash){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.5;if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(pad.l,py(v));ctx.lineTo(w-pad.r,py(v));ctx.stroke();ctx.restore();return o;};
+    o.text=function(s,x,y,color,align){ctx.fillStyle=color||'#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign=align||'left';ctx.fillText(s,x,y);return o;};
+    return o;
+  }
+  function mean(x){var s=0;for(var i=0;i<x.length;i++)s+=x[i];return s/x.length;}
+  function sd(x){var m=mean(x),s=0;for(var i=0;i<x.length;i++)s+=(x[i]-m)*(x[i]-m);return Math.sqrt(s/(x.length-1));}
+  function fmt(v,d){return Number(v).toFixed(d===undefined?2:d);}
+  function money(v){return '£'+Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+  function ticks(min,max,n){n=n||5;var span=max-min;if(span<=0)return [min];var step=Math.pow(10,Math.floor(Math.log(span/n)/Math.LN10));var err=span/n/step;if(err>=7.5)step*=10;else if(err>=3.5)step*=5;else if(err>=1.5)step*=2;var out=[];for(var v=Math.ceil(min/step)*step;v<=max+1e-9;v+=step)out.push(Math.round(v*1e6)/1e6);return out;}
+  /* ---- probability functions ---- */
+  function normInv(p){
+    var a=[-39.69683028665376,220.9460984245205,-275.9285104469687,138.3577518672690,-30.66479806614716,2.506628277459239];
+    var b=[-54.47609879822406,161.5858368580409,-155.6989798598866,66.80131188771972,-13.28068155288572];
+    var c=[-0.007784894002430293,-0.3223964580411365,-2.400758277161838,-2.549732539343734,4.374664141464968,2.938163982698783];
+    var d=[0.007784695709041462,0.3224671290700398,2.445134137142996,3.754408661907416];
+    var pl=0.02425,q,r;
+    if(p<=0||p>=1)return NaN;
+    if(p<pl){q=Math.sqrt(-2*Math.log(p));return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+    if(p>1-pl){q=Math.sqrt(-2*Math.log(1-p));return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+    q=p-0.5;r=q*q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  }
+  function logGamma(x){
+    var c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.001208650973866179,-0.000005395239384953];
+    var y=x,tmp=x+5.5;tmp-=(x+0.5)*Math.log(tmp);var ser=1.000000000190015;
+    for(var j=0;j<6;j++){y+=1;ser+=c[j]/y;}
+    return -tmp+Math.log(2.5066282746310005*ser/x);
+  }
+  function betacf(a,b,x){
+    var MAXIT=200,EPS=3e-12,FPMIN=1e-30;
+    var qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;
+    if(Math.abs(d)<FPMIN)d=FPMIN;d=1/d;var h=d;
+    for(var m=1;m<=MAXIT;m++){
+      var m2=2*m,aa=m*(b-m)*x/((qam+m2)*(a+m2));
+      d=1+aa*d;if(Math.abs(d)<FPMIN)d=FPMIN;c=1+aa/c;if(Math.abs(c)<FPMIN)c=FPMIN;d=1/d;h*=d*c;
+      aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+      d=1+aa*d;if(Math.abs(d)<FPMIN)d=FPMIN;c=1+aa/c;if(Math.abs(c)<FPMIN)c=FPMIN;d=1/d;
+      var del=d*c;h*=del;
+      if(Math.abs(del-1)<EPS)break;
+    }
+    return h;
+  }
+  function incBeta(a,b,x){
+    if(x<=0)return 0;if(x>=1)return 1;
+    var bt=Math.exp(logGamma(a+b)-logGamma(a)-logGamma(b)+a*Math.log(x)+b*Math.log(1-x));
+    if(x<(a+1)/(a+b+2))return bt*betacf(a,b,x)/a;
+    return 1-bt*betacf(b,a,1-x)/b;
+  }
+  function tCdf(x,df){var ib=incBeta(df/2,0.5,df/(df+x*x));return x>=0?1-ib/2:ib/2;}
+  function tInv(p,df){
+    if(p<=0||p>=1)return NaN;
+    var lo=-80,hi=80;
+    for(var i=0;i<200;i++){var mid=(lo+hi)/2;if(tCdf(mid,df)<p)lo=mid;else hi=mid;}
+    return (lo+hi)/2;
+  }
+  function genGARCH(omega,alpha,beta,n,seed,mu){
+    var rng=mulberry32(seed),g=gauss(rng);
+    var p=alpha+beta,s2=(p<1)?omega/(1-p):omega*20;
+    var burn=200,r=[],sig=[],eps=0;
+    for(var t=0;t<n+burn;t++){
+      s2=omega+alpha*eps*eps+beta*s2;
+      var s=Math.sqrt(s2);
+      eps=s*g();
+      if(t>=burn){r.push((mu||0)+eps);sig.push(s);}
+    }
+    return {r:r,sigma:sig};
+  }
+  function grade(pct){
+    if(pct>=70)return '🥇 First — the regulator sends a Christmas card.';
+    if(pct>=60)return '🥈 2:1 — solidly employable. Risk desks beckon.';
+    if(pct>=50)return '🥉 2:2 — a “Desmond”. Fat tails deserve more respect.';
+    if(pct>=40)return '3rd — you turned up, statistically speaking.';
+    return 'Fail — the desk is closed and the capital reallocated to someone who reads correlograms. Resit advised.';
+  }
+  function quiz(containerId,questions){
+    var box=document.getElementById(containerId);
+    var lang='py';
+    var state=questions.map(function(){return {done:false,ok:false};});
+    var tog=document.createElement('div');tog.className='langtog controls';
+    var bp=document.createElement('button');bp.textContent='Python';bp.className='on';
+    var br=document.createElement('button');br.textContent='R';br.className='alt';
+    var sc=document.createElement('span');sc.style.fontWeight='600';sc.style.marginLeft='auto';sc.style.color='#fbbf24';
+    tog.appendChild(bp);tog.appendChild(br);tog.appendChild(sc);box.appendChild(tog);
+    var list=document.createElement('div');box.appendChild(list);
+    bp.onclick=function(){lang='py';bp.className='on';br.className='alt';render();};
+    br.onclick=function(){lang='r';br.className='on';bp.className='alt';render();};
+    function render(){
+      list.innerHTML='';
+      var nOk=0,nDone=0;
+      questions.forEach(function(q,i){
+        var v=q[lang],st=state[i];
+        if(st.done){nDone++;if(st.ok)nOk++;}
+        var d=document.createElement('div');d.className='q';
+        var h=document.createElement('div');h.innerHTML='<b>'+(i+1)+'. '+q.title+'</b>';d.appendChild(h);
+        var pre=document.createElement('pre');
+        var parts=v.code.split('___');
+        pre.appendChild(document.createTextNode(parts[0]));
+        var sel=null;
+        if(st.done){
+          var fill=document.createElement('span');fill.textContent=v.opts[v.correct];
+          fill.style.color=st.ok?'#34d399':'#f87171';fill.style.fontWeight='700';
+          pre.appendChild(fill);
+        }else{
+          sel=document.createElement('select');
+          var o0=document.createElement('option');o0.value='';o0.textContent='— ??? —';sel.appendChild(o0);
+          v.opts.forEach(function(op,j){var o=document.createElement('option');o.value=String(j);o.textContent=op;sel.appendChild(o);});
+          pre.appendChild(sel);
+        }
+        pre.appendChild(document.createTextNode(parts[1]));
+        d.appendChild(pre);
+        var row=document.createElement('div');
+        var res=document.createElement('span');res.className='res';
+        var why=document.createElement('div');why.className='notice';why.style.display='none';why.style.marginTop='8px';why.textContent=v.why;
+        if(st.done){
+          res.textContent=st.ok?'✓ Correct':'✗ Wrong — answer: '+v.opts[v.correct];
+          res.style.color=st.ok?'#34d399':'#f87171';
+          why.style.display='block';
+          row.appendChild(res);
+        }else{
+          var btn=document.createElement('button');btn.textContent='Check';
+          btn.onclick=function(){if(sel.value==='')return;st.done=true;st.ok=(Number(sel.value)===v.correct);render();};
+          row.appendChild(btn);row.appendChild(res);
+        }
+        d.appendChild(row);d.appendChild(why);
+        list.appendChild(d);
+      });
+      sc.textContent='Score: '+nOk+'/'+questions.length+(nDone<questions.length?' ('+(questions.length-nDone)+' to go)':'');
+    }
+    render();
+  }
+  return {mulberry32:mulberry32,gauss:gauss,Chart:Chart,mean:mean,sd:sd,fmt:fmt,money:money,ticks:ticks,
+          normInv:normInv,tInv:tInv,tCdf:tCdf,genGARCH:genGARCH,grade:grade,quiz:quiz};
+})();
+
+/* ---------- SECTION A: VaR workbench ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  var inV=document.getElementById('inV'),selDist=document.getElementById('selDist'),sDf=document.getElementById('sDf'),
+      sSig=document.getElementById('sSig'),sMu=document.getElementById('sMu'),
+      vDf=document.getElementById('vDf'),vSig=document.getElementById('vSig'),vMu=document.getElementById('vMu'),
+      b95=document.getElementById('b95'),b99=document.getElementById('b99'),
+      formula=document.getElementById('formula'),vStats=document.getElementById('vStats'),
+      backVerdict=document.getElementById('backVerdict'),simNote=document.getElementById('simNote');
+  var conf=0.99,backSeed=20260808,backRun=false;
+  function quantiles(){
+    var q=1-conf,df=+sDf.value;
+    var zN=M.normInv(q);
+    var zT=M.tInv(q,df)*Math.sqrt((df-2)/df); /* rescaled so the t shock has unit variance */
+    return {q:q,zN:zN,zT:zT,df:df};
+  }
+  function varPct(z){ /* VaR as a positive % loss */
+    var mu=+sMu.value,sig=+sSig.value;
+    return -(mu+z*sig);
+  }
+  function draw(){
+    var V=Math.max(1000,+inV.value||1000000),mu=+sMu.value,sig=+sSig.value,df=+sDf.value;
+    var useT=(selDist.value==='t');
+    vDf.textContent=String(df);vSig.textContent=M.fmt(sig,1);vMu.textContent=M.fmt(mu,2);
+    sDf.disabled=!useT;
+    document.getElementById('boxDf').className=useT?'ctl':'ctl off';
+    b95.className=conf===0.95?'alt on':'alt';b99.className=conf===0.99?'alt on':'alt';
+    var Z=quantiles();
+    var z=useT?Z.zT:Z.zN;
+    var vp=varPct(z),vpN=varPct(Z.zN),vpT=varPct(Z.zT);
+    var lvl=Math.round(conf*100);
+    formula.innerHTML='VaR<sub>'+lvl+'%</sub> = −(μ + z<sub>'+M.fmt(Z.q,2)+'</sub>·σ)·V = −('+M.fmt(mu,2)+'% + ('+M.fmt(z,3)+')×'+M.fmt(sig,2)+'%) × '+M.money(V)+
+      ' = <b>'+M.money(vp/100*V)+'</b> &nbsp;('+M.fmt(vp,2)+'% of the portfolio)'+
+      '<br><span style="color:var(--muted)">z is the '+M.fmt(Z.q,2)+' quantile of '+(useT?'a Student-t(ν='+df+') rescaled by √((ν−2)/ν) to unit variance':'the standard normal')+'.</span>';
+    vStats.innerHTML=
+      '<span class="stat"><span class="v">'+M.fmt(Z.zN,3)+'</span><br><span class="k">z (normal)</span></span>'+
+      '<span class="stat"><span class="v">'+M.fmt(Z.zT,3)+'</span><br><span class="k">z (t, ν='+df+', unit-variance)</span></span>'+
+      '<span class="stat"><span class="v">'+M.money(vpN/100*V)+'</span><br><span class="k">Normal VaR</span></span>'+
+      '<span class="stat"><span class="v">'+M.money(vpT/100*V)+'</span><br><span class="k">Student-t VaR</span></span>'+
+      '<span class="stat"><span class="v">'+M.fmt(100*(vpT/vpN-1),1)+'%</span><br><span class="k">t premium over normal</span></span>';
+    /* bar comparison */
+    var c=M.Chart(document.getElementById('cBars'),170);
+    var top=Math.max(vpN,vpT,0.01)*1.25;
+    c.range(0,2,0,top).clear();
+    c.axes([],M.ticks(0,top,4),null,function(v){return M.fmt(v,1)+'%';});
+    var bw=(c.px(0.45)-c.px(0));
+    c.bars([0.5],[vpN],'#38bdf8',bw);
+    c.bars([1.5],[vpT],'#fbbf24',bw);
+    c.text('Normal: '+M.fmt(vpN,2)+'% = '+M.money(vpN/100*V),c.px(0.5),c.py(vpN)-6,'#38bdf8','center');
+    c.text('Student-t(ν='+df+'): '+M.fmt(vpT,2)+'% = '+M.money(vpT/100*V),c.px(1.5),c.py(vpT)-6,'#fbbf24','center');
+    c.text(lvl+'% one-day VaR, same μ and σ — only the tail shape differs',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+    if(backRun)backtest(false);
+    /* notice */
+    var prem=100*(vpT/vpN-1);
+    simNote.textContent='Fat tails are expensive: with ν = '+df+', the '+lvl+'% t-VaR is '+M.fmt(Math.abs(prem),1)+'% '+(prem>=0?'larger':'smaller — wait, at 95% the unit-variance t can actually sit INSIDE the normal! Extreme quantiles is where fat tails bite')+
+      ' than the normal VaR'+(conf===0.99?' (the gap widens as you push further into the tail — try 95% vs 99%).':' — now switch to 99% and watch the gap grow: tail risk lives in the extremes.')+
+      ' In the backtest, breaches should hit ≈ '+M.fmt(250*(1-conf),1)+' days out of 250 if the VaR is right; because GARCH volatility clusters, the breaches also arrive in clusters — quiet years then a terrible fortnight.';
+  }
+  function backtest(newSeed){
+    backRun=true;
+    if(newSeed)backSeed=(Math.random()*4294967296)>>>0;
+    var V=Math.max(1000,+inV.value||1000000),mu=+sMu.value,sig=+sSig.value;
+    var useT=(selDist.value==='t');
+    var Z=quantiles(),z=useT?Z.zT:Z.zN,vp=varPct(z);
+    /* GARCH with persistence 0.97 and unconditional sd = sig */
+    var omega=sig*sig*(1-0.97);
+    var sim=M.genGARCH(omega,0.08,0.89,250,backSeed,mu);
+    var r=sim.r,n=r.length,breach=[],i;
+    for(i=0;i<n;i++)if(r[i]< -vp)breach.push(i);
+    var lo=Math.min.apply(null,r.concat([-vp])),hi=Math.max.apply(null,r),m=(hi-lo)*0.1+0.2;
+    var c=M.Chart(document.getElementById('cBack'),210);
+    c.range(0,n-1,lo-m,hi+m).clear();
+    c.axes(M.ticks(0,n-1,5),M.ticks(lo-m,hi+m,4),null,function(v){return M.fmt(v,1);});
+    c.hline(0,'#334155');
+    var xs=[];for(i=0;i<n;i++)xs.push(i);
+    c.line(xs,r,'#38bdf8',1.2);
+    c.hline(-vp,'#f87171',[6,4]);
+    c.text('−VaR = −'+M.fmt(vp,2)+'%',c.pad.l+6,c.py(-vp)-5,'#f87171');
+    c.dots(breach,breach.map(function(j){return r[j];}),'#f87171',4);
+    c.text('250 simulated GARCH days · red dots = breaches',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+    var nb=breach.length,exp=250*(1-conf);
+    var cls,msg;
+    if(conf===0.99){
+      if(nb<=4){cls='green';msg='🟢 GREEN zone (≤4 breaches at 99%): the model lives. Basel multiplier stays at 3.';}
+      else if(nb<=9){cls='yellow';msg='🟡 YELLOW zone (5–9 breaches): the regulator raises an eyebrow and your capital multiplier.';}
+      else {cls='red';msg='🔴 RED zone (≥10 breaches): model rejected. Expect a difficult meeting.';}
+    }else{
+      if(nb<=19){cls='green';msg='🟢 Within the rough binomial acceptance band for 95% (≤19 of 250). (Basel’s official traffic light is defined at 99%.)';}
+      else if(nb<=29){cls='yellow';msg='🟡 More breaches than a healthy 95% model should give (20–29).';}
+      else {cls='red';msg='🔴 Far too many breaches — the model badly understates risk.';}
+    }
+    /* clustering check: max breaches in any 20-day window */
+    var maxw=0;
+    for(i=0;i<breach.length;i++){var cnt=0;for(var j2=i;j2<breach.length;j2++)if(breach[j2]-breach[i]<20)cnt++;if(cnt>maxw)maxw=cnt;}
+    backVerdict.innerHTML='<span class="verdict '+cls+'">'+nb+' breaches vs '+M.fmt(exp,1)+' expected — '+msg+'</span>'+
+      (maxw>=2?'<div style="font-size:.9rem;color:var(--muted);margin-top:6px">Note: '+maxw+' of the breaches fall within a single 20-day window — breach clustering, the signature of GARCH volatility that a constant-σ VaR ignores. Largest one-day loss: '+M.money(Math.abs(Math.min.apply(null,r))/100*V)+'.</div>':'');
+  }
+  b95.onclick=function(){conf=0.95;draw();};
+  b99.onclick=function(){conf=0.99;draw();};
+  document.getElementById('btnBack').onclick=function(){backtest(true);};
+  [inV,selDist,sDf,sSig,sMu].forEach(function(el){el.addEventListener('input',draw);});
+  window.addEventListener('resize',draw);
+  draw();
+})();
+
+/* ---------- SECTION B: Risk Manager ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG,KEY='mang2074_w08_best',Z99=2.326;
+  var elRound=document.getElementById('gRound'),elScore=document.getElementById('gScore'),elBreach=document.getElementById('gBreach'),
+      elBest=document.getElementById('gBest'),elFeed=document.getElementById('gFeed'),btnMain=document.getElementById('gMain'),
+      btnLock=document.getElementById('gLock'),slide=document.getElementById('gSlide'),gVal=document.getElementById('gVal');
+  var st={mode:'idle',round:0,score:0,breaches:0,cur:null};
+  var best=localStorage.getItem(KEY);
+  elBest.textContent=best===null?'–':best;
+  function showVal(){
+    var v=parseFloat(slide.value);
+    gVal.textContent=M.fmt(v,1)+'%  ('+M.money(v/100*1000000)+')';
+  }
+  function newRound(){
+    st.round++;st.mode='play';
+    var seed=(Math.random()*4294967296)>>>0,rng=M.mulberry32(seed);
+    var alpha=0.06+0.12*rng();
+    var p=0.70+0.285*rng();
+    var beta=Math.max(0,p-alpha);
+    var us=0.8+1.2*rng();              /* unconditional daily sd, % */
+    var omega=us*us*(1-alpha-beta);
+    var sim=M.genGARCH(omega,alpha,beta,61,(seed+101)>>>0,0);
+    /* tomorrow's TRUE conditional sigma: sigma2_{61} = omega + alpha*r60^2 + beta*sigma60^2 */
+    var r60=sim.r[59],s60=sim.sigma[59];
+    var sigTom=Math.sqrt(omega+alpha*r60*r60+beta*s60*s60);
+    st.cur={sim:sim,alpha:alpha,beta:beta,omega:omega,sigTom:sigTom,truth:sim.r[60],optimal:Z99*sigTom};
+    var shown=sim.r.slice(0,60);
+    var s=M.sd(shown);
+    slide.value=String(Math.min(15,Math.max(0.5,Math.round(Z99*s*10)/10)));
+    slide.disabled=false;btnLock.disabled=false;btnMain.style.display='none';
+    elRound.textContent=String(st.round);
+    elFeed.className='feedback';elFeed.innerHTML='';
+    showVal();drawRound(false);
+  }
+  function drawRound(reveal){
+    if(!st.cur)return;
+    var shown=st.cur.sim.r.slice(0,60),n=shown.length;
+    var vp=parseFloat(slide.value);
+    var lo=Math.min.apply(null,shown.concat([-vp])),hi=Math.max.apply(null,shown);
+    if(reveal){lo=Math.min(lo,st.cur.truth);hi=Math.max(hi,st.cur.truth);}
+    var m=(hi-lo)*0.1+0.2;
+    var c=M.Chart(document.getElementById('gChart'),230);
+    c.range(0,n+1.5,lo-m,hi+m).clear();
+    c.axes(M.ticks(0,n,5),M.ticks(lo-m,hi+m,4),function(v){return v>=n?'t+1':(v===n-1?'t':'t−'+(n-1-v));},function(v){return M.fmt(v,1);});
+    c.hline(0,'#334155');
+    var xs=[];for(var i=0;i<n;i++)xs.push(i);
+    c.line(xs,shown,'#38bdf8',1.3);
+    c.hline(-vp,'#f87171',[6,4]);
+    c.text('your VaR line  −'+M.fmt(vp,1)+'%',c.pad.l+6,c.py(-vp)-5,'#f87171');
+    c.text('last 60 days of desk returns (%)',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+    if(reveal){
+      var breached=(-st.cur.truth)>vp;
+      c.dots([n],[st.cur.truth],breached?'#f87171':'#34d399',6);
+      c.text('tomorrow: '+M.fmt(st.cur.truth,2)+'%',c.px(n)-4,c.py(st.cur.truth)-9,breached?'#f87171':'#34d399','right');
+    }
+  }
+  function lockIn(){
+    if(st.mode!=='play')return;
+    st.mode='shown';
+    slide.disabled=true;btnLock.disabled=true;
+    var vp=parseFloat(slide.value),truth=st.cur.truth,opt=st.cur.optimal;
+    var breached=(-truth)>vp;
+    var pts,cls,comment;
+    if(breached){
+      pts=-20;cls='bad';st.breaches++;
+      comment=(vp<opt)?
+        'The regulator frowns. Your VaR ('+M.fmt(vp,1)+'%) sat below the model-implied level ('+M.fmt(opt,1)+'%) — the volatility clustering was visible in the recent data.':
+        'Breached despite a defensible VaR — at 99% that should happen about 1 day in 100. The regulator frowns anyway; regulators are not Bayesian.';
+    }else{
+      var ratio=vp/opt;
+      if(ratio<=1.5){pts=15;cls='good';comment='Capital efficiently deployed: no breach, and your VaR was only '+M.fmt(ratio,2)+'× the optimal level. The CFO nods approvingly.';}
+      else {pts=5;cls='mid';comment='Safe… but your VaR was '+M.fmt(ratio,1)+'× the optimal level — '+M.money((vp-opt)/100*1000000)+' of capital snoozing on the balance sheet. The traders grumble.';}
+    }
+    st.score+=pts;
+    elScore.textContent=String(st.score);elBreach.textContent=String(st.breaches);
+    elFeed.className='feedback '+cls;
+    elFeed.innerHTML='<b>'+(pts>0?'+':'')+pts+' points.</b> Tomorrow’s return: '+M.fmt(truth,2)+'% · true conditional σₜ₊₁ = '+M.fmt(st.cur.sigTom,2)+'% · optimal 99% VaR = 2.326σₜ₊₁ = '+M.fmt(opt,1)+'% · yours = '+M.fmt(vp,1)+'%<br>'+comment+
+      '<br><span style="color:var(--muted)">Hidden process: α = '+M.fmt(st.cur.alpha,2)+', β = '+M.fmt(st.cur.beta,2)+' (persistence '+M.fmt(st.cur.alpha+st.cur.beta,2)+').</span>';
+    drawRound(true);
+    btnMain.textContent=st.round>=10?'🏁 Finish':'Next day ▶';
+    btnMain.style.display='inline-block';
+  }
+  function finish(){
+    st.mode='idle';
+    var maxPts=150,pct=Math.max(0,100*st.score/maxPts);
+    var prev=(localStorage.getItem(KEY)===null)?-Infinity:Number(localStorage.getItem(KEY));
+    if(st.score>prev){localStorage.setItem(KEY,String(st.score));elBest.textContent=String(st.score);}
+    else elBest.textContent=String(prev);
+    elFeed.className='feedback '+(st.score>=75?'good':'bad');
+    elFeed.innerHTML='<b>Stint over — desk score '+st.score+' / '+maxPts+' with '+st.breaches+' breach'+(st.breaches===1?'':'es')+'.</b><br>Verdict: '+M.grade(pct)+(st.score>prev?'<br>🎉 New personal best!':'')+
+      '<br><span style="color:var(--muted)">Lesson: good VaR is a tightrope — too low and you breach (−20), too high and you waste capital (+5 instead of +15). The optimum tracks the conditional σ, not the long-run average.</span>';
+    btnMain.textContent='↻ New stint';btnMain.style.display='inline-block';
+  }
+  slide.addEventListener('input',function(){showVal();if(st.mode==='play')drawRound(false);});
+  btnLock.onclick=lockIn;
+  btnMain.onclick=function(){
+    if(st.mode==='idle'){st.round=0;st.score=0;st.breaches=0;elScore.textContent='0';elBreach.textContent='0';newRound();}
+    else if(st.mode==='shown'){if(st.round>=10)finish();else newRound();}
+  };
+  window.addEventListener('resize',function(){if(st.cur)drawRound(st.mode==='shown');});
+})();
+
+/* ---------- SECTION C: code challenges ---------- */
+(function(){
+  'use strict';
+  var Q=[
+    {title:'The quantile behind parametric VaR',
+     py:{code:'from scipy.stats import norm\nz99 = ___(0.01)                  # = -2.326, the 1% quantile of N(0,1)\nVaR = -(mu + z99 * sigma) * V    # 99% one-day VaR in £',
+         opts:['norm.ppf','norm.pdf','norm.cdf','norm.rvs'],correct:0,
+         why:'ppf = percent point function = inverse CDF. pdf gives the density height, cdf the probability — common exam mix-up.'},
+     r:{code:'z99 <- ___(0.01)                 # = -2.326, the 1% quantile of N(0,1)\nVaR <- -(mu + z99 * sigma) * V   # 99% one-day VaR in £',
+        opts:['qnorm','dnorm','pnorm','rnorm'],correct:0,
+        why:'R’s q/d/p/r convention: qnorm = quantile (inverse CDF), dnorm = density, pnorm = CDF, rnorm = random draws.'}},
+    {title:'Student-t quantile, rescaled to unit variance',
+     py:{code:'from scipy.stats import t\n# A t(df) variable has variance df/(df-2) > 1, so rescale:\nz_t = t.ppf(0.01, df) * np.sqrt(___)\nVaR_t = -(mu + z_t * sigma) * V',
+         opts:['(df - 2) / df','df / (df - 2)','1 / df','df - 2'],correct:0,
+         why:'Multiplying by √((df−2)/df) standardises the t to unit variance, so σ keeps its meaning. Forgetting this double-counts the fat tails.'},
+     r:{code:'# A t(df) variable has variance df/(df-2) > 1, so rescale:\nz_t <- qt(0.01, df) * sqrt(___)\nVaR_t <- -(mu + z_t * sigma) * V',
+        opts:['(df - 2) / df','df / (df - 2)','1 / df','df - 2'],correct:0,
+        why:'√((df−2)/df) < 1 shrinks the raw t quantile so its variance is 1; the remaining difference from the normal is pure tail fatness.'}},
+    {title:'Historical-simulation VaR',
+     py:{code:'# No distributional assumption: read the loss quantile off the data\nVaR_hs = -___(returns, 1) * V    # 1st percentile of returns',
+         opts:['np.percentile','np.mean','np.min','np.std'],correct:0,
+         why:'np.percentile(returns, 1) is the empirical 1% quantile — the return exceeded on 99% of days. np.min would be the worst day ever, not a quantile.'},
+     r:{code:'# No distributional assumption: read the loss quantile off the data\nVaR_hs <- -___(returns, probs = 0.01) * V',
+        opts:['quantile','mean','min','sd'],correct:0,
+        why:'quantile(returns, 0.01) gives the empirical 1% quantile. Simple, but it assumes the recent past contains tomorrow’s tail.'}},
+    {title:'GARCH 1-day-ahead VaR',
+     py:{code:'f = res.forecast(horizon=1)\nsigma_fc = np.sqrt(f.variance.values[-1, 0])   # tomorrow’s conditional vol\nVaR_99 = -(mu + norm.ppf(0.01) * ___) * V',
+         opts:['sigma_fc','sigma_fc**2','f.variance','res.resid[-1]'],correct:0,
+         why:'VaR uses the standard deviation σ, not the variance σ² — and a CONDITIONAL one: tomorrow’s σ from GARCH, not the long-run average.'},
+     r:{code:'fc <- ugarchforecast(fit, n.ahead = 1)\nVaR_99 <- -(mu + qnorm(0.01) * ___) * V',
+        opts:['sigma(fc)','sigma(fc)^2','fitted(fc)','residuals(fit)'],correct:0,
+        why:'sigma(fc) extracts the forecast conditional volatility. Using σ² instead of σ is the classic units error — check magnitudes!'}},
+    {title:'Expected shortfall (the average bad day)',
+     py:{code:'losses = -returns\nVaR = np.percentile(losses, 99)\nES  = losses[losses > VaR].___()   # average loss BEYOND VaR',
+         opts:['mean','max','sum','argmax'],correct:0,
+         why:'ES (CVaR) = the MEAN loss conditional on exceeding VaR. It answers “how bad is bad?” — which VaR, a mere quantile, cannot.'},
+     r:{code:'losses <- -returns\nVaR <- quantile(losses, 0.99)\nES  <- ___(losses[losses > VaR])   # average loss BEYOND VaR',
+        opts:['mean','max','sum','length'],correct:0,
+        why:'mean of the tail losses = expected shortfall. Unlike VaR it is subadditive, which is why Basel moved towards ES (FRTB).'}},
+    {title:'Counting backtest breaches',
+     py:{code:'# VaR_pct is a positive % loss; a breach is a return below -VaR_pct\nbreaches = ___(returns < -VaR_pct)\nprint(breaches, "vs", 0.01 * len(returns), "expected at 99%")',
+         opts:['np.sum','np.any','np.argmax','len'],correct:0,
+         why:'A boolean array summed counts the True values — the breach count. Compare with 1% of the sample; Basel’s zones: green ≤4, yellow 5–9, red ≥10 (250 days).'},
+     r:{code:'# VaR_pct is a positive % loss; a breach is a return below -VaR_pct\nbreaches <- ___(returns < -VaR_pct)\nbreaches / (0.01 * length(returns))   # ratio to expected',
+        opts:['sum','any','which','length'],correct:0,
+        why:'sum() over a logical vector counts the TRUEs. which() would list the breach dates — useful for spotting breach clustering.'}}
+  ];
+  MANG.quiz('quiz',Q);
+})();
+</script>
+</body>
+</html>

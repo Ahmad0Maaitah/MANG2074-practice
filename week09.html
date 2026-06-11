@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MANG2074 · Week 9 — Markov Switching</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--panel2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#fbbf24;--good:#34d399;--bad:#f87171;--font:'Segoe UI',system-ui,sans-serif;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.6;}
+header{position:sticky;top:0;z-index:50;background:rgba(15,23,42,.93);backdrop-filter:blur(6px);border-bottom:1px solid #334155;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+header .brand{font-weight:600;color:var(--accent);font-size:.95rem;}
+header .wk{color:var(--muted);font-size:.9rem;}
+header a{color:var(--accent2);text-decoration:none;font-size:.9rem;}
+header a:hover{text-decoration:underline;}
+main{max-width:1000px;margin:0 auto;padding:18px 16px 40px;}
+.intro{background:var(--panel);border-radius:14px;padding:20px;margin:14px 0;}
+section{background:var(--panel);border-radius:14px;padding:20px;margin:18px 0;}
+h1{font-size:1.45rem;margin:6px 0 0;}
+h2{font-size:1.3rem;margin:0 0 10px;}
+h3{font-size:1.05rem;margin:14px 0 6px;color:var(--accent);}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:8px 20px;margin:12px 0;}
+.ctl label{display:flex;justify-content:space-between;font-size:.88rem;color:var(--muted);}
+.ctl label b{color:var(--text);font-weight:600;}
+.ctl input[type=range]{width:100%;accent-color:var(--accent);}
+button{background:var(--accent);color:#0b1220;border:0;border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer;font-family:var(--font);font-size:.95rem;}
+button:hover{filter:brightness(1.1);}
+button.alt{background:var(--panel2);color:var(--text);border:1px solid #334155;}
+button:disabled{opacity:.45;cursor:default;}
+canvas{width:100%;display:block;background:var(--panel);border:1px solid #334155;border-radius:8px;margin:10px 0;}
+.notice{background:var(--panel2);border-left:4px solid var(--accent2);border-radius:8px;padding:12px 14px;font-size:.93rem;margin-top:10px;}
+.readouts{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0;}
+.stat{background:var(--panel2);border-radius:8px;padding:8px 12px;font-size:.85rem;min-width:130px;color:var(--muted);}
+.stat b{display:block;font-size:1.05rem;color:var(--text);}
+.gamebar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0;}
+.pill{background:var(--panel2);border-radius:999px;padding:4px 14px;font-size:.9rem;}
+.feedback{border-radius:8px;padding:12px 14px;margin-top:10px;font-size:.95rem;display:none;}
+.feedback.good{background:rgba(52,211,153,.12);border:1px solid var(--good);display:block;}
+.feedback.bad{background:rgba(248,113,113,.12);border:1px solid var(--bad);display:block;}
+.feedback.info{background:var(--panel2);border:1px solid #334155;display:block;}
+pre.code{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px;overflow-x:auto;font-size:.88rem;line-height:1.6;color:#dbeafe;font-family:Consolas,Menlo,monospace;white-space:pre-wrap;}
+pre.code select{font-family:inherit;font-size:inherit;background:var(--panel2);color:var(--accent2);border:1px solid var(--accent);border-radius:6px;padding:1px 4px;max-width:100%;}
+.q{border:1px solid #334155;border-radius:10px;padding:14px;margin:12px 0;background:var(--panel2);}
+.q .why{font-size:.88rem;margin-top:8px;display:none;}
+footer{border-top:1px solid #334155;color:var(--muted);font-size:.85rem;text-align:center;padding:18px 12px 30px;}
+footer a{color:var(--accent);text-decoration:none;margin:0 8px;}
+footer a:hover{text-decoration:underline;}
+.legend{font-size:.82rem;color:var(--muted);margin:2px 0 6px;}
+.legend i{display:inline-block;width:12px;height:3px;vertical-align:middle;margin:0 4px 0 10px;border-radius:2px;}
+@media(max-width:720px){.controls{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="brand">MANG2074 · Financial Econometrics 1</div><div class="wk">Week 9 — Markov Switching</div></div>
+  <a href="index.html">← All topics</a>
+</header>
+<main>
+<h1>🕵️ Markov Switching — Regime Detective</h1>
+<div class="intro">
+Markets seem to live in <b>regimes</b>: long calm spells with small steady gains, punctuated by crisis spells with violent swings. A Markov-switching model formalises this: an unobserved state s<sub>t</sub> ∈ {1, 2} follows a Markov chain with transition probabilities p<sub>11</sub> and p<sub>22</sub>, and returns have regime-specific mean μ<sub>s</sub> and volatility σ<sub>s</sub>. Here you will simulate two-regime markets, learn what transition persistence does to regime durations, and then play detective: spot the hidden switch point from the data alone.
+</div>
+
+<section id="simsec">
+<h2>🔬 Simulation — the two-regime market</h2>
+<p>Returns are generated as r<sub>t</sub> = μ<sub>s<sub>t</sub></sub> + σ<sub>s<sub>t</sub></sub>·ε<sub>t</sub>, ε<sub>t</sub> ~ N(0,1), with s<sub>t</sub> a 2-state Markov chain (n = 300 months). Drag the sliders and watch the market change character.</p>
+<div class="controls">
+  <div class="ctl"><label><span>μ₁ — regime 1 mean (calm), %/m</span><b id="v_mu1">0.8</b></label><input type="range" id="mu1" min="-1" max="2" step="0.1" value="0.8"></div>
+  <div class="ctl"><label><span>σ₁ — regime 1 volatility, %</span><b id="v_s1">2.0</b></label><input type="range" id="s1" min="0.5" max="5" step="0.1" value="2"></div>
+  <div class="ctl"><label><span>μ₂ — regime 2 mean (crisis), %/m</span><b id="v_mu2">-0.5</b></label><input type="range" id="mu2" min="-3" max="1" step="0.1" value="-0.5"></div>
+  <div class="ctl"><label><span>σ₂ — regime 2 volatility, %</span><b id="v_s2">6.0</b></label><input type="range" id="s2" min="2" max="12" step="0.5" value="6"></div>
+  <div class="ctl"><label><span>p₁₁ — P(stay in regime 1)</span><b id="v_p11">0.95</b></label><input type="range" id="p11" min="0.80" max="0.99" step="0.01" value="0.95"></div>
+  <div class="ctl"><label><span>p₂₂ — P(stay in regime 2)</span><b id="v_p22">0.90</b></label><input type="range" id="p22" min="0.80" max="0.99" step="0.01" value="0.90"></div>
+</div>
+<div class="gamebar">
+  <button id="regen">↻ Regenerate (new seed)</button>
+  <label style="font-size:.9rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="showprob"> Show true regime indicator (step plot)</label>
+</div>
+<div class="legend"><i style="background:#38bdf8"></i>monthly return r<sub>t</sub> (%) <i style="background:rgba(248,113,113,.7)"></i>shaded band = regime 2 (crisis)</div>
+<canvas id="cv_ret" data-h="250"></canvas>
+<canvas id="cv_prob" data-h="130" style="display:none"></canvas>
+<h3>Regime persistence ⇒ regime durations &amp; long-run shares</h3>
+<div class="readouts">
+  <div class="stat">Expected duration, regime 1<br><b id="r_d1">—</b><span>= 1/(1−p₁₁) months</span></div>
+  <div class="stat">Expected duration, regime 2<br><b id="r_d2">—</b><span>= 1/(1−p₂₂) months</span></div>
+  <div class="stat">Ergodic π₁ (long-run share)<br><b id="r_pi1">—</b><span>= (1−p₂₂)/(2−p₁₁−p₂₂)</span></div>
+  <div class="stat">Ergodic π₂<br><b id="r_pi2">—</b><span>= (1−p₁₁)/(2−p₁₁−p₂₂)</span></div>
+  <div class="stat">Sample share in regime 2<br><b id="r_share">—</b><span>this simulated path</span></div>
+</div>
+<div class="notice" id="simnote"></div>
+</section>
+
+<section id="gamesec">
+<h2>🎮 Game: Regime Detective</h2>
+<p>Each round a 2-regime market is simulated with <b>one</b> regime switch hidden somewhere in the middle — no shading, no help. <b>Click on the chart</b> at the moment you think the market switched regime. Within ±5 observations = <b>+20</b>, within ±15 = <b>+10</b>, otherwise 0. Consecutive scoring rounds earn a <b>+5 streak bonus</b>. 10 rounds.</p>
+<div class="gamebar">
+  <button id="g_start">▶ Start game</button>
+  <span class="pill">Round: <b id="g_round">–</b>/10</span>
+  <span class="pill">Score: <b id="g_score">0</b></span>
+  <span class="pill">Streak: <b id="g_streak">0</b>🔥</span>
+  <span class="pill" id="g_best">Best: –</span>
+</div>
+<div class="legend"><i style="background:#38bdf8"></i>returns (%) <i style="background:#fbbf24"></i>cumulative return (rescaled — helps spot mean shifts) <i style="background:#34d399"></i>smoothed P(regime 2) — shown after you answer</div>
+<canvas id="cv_game" data-h="270" style="cursor:crosshair"></canvas>
+<div id="g_msg" class="feedback info">Press <b>Start game</b>, then click where the regime switches.</div>
+<div id="g_fb" class="feedback"></div>
+<div class="gamebar"><button id="g_next" style="display:none">Next round →</button></div>
+</section>
+
+<section id="codesec">
+<h2>⌨️ Code challenges</h2>
+<p>Fill the blank in each snippet (toggle Python/R). One attempt per question.</p>
+<div id="quiz"></div>
+</section>
+</main>
+<footer>
+MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah<br>
+<a href="week08.html">← Week 8: Volatility &amp; VaR</a> · <a href="index.html">All topics</a> · <a href="week10.html">Week 10: Panel Data →</a>
+</footer>
+
+<script>
+'use strict';
+window.MANG = (function(){
+  function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
+  function gauss(rng){var u=0,v=0;while(u===0)u=rng();v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  function setup(cv){var dpr=window.devicePixelRatio||1;var W=cv.clientWidth||640;var H=parseInt(cv.getAttribute('data-h')||'260',10);cv.style.height=H+'px';cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);var ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#1e293b';ctx.fillRect(0,0,W,H);return {ctx:ctx,W:W,H:H};}
+  function fmt(v){var a=Math.abs(v);if(a>=100)return v.toFixed(0);if(a>=10)return v.toFixed(1);if(a>=1)return v.toFixed(1);if(v===0)return '0';return v.toFixed(2);}
+  function axes(ctx,W,H,xmin,xmax,ymin,ymax,xlab,ylab){
+    var pad={l:48,r:14,t:14,b:32};
+    function X(v){return pad.l+(v-xmin)/(xmax-xmin)*(W-pad.l-pad.r);}
+    function Y(v){return H-pad.b-(v-ymin)/(ymax-ymin)*(H-pad.t-pad.b);}
+    ctx.font='11px Segoe UI, sans-serif';ctx.lineWidth=1;
+    var i,v,x,y;
+    for(i=0;i<=4;i++){v=ymin+(ymax-ymin)*i/4;y=Y(v);ctx.strokeStyle='#334155';ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.fillStyle='#94a3b8';ctx.textAlign='right';ctx.fillText(fmt(v),pad.l-6,y+4);}
+    for(i=0;i<=5;i++){v=xmin+(xmax-xmin)*i/5;x=X(v);ctx.strokeStyle='#334155';ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,H-pad.b);ctx.stroke();ctx.fillStyle='#94a3b8';ctx.textAlign='center';ctx.fillText(fmt(v),x,H-pad.b+15);}
+    if(xlab){ctx.fillStyle='#94a3b8';ctx.textAlign='center';ctx.fillText(xlab,(pad.l+W-pad.r)/2,H-4);}
+    if(ylab){ctx.save();ctx.translate(12,(pad.t+H-pad.b)/2);ctx.rotate(-Math.PI/2);ctx.fillStyle='#94a3b8';ctx.textAlign='center';ctx.fillText(ylab,0,0);ctx.restore();}
+    return {X:X,Y:Y,pad:pad};
+  }
+  function line(ctx,M,xs,ys,color,w){ctx.strokeStyle=color;ctx.lineWidth=w||2;ctx.beginPath();for(var i=0;i<xs.length;i++){var x=M.X(xs[i]),y=M.Y(ys[i]);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();}
+  function grade(score,max){var p=100*score/max;
+    if(p>=70)return ['1st','First Class — the external examiner weeps with joy. 🏆'];
+    if(p>=60)return ['2:1','Upper Second — solidly employable. 👍'];
+    if(p>=50)return ['2:2','Lower Second — respectable, but replay for glory. 📚'];
+    if(p>=40)return ['3rd','Third — you turned up, and it shows. ☕'];
+    return ['Fail','Fail — see you at the resit board. Replay! 😅'];}
+  function saveBest(key,score){var prev=parseInt(localStorage.getItem(key)||'-1',10);if(score>prev){try{localStorage.setItem(key,String(score));}catch(e){}return true;}return false;}
+  function getBest(key){var v=localStorage.getItem(key);return v===null?null:parseInt(v,10);}
+  function quiz(rootId,QS){
+    var root=document.getElementById(rootId);var lang='py';
+    var done=QS.map(function(){return {answered:false,right:false};});
+    var bar=document.createElement('div');bar.className='gamebar';
+    var bp=document.createElement('button');bp.textContent='Python';
+    var br=document.createElement('button');br.textContent='R';br.className='alt';
+    var sc=document.createElement('span');sc.className='pill';
+    bar.appendChild(bp);bar.appendChild(br);bar.appendChild(sc);root.appendChild(bar);
+    var cards=QS.map(function(q,i){
+      var d=document.createElement('div');d.className='q';
+      var pr=document.createElement('div');pr.innerHTML='<b>Q'+(i+1)+'.</b> '+q.q;d.appendChild(pr);
+      var pre=document.createElement('pre');pre.className='code';
+      var s1=document.createElement('span');var sel=document.createElement('select');var s2=document.createElement('span');
+      pre.appendChild(s1);pre.appendChild(sel);pre.appendChild(s2);d.appendChild(pre);
+      var btn=document.createElement('button');btn.textContent='Check';
+      var why=document.createElement('div');why.className='why';
+      d.appendChild(btn);d.appendChild(why);
+      btn.addEventListener('click',function(){
+        if(done[i].answered)return;
+        var v=(lang==='py')?q.py:q.r;
+        var k=parseInt(sel.value,10);
+        if(isNaN(k)||k<0){why.style.display='block';why.style.color='var(--accent2)';why.textContent='Pick an option first.';return;}
+        done[i].answered=true;done[i].right=(k===v.ans);
+        sel.disabled=true;btn.disabled=true;
+        why.style.display='block';
+        why.style.color=done[i].right?'var(--good)':'var(--bad)';
+        why.textContent=(done[i].right?'✓ Correct. ':'✗ Not quite — answer: '+v.opts[v.ans]+'. ')+q.why;
+        upd();
+      });
+      return {div:d,s1:s1,s2:s2,sel:sel};
+    });
+    cards.forEach(function(c){root.appendChild(c.div);});
+    function fill(){cards.forEach(function(c,i){
+      var v=(lang==='py')?QS[i].py:QS[i].r;
+      c.s1.textContent=v.code[0];c.s2.textContent=v.code[1];
+      c.sel.innerHTML='';
+      var ph=document.createElement('option');ph.value='-1';ph.textContent='— ? —';c.sel.appendChild(ph);
+      v.opts.forEach(function(o,k){var op=document.createElement('option');op.value=String(k);op.textContent=o;c.sel.appendChild(op);});
+      if(done[i].answered){c.sel.value=String(v.ans);c.sel.disabled=true;}else{c.sel.disabled=false;c.sel.value='-1';}
+    });}
+    function upd(){var n=done.filter(function(d){return d.right;}).length;sc.textContent='Score: '+n+'/'+QS.length;}
+    bp.addEventListener('click',function(){lang='py';bp.className='';br.className='alt';fill();});
+    br.addEventListener('click',function(){lang='r';br.className='';bp.className='alt';fill();});
+    fill();upd();
+  }
+  // Hamilton filter + Kim smoother (2 regimes, known parameters)
+  function smoothedProbs(r,mu,sg,p11,p22){
+    var n=r.length,t;
+    function dn(x,m,s){return Math.exp(-0.5*Math.pow((x-m)/s,2))/(s*Math.sqrt(2*Math.PI));}
+    var pi1=(1-p22)/(2-p11-p22);
+    var pr=[pi1,1-pi1],filt=[];
+    for(t=0;t<n;t++){
+      var pp0=pr[0]*p11+pr[1]*(1-p22), pp1=pr[0]*(1-p11)+pr[1]*p22;
+      var f0=pp0*dn(r[t],mu[0],sg[0]), f1=pp1*dn(r[t],mu[1],sg[1]);
+      var s=f0+f1; if(s<=0){f0=0.5;f1=0.5;s=1;}
+      pr=[f0/s,f1/s]; filt.push([pr[0],pr[1]]);
+    }
+    var sm=filt.map(function(a){return a.slice();});
+    for(t=n-2;t>=0;t--){
+      var q0=filt[t][0]*p11+filt[t][1]*(1-p22), q1=filt[t][0]*(1-p11)+filt[t][1]*p22;
+      q0=Math.max(q0,1e-12); q1=Math.max(q1,1e-12);
+      sm[t][0]=filt[t][0]*( p11*sm[t+1][0]/q0 + (1-p11)*sm[t+1][1]/q1 );
+      sm[t][1]=filt[t][1]*( (1-p22)*sm[t+1][0]/q0 + p22*sm[t+1][1]/q1 );
+      var z=sm[t][0]+sm[t][1]; sm[t][0]/=z; sm[t][1]/=z;
+    }
+    return sm.map(function(a){return a[1];});
+  }
+  return {mulberry32:mulberry32,gauss:gauss,setup:setup,axes:axes,line:line,fmt:fmt,grade:grade,saveBest:saveBest,getBest:getBest,quiz:quiz,smoothedProbs:smoothedProbs};
+})();
+
+/* ---------- SECTION A: simulation ---------- */
+(function(){
+  var M=window.MANG;
+  var ids=['mu1','s1','mu2','s2','p11','p22'];
+  var seed=20260901;
+  function val(id){return parseFloat(document.getElementById(id).value);}
+  function shadeSpans(s){ // contiguous regime-2 spans
+    var spans=[],start=-1;
+    for(var t=0;t<s.length;t++){
+      if(s[t]===1&&start<0)start=t;
+      if((s[t]===0||t===s.length-1)&&start>=0){spans.push([start,s[t]===1?t:t-1]);start=-1;}
+    }
+    return spans;
+  }
+  function simulate(){
+    var mu1=val('mu1'),s1=val('s1'),mu2=val('mu2'),s2=val('s2'),p11=val('p11'),p22=val('p22');
+    var n=300,rng=M.mulberry32(seed),r=[],s=[];
+    var pi1=(1-p22)/(2-p11-p22);
+    var st=(rng()<pi1)?0:1;
+    for(var t=0;t<n;t++){
+      if(t>0){var u=rng();if(s[t-1]===0){st=(u<p11)?0:1;}else{st=(u<p22)?1:0;}}
+      s.push(st);
+      r.push((st===0?mu1:mu2)+(st===0?s1:s2)*M.gauss(rng));
+    }
+    return {r:r,s:s,mu1:mu1,s1:s1,mu2:mu2,s2:s2,p11:p11,p22:p22};
+  }
+  function draw(){
+    var d=simulate();
+    // value labels
+    document.getElementById('v_mu1').textContent=d.mu1.toFixed(1);
+    document.getElementById('v_s1').textContent=d.s1.toFixed(1);
+    document.getElementById('v_mu2').textContent=d.mu2.toFixed(1);
+    document.getElementById('v_s2').textContent=d.s2.toFixed(1);
+    document.getElementById('v_p11').textContent=d.p11.toFixed(2);
+    document.getElementById('v_p22').textContent=d.p22.toFixed(2);
+    var n=d.r.length;
+    var lo=Math.min.apply(null,d.r),hi=Math.max.apply(null,d.r);
+    var padv=0.1*(hi-lo)+0.5;
+    var cv=document.getElementById('cv_ret');
+    var c=M.setup(cv),ctx=c.ctx;
+    var A=M.axes(ctx,c.W,c.H,0,n-1,lo-padv,hi+padv,'month t','return %');
+    // subtle regime-2 shading
+    ctx.fillStyle='rgba(248,113,113,0.13)';
+    shadeSpans(d.s).forEach(function(sp){
+      var x0=A.X(Math.max(sp[0]-0.5,0)),x1=A.X(Math.min(sp[1]+0.5,n-1));
+      ctx.fillRect(x0,A.pad.t,x1-x0,c.H-A.pad.b-A.pad.t);
+    });
+    // zero line
+    if(lo<0&&hi>0){ctx.strokeStyle='#475569';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(A.pad.l,A.Y(0));ctx.lineTo(c.W-A.pad.r,A.Y(0));ctx.stroke();ctx.setLineDash([]);}
+    var xs=[];for(var t=0;t<n;t++)xs.push(t);
+    M.line(ctx,A,xs,d.r,'#38bdf8',1.6);
+    // step plot of regime indicator
+    var cv2=document.getElementById('cv_prob');
+    if(document.getElementById('showprob').checked){
+      cv2.style.display='block';
+      var c2=M.setup(cv2),ctx2=c2.ctx;
+      var A2=M.axes(ctx2,c2.W,c2.H,0,n-1,-0.1,1.1,'month t','regime');
+      ctx2.strokeStyle='#fbbf24';ctx2.lineWidth=2;ctx2.beginPath();
+      for(var u=0;u<n;u++){
+        var y=A2.Y(d.s[u]);
+        if(u===0)ctx2.moveTo(A2.X(0),y);
+        else {ctx2.lineTo(A2.X(u),A2.Y(d.s[u-1]));ctx2.lineTo(A2.X(u),y);}
+      }
+      ctx2.stroke();
+      ctx2.fillStyle='#94a3b8';ctx2.font='11px Segoe UI, sans-serif';ctx2.textAlign='left';
+      ctx2.fillText('1 = regime 2 (crisis), 0 = regime 1 (calm) — the true indicator (probability 0/1 since we know the truth)',A2.pad.l+4,A2.pad.t+10);
+    } else cv2.style.display='none';
+    // readouts
+    var d1=1/(1-d.p11),d2=1/(1-d.p22);
+    var pi1=(1-d.p22)/(2-d.p11-d.p22),pi2=(1-d.p11)/(2-d.p11-d.p22);
+    var share=d.s.reduce(function(a,b){return a+b;},0)/n;
+    document.getElementById('r_d1').textContent=d1.toFixed(1)+' months';
+    document.getElementById('r_d2').textContent=d2.toFixed(1)+' months';
+    document.getElementById('r_pi1').textContent=(100*pi1).toFixed(0)+'%';
+    document.getElementById('r_pi2').textContent=(100*pi2).toFixed(0)+'%';
+    document.getElementById('r_share').textContent=(100*share).toFixed(0)+'%';
+    // what to notice
+    var note='<b>What to notice:</b> Higher p<sub>ii</sub> means longer-lived regimes — expected duration is 1/(1−p<sub>ii</sub>), so p₁₁ = '+d.p11.toFixed(2)+
+      ' gives calm spells of ≈'+d1.toFixed(0)+' months and p₂₂ = '+d.p22.toFixed(2)+' gives crisis spells of ≈'+d2.toFixed(0)+
+      ' months. In the long run the market spends π₁ = '+(100*pi1).toFixed(0)+'% of its time calm. ';
+    if(Math.abs(d.mu1-d.mu2)<=1.0 && Math.abs(d.s2-d.s1)>=2){
+      note+='Right now μ₁ ≈ μ₂ but σ₂ ≫ σ₁: the regimes differ mainly in <b>volatility</b> — this is a volatility-switching model. Compare with GARCH (Week 7): there volatility moves <i>smoothly</i> each period, here it <i>jumps</i> between discrete states.';
+    } else if(Math.abs(d.mu1-d.mu2)>1.0 && Math.abs(d.s2-d.s1)<2){
+      note+='Right now the regimes differ mainly in <b>mean</b> — a bull/bear switching model like Hamilton (1989) used for GNP growth. Mean switches are much harder to see by eye than volatility switches.';
+    } else {
+      note+='Means <i>and</i> volatilities both differ — the classic "calm bull / volatile bear" pattern found in equity returns.';
+    }
+    document.getElementById('simnote').innerHTML=note;
+  }
+  ids.forEach(function(id){document.getElementById(id).addEventListener('input',draw);});
+  document.getElementById('showprob').addEventListener('change',draw);
+  document.getElementById('regen').addEventListener('click',function(){seed=(seed*1664525+1013904223)>>>0;draw();});
+  window.addEventListener('resize',draw);
+  draw();
+})();
+
+/* ---------- SECTION B: game ---------- */
+(function(){
+  var M=window.MANG;
+  var KEY='mang2074_w09_best', N=200, ROUNDS=10;
+  var state=null, baseSeed=0, Amap=null;
+  var el=function(id){return document.getElementById(id);};
+  var best=M.getBest(KEY);
+  if(best!==null)el('g_best').textContent='Best: '+best;
+  function newRound(roundIdx){
+    var rng=M.mulberry32((baseSeed+roundIdx*7919)>>>0);
+    var k=50+Math.floor(rng()*101); // switch at 50..150
+    var type=['var','mean','both'][roundIdx%3];
+    var startWild=rng()<0.4;
+    var muA=0.8,sA=2.0,muB,sB;
+    if(type==='var'){muB=0.8;sB=5.5+rng()*2.5;}
+    else if(type==='mean'){muB=-3.4-rng()*1.2;sB=2.0;}
+    else {muB=-2.2-rng();sB=4.5+rng()*2;}
+    var mu=[muA,muB],sg=[sA,sB];
+    if(startWild){mu=[muB,muA];sg=[sB,sA];}
+    var r=[],s=[];
+    for(var t=0;t<N;t++){var st=(t<k)?0:1;s.push(st);r.push(mu[st]+sg[st]*M.gauss(rng));}
+    return {r:r,s:s,k:k,type:type,mu:mu,sg:sg};
+  }
+  function drawRound(reveal,guess){
+    var d=state.cur;
+    var cv=el('cv_game'),c=M.setup(cv),ctx=c.ctx;
+    var lo=Math.min.apply(null,d.r),hi=Math.max.apply(null,d.r);
+    var padv=0.1*(hi-lo)+0.5;
+    var A=M.axes(ctx,c.W,c.H,0,N-1,lo-padv,hi+padv,'observation t','return %');
+    Amap={A:A,W:c.W,H:c.H};
+    if(reveal){ // true regime shading
+      ctx.fillStyle='rgba(248,113,113,0.13)';
+      var a0=d.s[0]===1?0:d.k, a1=d.s[0]===1?d.k-1:N-1;
+      ctx.fillRect(A.X(a0),A.pad.t,A.X(a1)-A.X(a0),c.H-A.pad.b-A.pad.t);
+    }
+    var xs=[];for(var t=0;t<N;t++)xs.push(t);
+    M.line(ctx,A,xs,d.r,'#38bdf8',1.5);
+    // cumulative return, rescaled into the plot range (helps spot mean shifts)
+    var cum=[],csum=0;for(var u=0;u<N;u++){csum+=d.r[u];cum.push(csum);}
+    var clo=Math.min.apply(null,cum),chi=Math.max.apply(null,cum);
+    var span=(chi-clo)||1;
+    var cumS=cum.map(function(v){return (lo-padv)+((v-clo)/span)*((hi+padv)-(lo-padv));});
+    ctx.globalAlpha=0.65;M.line(ctx,A,xs,cumS,'#fbbf24',1.2);ctx.globalAlpha=1;
+    if(reveal){
+      // smoothed-probability-style curve via Hamilton filter + Kim smoother (true params, sticky chain)
+      var sp=M.smoothedProbs(d.r,d.mu,d.sg,0.985,0.985);
+      var spS=sp.map(function(p){return (lo-padv)+p*((hi+padv)-(lo-padv));});
+      M.line(ctx,A,xs,spS,'#34d399',2);
+      // true switch + guess markers
+      ctx.strokeStyle='#34d399';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+      ctx.beginPath();ctx.moveTo(A.X(d.k),A.pad.t);ctx.lineTo(A.X(d.k),c.H-A.pad.b);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='#34d399';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='center';
+      ctx.fillText('true switch (t='+d.k+')',A.X(d.k),A.pad.t+10);
+      if(guess!==null&&guess!==undefined){
+        ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(A.X(guess),A.pad.t);ctx.lineTo(A.X(guess),c.H-A.pad.b);ctx.stroke();
+        ctx.fillStyle='#fbbf24';ctx.fillText('your click (t='+guess+')',A.X(guess),c.H-A.pad.b-6);
+      }
+    }
+  }
+  function setMsg(t){el('g_msg').innerHTML=t;}
+  function startGame(){
+    baseSeed=(Date.now()&0xffffff)>>>0;
+    state={round:0,score:0,streak:0,awaiting:false,cur:null};
+    el('g_fb').className='feedback';el('g_fb').style.display='none';
+    el('g_next').style.display='none';
+    el('g_start').textContent='▶ Restart';
+    nextRound();
+  }
+  function nextRound(){
+    state.round++;
+    state.cur=newRound(state.round);
+    state.awaiting=true;
+    el('g_round').textContent=state.round;
+    el('g_streak').textContent=state.streak;
+    el('g_next').style.display='none';
+    el('g_fb').className='feedback';el('g_fb').style.display='none';
+    setMsg('Round '+state.round+': <b>click on the chart</b> where you think the regime switched.');
+    drawRound(false,null);
+  }
+  function finish(){
+    var g=M.grade(state.score,200);
+    var isNew=M.saveBest(KEY,state.score);
+    var b=M.getBest(KEY);el('g_best').textContent='Best: '+b;
+    setMsg('🏁 Game over! Final score <b>'+state.score+'</b> / 200. Grade: <b>'+g[0]+'</b> — '+g[1]+(isNew?' <b>New personal best!</b>':''));
+    el('g_next').style.display='none';
+    el('g_start').textContent='▶ Play again';
+  }
+  el('cv_game').addEventListener('click',function(e){
+    if(!state||!state.awaiting||!Amap)return;
+    var rect=e.target.getBoundingClientRect();
+    var px=e.clientX-rect.left;
+    var A=Amap.A;
+    var frac=(px-A.pad.l)/((Amap.W-A.pad.r)-A.pad.l);
+    var guess=Math.round(frac*(N-1));
+    guess=Math.max(0,Math.min(N-1,guess));
+    state.awaiting=false;
+    var d=state.cur,diff=Math.abs(guess-d.k);
+    var pts=diff<=5?20:(diff<=15?10:0);
+    var bonus=0;
+    if(pts>0){state.streak++;if(state.streak>=2)bonus=5;}else state.streak=0;
+    state.score+=pts+bonus;
+    el('g_score').textContent=state.score;
+    el('g_streak').textContent=state.streak;
+    drawRound(true,guess);
+    var cue;
+    if(d.type==='var')cue='Cue available: the <b>variance</b> jumped — the band of returns suddenly got wider or narrower. Volatility switches are the easiest to spot by eye (and the green smoothed-probability curve nails them too).';
+    else if(d.type==='mean')cue='Cue available: only the <b>mean</b> shifted. Individual returns look similar, so look at the gold cumulative line — its slope changes at the switch. Mean switches are genuinely hard to detect; even the smoothed probabilities are wobblier here.';
+    else cue='Cues available: <b>both</b> mean and variance changed — slope of the cumulative line and the width of the return band both shift.';
+    var fb=el('g_fb');
+    fb.className='feedback '+(pts>0?'good':'bad');
+    fb.innerHTML=(pts>0?'✓':'✗')+' You clicked t='+guess+'; the true switch was t='+d.k+' (off by '+diff+'). <b>+'+pts+'</b>'+(bonus?' and +'+bonus+' streak bonus 🔥':'')+'.<br>'+cue+'<br><span style="color:var(--muted)">The green curve is the smoothed probability of the second regime, P(s<sub>t</sub>=2 | all data) — what MarkovRegression / msmFit would estimate.</span>';
+    if(state.round>=ROUNDS){setTimeout(finish,400);}
+    else el('g_next').style.display='inline-block';
+  });
+  el('g_start').addEventListener('click',startGame);
+  el('g_next').addEventListener('click',nextRound);
+  window.addEventListener('resize',function(){if(state&&state.cur)drawRound(!state.awaiting,null);});
+})();
+
+/* ---------- SECTION C: code challenges ---------- */
+(function(){
+  var QS=[
+    {q:'Fit a 2-regime Markov-switching model of monthly returns where <b>both the mean and the variance</b> switch between regimes.',
+     py:{code:['import statsmodels.api as sm\nmod = sm.tsa.MarkovRegression(returns, k_regimes=2,\n                              trend=\'c\', ',')\nres = mod.fit()'],
+         opts:['switching_variance=True','switching_variance=False','switching_trend=False','order=(1, 1)'],ans:0},
+     r:{code:['library(MSwM)\nols <- lm(returns ~ 1)\nmod <- msmFit(ols, k = 2, ',')'],
+        opts:['sw = c(TRUE, TRUE)','sw = c(FALSE, FALSE)','p = 2','family = "gaussian"'],ans:0},
+     why:'You must let σ² switch too: switching_variance=True in statsmodels; in MSwM, sw=c(TRUE,TRUE) lets the intercept AND the residual s.d. differ by regime.'},
+    {q:'Extract the <b>smoothed</b> probability that each observation came from regime 0 (Python) / regime 1 (R).',
+     py:{code:['p_smooth = res.',''],
+         opts:['smoothed_marginal_probabilities[0]','filtered_marginal_probabilities[0]','predicted_marginal_probabilities[0]','params[0]'],ans:0},
+     r:{code:['p_smooth <- mod@Fit@',''],
+        opts:['smoProb','filtProb','logLikel','condStd'],ans:0},
+     why:'Smoothed probabilities P(s_t = j | full sample) are what you plot to date regimes historically; filtered ones use only data up to t.'},
+    {q:'Compute the expected duration of regime 1 from its staying probability p₁₁.',
+     py:{code:['p11 = res.regime_transitions[0, 0]   # P(stay in regime 1)\ndur1 = ',''],
+         opts:['1 / (1 - p11)','1 / p11','p11 / (1 - p11)','(1 - p11) / p11'],ans:0},
+     r:{code:['p11  <- mod@transMat[1, 1]   # P(stay in regime 1)\ndur1 <- ',''],
+        opts:['1 / (1 - p11)','1 / p11','p11 / (1 - p11)','(1 - p11) / p11'],ans:0},
+     why:'Time-in-regime is geometric: E[duration] = 1/(1−p₁₁). With p₁₁ = 0.95 the calm regime lasts 20 periods on average.'},
+    {q:'From the transition matrix, what is the probability of moving <b>from regime 1 to regime 2</b> in one step?',
+     py:{code:['# rows of P sum to 1: P[i, j] = P(move from i to j)\np_12 = ',''],
+         opts:['1 - p11','p22','1 - p22','p11 * p22'],ans:0},
+     r:{code:['# rows of P sum to 1: P[i, j] = P(move from i to j)\np_12 <- ',''],
+        opts:['1 - p11','p22','1 - p22','p11 * p22'],ans:0},
+     why:'With 2 states each row sums to 1, so p₁₂ = 1 − p₁₁. (And p₂₁ = 1 − p₂₂.)'},
+    {q:'You want a <b>real-time</b> crisis signal that uses no future information (no look-ahead bias). Which probabilities do you take?',
+     py:{code:['signal = res.','[1]   # uses only data up to time t'],
+         opts:['filtered_marginal_probabilities','smoothed_marginal_probabilities','fittedvalues','resid'],ans:0},
+     r:{code:['signal <- mod@Fit@','   # uses only data up to time t'],
+        opts:['filtProb','smoProb','error','condMean'],ans:0},
+     why:'Smoothed probabilities condition on the FULL sample — they peek into the future, so they are fine for history-writing but cheating for trading. Filtered ≠ smoothed precisely because of this look-ahead.'},
+    {q:'Complete the citation: the seminal Markov-switching paper, Hamilton (1989), modelled regime switches in…',
+     py:{code:['# Hamilton, J. D. (1989), Econometrica 57(2), 357-384:\n# a Markov-switching AR model of ',''],
+         opts:['US real GNP growth (recessions vs expansions)','UK house prices','Bitcoin returns','the VIX index'],ans:0},
+     r:{code:['# Hamilton, J. D. (1989), Econometrica 57(2), 357-384:\n# a Markov-switching AR model of ',''],
+        opts:['US real GNP growth (recessions vs expansions)','UK house prices','Bitcoin returns','the VIX index'],ans:0},
+     why:'Hamilton (1989) dated US business cycles by letting GNP growth switch between expansion and recession means — the smoothed probabilities lined up with NBER recession dates.'}
+  ];
+  window.MANG.quiz('quiz',QS);
+})();
+</script>
+</body>
+</html>

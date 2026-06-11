@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MANG2074 · Week 2 — OLS, Hedge Ratios &amp; the CAPM</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--panel2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#fbbf24;--good:#34d399;--bad:#f87171;--font:'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 var(--font)}
+header{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(15,23,42,.96);border-bottom:1px solid #334155;padding:10px 22px}
+header .brand{font-weight:700}
+header .brand small{display:block;font-weight:400;color:var(--muted);font-size:.82rem}
+header a{color:var(--accent);text-decoration:none;font-size:.95rem}
+header a:hover{text-decoration:underline}
+main{max-width:1000px;margin:0 auto;padding:22px 16px 10px}
+.intro{background:var(--panel2);border-radius:14px;padding:16px 20px;margin-bottom:22px}
+section{background:var(--panel);border-radius:14px;padding:20px;margin-bottom:26px}
+h2{font-size:1.3rem;margin:0 0 12px}
+h3{font-size:1.05rem;margin:18px 0 8px;color:var(--accent)}
+button{background:var(--accent);color:#0f172a;border:0;border-radius:8px;padding:9px 16px;font:600 .95rem var(--font);cursor:pointer}
+button:hover{filter:brightness(1.1)}
+button:disabled{opacity:.45;cursor:default;filter:none}
+button.alt{background:var(--panel2);color:var(--text);border:1px solid #475569}
+button.choice{background:var(--panel2);color:var(--text);border:1px solid #475569;margin:4px 6px 4px 0}
+button.choice:hover{border-color:var(--accent)}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px 18px;margin:6px 0 16px}
+.ctl{background:var(--panel2);border-radius:10px;padding:10px 14px}
+.ctl label{display:block;font-size:.88rem;color:var(--muted);margin-bottom:4px}
+.ctl label b{color:var(--text)}
+.ctl .val{color:var(--accent2);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+canvas{display:block;width:100%;background:var(--panel);border:1px solid #334155;border-radius:10px;margin:10px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
+.stat{background:var(--panel2);border-radius:10px;padding:8px 12px;text-align:center}
+.stat .k{font-size:.8rem;color:var(--muted)}
+.stat .v{font-size:1.12rem;font-weight:700;color:var(--accent)}
+.stat .v.good{color:var(--good)}
+.stat .v.bad{color:var(--bad)}
+.notice{background:var(--panel2);border-left:4px solid var(--accent2);border-radius:10px;padding:12px 16px;margin-top:14px;font-size:.95rem}
+.notice b{color:var(--accent2)}
+.hud{display:flex;gap:14px;flex-wrap:wrap;align-items:center;background:var(--panel2);border-radius:10px;padding:10px 14px;margin:12px 0}
+.hud .pill{background:var(--bg);border-radius:999px;padding:4px 14px;font-size:.9rem}
+.hud .pill b{color:var(--accent2)}
+.feedback{border-radius:10px;padding:12px 16px;margin:12px 0;font-size:.95rem;display:none}
+.feedback.good{display:block;background:rgba(52,211,153,.12);border-left:4px solid var(--good)}
+.feedback.bad{display:block;background:rgba(248,113,113,.12);border-left:4px solid var(--bad)}
+.feedback.info{display:block;background:var(--panel2);border-left:4px solid var(--accent)}
+.cc-card{background:var(--panel2);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.cc-prompt{margin-bottom:8px;font-size:.97rem}
+pre.code{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px 14px;font:.88rem/1.55 Consolas,'Courier New',monospace;color:#dbeafe;overflow-x:auto;white-space:pre-wrap}
+pre.code select{background:#1e293b;color:var(--accent2);border:1px solid #475569;border-radius:6px;padding:2px 6px;font:inherit}
+.cc-row{display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap}
+.cc-res{font-size:.92rem}
+.cc-res.ok{color:var(--good)}
+.cc-res.no{color:var(--bad)}
+.langtog{display:flex;gap:8px;margin-bottom:14px;align-items:center}
+.langtog button.on{outline:2px solid var(--accent2)}
+table.reg{border-collapse:collapse;width:100%;font:.88rem Consolas,monospace;margin:10px 0}
+table.reg th,table.reg td{border:1px solid #334155;padding:5px 10px;text-align:right}
+table.reg th:first-child,table.reg td:first-child{text-align:left}
+table.reg th{background:var(--panel2);color:var(--muted)}
+.rsswrap{margin:10px 0}
+.rsswrap .lbl{font-size:.85rem;color:var(--muted)}
+.rssbar{height:18px;border-radius:6px;background:var(--bg);overflow:hidden;margin:3px 0 10px}
+.rssbar>div{height:100%;border-radius:6px}
+footer{max-width:1000px;margin:0 auto;padding:18px 16px 34px;color:var(--muted);font-size:.9rem;text-align:center}
+footer .nav{display:flex;justify-content:space-between;margin-bottom:10px}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline}
+@media(max-width:720px){header{padding:10px 14px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">MANG2074 · Financial Econometrics 1<small>Week 2 — OLS, Hedge Ratios &amp; the CAPM</small></div>
+  <a href="index.html">← All topics</a>
+</header>
+<main>
+<div class="intro">
+  OLS picks the line that minimises the residual sum of squares — this week you race it by hand.
+  Drag your own α̂ and β̂ through a CAPM scatter of excess returns and see how close your RSS gets to the OLS minimum,
+  then train your eye to read the market beta straight off a cloud of points in “Guess the Beta”.
+</div>
+
+<!-- ============ SECTION A: SIMULATION ============ -->
+<section id="sim">
+<h2>🔬 Simulation — Fit your own line</h2>
+<p>Each point is one month: x = market excess return (r<sub>m</sub> − r<sub>f</sub>), y = stock excess return (r<sub>i</sub> − r<sub>f</sub>), both in %. The DGP is y = α + β·x + u. OLS solves β̂ = Cov(x,y)/Var(x), α̂ = ȳ − β̂·x̄.</p>
+<div class="controls">
+  <div class="ctl"><label><b>n</b> observations: <span class="val" id="nV">60</span></label>
+    <input type="range" id="nObs" min="20" max="200" step="10" value="60"></div>
+  <div class="ctl"><label><b>σ<sub>u</sub></b> noise sd (%): <span class="val" id="sV">3.0</span></label>
+    <input type="range" id="sNoise" min="0.5" max="8" step="0.25" value="3"></div>
+  <div class="ctl" style="display:flex;align-items:center;gap:8px">
+    <button id="regen" style="flex:1">🎲 New sample</button>
+    <button id="reveal" class="alt" style="flex:1">Reveal OLS line</button></div>
+</div>
+<div class="controls">
+  <div class="ctl"><label>Your intercept <b>α̂</b>: <span class="val" id="aV">0.00</span></label>
+    <input type="range" id="aHat" min="-3" max="3" step="0.05" value="0"></div>
+  <div class="ctl"><label>Your slope <b>β̂</b>: <span class="val" id="bV">1.00</span></label>
+    <input type="range" id="bHat" min="0" max="3" step="0.01" value="1"></div>
+</div>
+<canvas id="scatC" style="height:330px"></canvas>
+<div class="rsswrap">
+  <div class="lbl">Your RSS = <b id="rssYou" style="color:var(--accent2)">–</b></div>
+  <div class="rssbar"><div id="barYou" style="background:var(--accent2);width:0%"></div></div>
+  <div class="lbl">OLS minimum RSS = <b id="rssOls" style="color:var(--good)">–</b></div>
+  <div class="rssbar"><div id="barOls" style="background:var(--good);width:0%"></div></div>
+</div>
+<div id="olsBox" style="display:none">
+  <h3>OLS estimates (and the truth)</h3>
+  <table class="reg">
+    <tr><th></th><th>estimate</th><th>std. error</th><th>t (H₀: =0)</th><th>t (H₀: β=1)</th><th>true value</th></tr>
+    <tr><td>α̂ (Jensen’s alpha)</td><td id="oA">–</td><td id="oAse">–</td><td id="oAt">–</td><td>—</td><td id="tA">–</td></tr>
+    <tr><td>β̂ (market beta)</td><td id="oB">–</td><td id="oBse">–</td><td id="oBt">–</td><td id="oBt1">–</td><td id="tB">–</td></tr>
+  </table>
+  <div class="stats">
+    <div class="stat"><div class="k">R²</div><div class="v" id="oR2">–</div></div>
+    <div class="stat"><div class="k">s (resid sd)</div><div class="v" id="oS">–</div></div>
+    <div class="stat"><div class="k">SE(β̂) = s/√Σ(x−x̄)²</div><div class="v" id="oSEb">–</div></div>
+  </div>
+</div>
+<div class="notice" id="simNotice"><b>What to notice:</b> …</div>
+</section>
+
+<!-- ============ SECTION B: GAME ============ -->
+<section id="game">
+<h2>🎮 Game: Guess the Beta</h2>
+<p>A fresh CAPM scatter every round (true β between 0.2 and 2.5, noise varies). Read the slope off the cloud and lock in your guess.
+Points = max(0, 20 − 40·|guess−β|/β). Within 10% of the truth = 🎯 bullseye; consecutive bullseyes earn +5. 10 rounds.</p>
+<div class="hud">
+  <button id="gStart">▶ Start game</button>
+  <span class="pill">Round <b id="gRound">0</b>/10</span>
+  <span class="pill">Score <b id="gScore">0</b></span>
+  <span class="pill">🎯 streak <b id="gStreak">0</b></span>
+  <span class="pill">Best <b id="gBest">–</b></span>
+</div>
+<canvas id="gC" style="height:300px"></canvas>
+<div id="gCtl" style="display:none">
+  <div class="ctl" style="max-width:480px"><label>Your guess <b>β̂</b> = <span class="val" id="gGuessV">1.00</span></label>
+    <input type="range" id="gGuess" min="0" max="3" step="0.01" value="1"></div>
+  <button id="gSubmit" style="margin-top:8px">Lock in guess</button>
+</div>
+<div class="feedback" id="gFb"></div>
+</section>
+
+<!-- ============ SECTION C: CODE ============ -->
+<section id="codes">
+<h2>⌨️ Code challenges</h2>
+<div class="langtog">
+  <button id="ccPy" class="on">Python</button>
+  <button id="ccR" class="alt">R</button>
+  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/6</span>
+</div>
+<div id="cc-list"></div>
+</section>
+</main>
+
+<footer>
+  <div class="nav"><a href="week01.html">← Week 1: Returns &amp; Distributions</a><a href="week03.html">Week 3: Multiple Regression &amp; F-tests →</a></div>
+  <div>MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah</div>
+</footer>
+
+<script>
+/* ===== Shared helpers (window.MANG) ===== */
+window.MANG = (function () {
+  'use strict';
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gauss(rng) {
+    let u = 0; do { u = rng(); } while (u === 0);
+    const v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function fitCanvas(cv) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth || 600, h = cv.clientHeight || 200;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, W: w, H: h };
+  }
+  function fmt(v) {
+    if (!isFinite(v)) return '–';
+    const a = Math.abs(v);
+    if (a >= 1000) return v.toFixed(0);
+    if (a >= 10) return v.toFixed(1);
+    if (a === 0) return '0';
+    if (a < 0.01) return v.toExponential(1);
+    return v.toFixed(2);
+  }
+  function frame(ctx, W, H, xmin, xmax, ymin, ymax, opts) {
+    opts = opts || {};
+    const padL = opts.padL || 46, padR = 10, padT = opts.title ? 22 : 10, padB = 26;
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(0, 0, W, H);
+    const X = v => padL + (v - xmin) / ((xmax - xmin) || 1) * (W - padL - padR);
+    const Y = v => H - padB - (v - ymin) / ((ymax - ymin) || 1) * (H - padT - padB);
+    ctx.lineWidth = 1; ctx.font = '11px Segoe UI, sans-serif';
+    for (let i = 0; i <= 4; i++) {
+      const v = ymin + (ymax - ymin) * i / 4, y = Y(v);
+      ctx.strokeStyle = '#334155';
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+      ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'right'; ctx.fillText(fmt(v), padL - 6, y + 4);
+    }
+    for (let i = 0; i <= 4; i++) {
+      const v = xmin + (xmax - xmin) * i / 4, x = X(v);
+      ctx.strokeStyle = '#334155';
+      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
+      ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'center'; ctx.fillText(fmt(v), x, H - padB + 15);
+    }
+    if (opts.title) { ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'left'; ctx.fillText(opts.title, padL, 14); }
+    return { X: X, Y: Y, padL: padL, padR: padR, padT: padT, padB: padB };
+  }
+  function drawLine(ctx, f, xs, ys, color, width) {
+    ctx.strokeStyle = color; ctx.lineWidth = width || 2; ctx.beginPath();
+    for (let i = 0; i < xs.length; i++) {
+      const px = f.X(xs[i]), py = f.Y(ys[i]);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+  function drawDots(ctx, f, xs, ys, color, r) {
+    ctx.fillStyle = color;
+    for (let i = 0; i < xs.length; i++) {
+      ctx.beginPath(); ctx.arc(f.X(xs[i]), f.Y(ys[i]), r || 2.5, 0, 2 * Math.PI); ctx.fill();
+    }
+  }
+  // simple OLS y = a + b x ; returns estimates, SEs, t-stats, RSS, R2
+  function ols2(x, y) {
+    const n = x.length;
+    let xb = 0, yb = 0;
+    for (let i = 0; i < n; i++) { xb += x[i]; yb += y[i]; }
+    xb /= n; yb /= n;
+    let sxx = 0, sxy = 0, syy = 0;
+    for (let i = 0; i < n; i++) {
+      sxx += (x[i] - xb) * (x[i] - xb);
+      sxy += (x[i] - xb) * (y[i] - yb);
+      syy += (y[i] - yb) * (y[i] - yb);
+    }
+    const b = sxy / sxx;               // beta_hat = Cov(x,y)/Var(x)
+    const a = yb - b * xb;
+    let rss = 0;
+    for (let i = 0; i < n; i++) { const e = y[i] - a - b * x[i]; rss += e * e; }
+    const s2 = rss / (n - 2);
+    const seB = Math.sqrt(s2 / sxx);
+    const seA = Math.sqrt(s2 * (1 / n + xb * xb / sxx));
+    return { a: a, b: b, seA: seA, seB: seB, tA: a / seA, tB: b / seB, rss: rss, tss: syy, r2: 1 - rss / syy, s: Math.sqrt(s2), sxx: sxx, n: n };
+  }
+  return { mulberry32: mulberry32, gauss: gauss, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, ols2: ols2, fmt: fmt };
+})();
+</script>
+
+<script>
+/* ===== SECTION A: Fit your own line ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  let seed = 20742, data = null, ols = null, revealed = false;
+
+  function generate() {
+    const n = parseInt($('nObs').value, 10);
+    const sig = parseFloat($('sNoise').value);
+    const rng = M.mulberry32(seed);
+    const trueA = -0.5 + rng() * 1.0;
+    const trueB = 0.5 + rng() * 1.3;
+    const x = new Array(n), y = new Array(n);
+    for (let i = 0; i < n; i++) {
+      x[i] = 0.5 + 3 * M.gauss(rng);
+      y[i] = trueA + trueB * x[i] + sig * M.gauss(rng);
+    }
+    data = { x: x, y: y, trueA: trueA, trueB: trueB, sig: sig, n: n };
+    ols = M.ols2(x, y);
+    revealed = false;
+    $('olsBox').style.display = 'none';
+    redraw();
+  }
+
+  function redraw() {
+    if (!data) return;
+    const aH = parseFloat($('aHat').value), bH = parseFloat($('bHat').value);
+    const c = M.fitCanvas($('scatC'));
+    let xlo = Math.min.apply(null, data.x), xhi = Math.max.apply(null, data.x);
+    let ylo = Math.min.apply(null, data.y), yhi = Math.max.apply(null, data.y);
+    const xm = (xhi - xlo) * 0.06, ym = (yhi - ylo) * 0.1;
+    const f = M.frame(c.ctx, c.W, c.H, xlo - xm, xhi + xm, ylo - ym, yhi + ym,
+      { title: 'x = market excess return (%) → y = stock excess return (%)' });
+    M.drawDots(c.ctx, f, data.x, data.y, '#38bdf8', 3);
+    // your line (gold)
+    M.drawLine(c.ctx, f, [xlo - xm, xhi + xm], [aH + bH * (xlo - xm), aH + bH * (xhi + xm)], '#fbbf24', 2);
+    // OLS line (green) if revealed
+    if (revealed) {
+      M.drawLine(c.ctx, f, [xlo - xm, xhi + xm], [ols.a + ols.b * (xlo - xm), ols.a + ols.b * (xhi + xm)], '#34d399', 2);
+      c.ctx.fillStyle = '#34d399'; c.ctx.font = '12px Segoe UI, sans-serif'; c.ctx.textAlign = 'left';
+      c.ctx.fillText('OLS', f.X(xhi) - 30, f.Y(ols.a + ols.b * xhi) - 8);
+    }
+    c.ctx.fillStyle = '#fbbf24'; c.ctx.font = '12px Segoe UI, sans-serif'; c.ctx.textAlign = 'left';
+    c.ctx.fillText('you', f.X(xhi) - 30, f.Y(aH + bH * xhi) + 14);
+    // RSS comparison
+    let rssYou = 0;
+    for (let i = 0; i < data.n; i++) { const e = data.y[i] - aH - bH * data.x[i]; rssYou += e * e; }
+    $('rssYou').textContent = rssYou.toFixed(1);
+    $('rssOls').textContent = ols.rss.toFixed(1);
+    const mx = Math.max(rssYou, ols.rss);
+    $('barYou').style.width = (100 * rssYou / mx).toFixed(1) + '%';
+    $('barOls').style.width = (100 * ols.rss / mx).toFixed(1) + '%';
+    // notice
+    const gap = 100 * (rssYou - ols.rss) / ols.rss;
+    let msg = '<b>What to notice:</b> OLS is <em>defined</em> as the (α̂, β̂) minimising RSS — you can tie it but never beat it. ' +
+      'Your RSS is currently <b>' + (gap < 0.05 ? 'at the OLS minimum — perfect fit by hand!' : gap.toFixed(1) + '% above the minimum.') + '</b> ';
+    msg += 'Now play with the controls: SE(β̂) = s/√Σ(x−x̄)² — <b>more noise σ<sub>u</sub> inflates it, more observations n shrink it</b>' +
+      (revealed ? ' (currently SE(β̂) = ' + ols.seB.toFixed(3) + ' with n = ' + data.n + ', σ = ' + data.sig.toFixed(2) + ').' : ' — reveal the OLS line to see the standard errors.');
+    $('simNotice').innerHTML = msg;
+  }
+
+  function reveal() {
+    if (!data) return;
+    revealed = true;
+    $('olsBox').style.display = 'block';
+    $('oA').textContent = ols.a.toFixed(3); $('oAse').textContent = ols.seA.toFixed(3); $('oAt').textContent = ols.tA.toFixed(2);
+    $('oB').textContent = ols.b.toFixed(3); $('oBse').textContent = ols.seB.toFixed(3); $('oBt').textContent = ols.tB.toFixed(2);
+    $('oBt1').textContent = ((ols.b - 1) / ols.seB).toFixed(2);
+    $('tA').textContent = data.trueA.toFixed(3); $('tB').textContent = data.trueB.toFixed(3);
+    $('oR2').textContent = ols.r2.toFixed(3);
+    $('oS').textContent = ols.s.toFixed(3);
+    $('oSEb').textContent = ols.seB.toFixed(4);
+    redraw();
+  }
+
+  ['nObs', 'sNoise'].forEach(id => $(id).addEventListener('input', function () {
+    $('nV').textContent = $('nObs').value;
+    $('sV').textContent = parseFloat($('sNoise').value).toFixed(2);
+    generate();
+  }));
+  ['aHat', 'bHat'].forEach(id => $(id).addEventListener('input', function () {
+    $('aV').textContent = parseFloat($('aHat').value).toFixed(2);
+    $('bV').textContent = parseFloat($('bHat').value).toFixed(2);
+    redraw();
+  }));
+  $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
+  $('reveal').addEventListener('click', reveal);
+  window.addEventListener('resize', redraw);
+  generate();
+})();
+</script>
+
+<script>
+/* ===== SECTION B: Game — Guess the Beta ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const KEY = 'mang2074_w02_best';
+  const ROUNDS = 10, N = 80, MAX = ROUNDS * 20 + (ROUNDS - 1) * 5;
+  let round = 0, score = 0, streak = 0, cur = null, locked = true;
+
+  function bestLoad() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function bestSave(s) {
+    try {
+      const b = parseInt(localStorage.getItem(KEY) || '-1', 10);
+      if (s > b) localStorage.setItem(KEY, String(s));
+    } catch (e) { }
+  }
+  function showBest() { const b = bestLoad(); $('gBest').textContent = (b === null ? '–' : b); }
+
+  function newRound() {
+    round++;
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const trueB = 0.2 + rng() * 2.3;
+    const sig = 1 + rng() * 5;
+    const x = new Array(N), y = new Array(N);
+    for (let i = 0; i < N; i++) {
+      x[i] = 0.5 + 2.5 * M.gauss(rng);
+      y[i] = 0.1 + trueB * x[i] + sig * M.gauss(rng);
+    }
+    cur = { x: x, y: y, trueB: trueB, sig: sig, ols: M.ols2(x, y) };
+    drawRound();
+    $('gRound').textContent = round;
+    $('gFb').className = 'feedback'; $('gFb').textContent = '';
+    locked = false;
+  }
+
+  function drawRound() {
+    if (!cur) return;
+    const c = M.fitCanvas($('gC'));
+    const xlo = Math.min.apply(null, cur.x), xhi = Math.max.apply(null, cur.x);
+    const ylo = Math.min.apply(null, cur.y), yhi = Math.max.apply(null, cur.y);
+    const xm = (xhi - xlo) * 0.06, ym = (yhi - ylo) * 0.1;
+    const f = M.frame(c.ctx, c.W, c.H, xlo - xm, xhi + xm, ylo - ym, yhi + ym,
+      { title: 'How steep is this cloud?  x = market excess ret (%), y = stock excess ret (%)' });
+    M.drawDots(c.ctx, f, cur.x, cur.y, '#38bdf8', 3);
+    if (locked && round > 0) { // after answering, show truth vs guess
+      M.drawLine(c.ctx, f, [xlo, xhi], [0.1 + cur.trueB * xlo, 0.1 + cur.trueB * xhi], '#34d399', 2);
+      const g = parseFloat($('gGuess').value);
+      M.drawLine(c.ctx, f, [xlo, xhi], [0.1 + g * xlo, 0.1 + g * xhi], '#fbbf24', 2);
+    }
+  }
+
+  function submit() {
+    if (locked || !cur) return;
+    locked = true;
+    const g = parseFloat($('gGuess').value);
+    const t = cur.trueB;
+    const relErr = Math.abs(g - t) / t;
+    let pts = Math.max(0, Math.round(20 - 40 * relErr));
+    const bull = relErr < 0.10;
+    if (bull) { streak++; if (streak >= 2) pts += 5; } else { streak = 0; }
+    score += pts;
+    $('gScore').textContent = score; $('gStreak').textContent = streak;
+    drawRound();
+    const fb = $('gFb');
+    fb.className = 'feedback ' + (pts >= 10 ? 'good' : 'bad');
+    fb.innerHTML = (bull ? '🎯 Bullseye! ' : '') + '+' + pts + ' points. True β = <b>' + t.toFixed(2) +
+      '</b>, your guess = ' + g.toFixed(2) + ', OLS estimate from these ' + N + ' points = ' + cur.ols.b.toFixed(2) +
+      ' (SE ' + cur.ols.seB.toFixed(2) + ').<br>Reading the slope: when the market moves +1%, this stock moves about +' + t.toFixed(2) +
+      '% on average — rise over run across the cloud. Noisy rounds (σ = ' + cur.sig.toFixed(1) + ' here) make even OLS miss the truth a bit.';
+    if (round >= ROUNDS) { finish(); } else { setTimeout(newRound, 3200); }
+  }
+
+  function grade(s) {
+    const p = 100 * s / MAX;
+    if (p >= 70) return '🥇 1st — First Class. You ARE the efficient frontier.';
+    if (p >= 60) return '🥈 2:1 — Upper Second. Your eyeball beta is fund-manager grade.';
+    if (p >= 50) return '🥉 2:2 — Lower Second. A respectable “Desmond”.';
+    if (p >= 40) return '3rd — Third Class. Beta? More like beta-version.';
+    return 'Fail — you hedged a long with another long. Resit recommended.';
+  }
+
+  function finish() {
+    bestSave(score); showBest();
+    setTimeout(function () {
+      const fb = $('gFb');
+      fb.className = 'feedback info';
+      fb.innerHTML = '🏁 <b>Game over!</b> Final score <b>' + score + '</b>/' + MAX + '. Grade: ' + grade(score);
+      $('gCtl').style.display = 'none';
+      $('gStart').disabled = false;
+    }, 3200);
+  }
+
+  $('gStart').addEventListener('click', function () {
+    round = 0; score = 0; streak = 0;
+    $('gScore').textContent = 0; $('gStreak').textContent = 0;
+    $('gCtl').style.display = 'block';
+    $('gStart').disabled = true;
+    newRound();
+  });
+  $('gGuess').addEventListener('input', function () {
+    $('gGuessV').textContent = parseFloat($('gGuess').value).toFixed(2);
+  });
+  $('gSubmit').addEventListener('click', submit);
+  window.addEventListener('resize', drawRound);
+  showBest();
+})();
+</script>
+
+<script>
+/* ===== SECTION C: Code challenges ===== */
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const QS = [
+    {
+      prompt: 'Estimate the CAPM regression by OLS — and don’t forget the intercept!',
+      py: { code: "import statsmodels.api as sm\nX = ___\nmodel = sm.OLS(erstock, X).fit()", correct: 'sm.add_constant(ermarket)', opts: ['sm.add_constant(ermarket)', 'ermarket', 'sm.constant(ermarket)', 'sm.OLS.add_intercept(ermarket)'], expl: 'statsmodels does NOT add an intercept automatically — sm.add_constant() does it.' },
+      r: { code: 'model <- ___\nsummary(model)', correct: 'lm(erstock ~ ermarket)', opts: ['lm(erstock ~ ermarket)', 'lm(ermarket ~ erstock)', 'lm(erstock ~ ermarket - 1)', 'ols(erstock, ermarket)'], expl: 'lm(y ~ x) adds the intercept by default; "~ x - 1" would wrongly drop it, and swapping y and x estimates 1/β-ish nonsense.' }
+    },
+    {
+      prompt: 'Build excess returns: the 3-month T-bill yield USTB3M is an ANNUAL % rate, data are MONTHLY.',
+      py: { code: "ersandp = data['sandp_ret'] - data['USTB3M'] / ___", correct: '12', opts: ['12', '252', '100', '3'], expl: 'Annual % → monthly %: divide by 12. (252 is for trading DAYS.)' },
+      r: { code: 'ersandp <- sandp_ret - USTB3M / ___', correct: '12', opts: ['12', '252', '100', '3'], expl: 'Annual % rate divided by 12 gives the monthly risk-free rate in %.' }
+    },
+    {
+      prompt: 'Pull the estimated beta out of the fitted model.',
+      py: { code: "beta_hat = model.___['ermarket']", correct: 'params', opts: ['params', 'coef_', 'betas', 'estimates'], expl: 'statsmodels stores estimates in .params (coef_ is the scikit-learn idiom).' },
+      r: { code: 'beta_hat <- ___(model)["ermarket"]', correct: 'coef', opts: ['coef', 'params', 'beta', 'est'], expl: 'coef(model) extracts the coefficient vector from an lm object.' }
+    },
+    {
+      prompt: 'Test H₀: β = 1 — does the stock move one-for-one with the market?',
+      py: { code: "print(model.t_test('___'))", correct: 'ermarket = 1', opts: ['ermarket = 1', 'ermarket == 1', 'beta = 1', 'ermarket: 1'], expl: 't_test takes an equation string with a single "=" naming the regressor: "ermarket = 1".' },
+      r: { code: 'library(car)\nlinearHypothesis(model, "___")', correct: 'ermarket = 1', opts: ['ermarket = 1', 'ermarket == 1', 'beta == 1', 'H0: ermarket = 1'], expl: 'linearHypothesis uses the variable’s name with a single "=": "ermarket = 1".' }
+    },
+    {
+      prompt: 'Retrieve R² — the share of the stock’s excess-return variance explained by the market.',
+      py: { code: 'r2 = model.___', correct: 'rsquared', opts: ['rsquared', 'rsq', 'r2', 'score'], expl: '.rsquared on the fitted results; .rsquared_adj gives the adjusted version.' },
+      r: { code: 'r2 <- summary(model)$___', correct: 'r.squared', opts: ['r.squared', 'rsquared', 'r2', 'R.squared'], expl: 'It lives in summary(model)$r.squared (note the dot).' }
+    },
+    {
+      prompt: 'Predict the stock’s excess return when the market excess return is 2%.',
+      py: { code: 'model.___([[1, 2.0]])   # columns: [const, ermarket]', correct: 'predict', opts: ['predict', 'forecast', 'fitted', 'eval'], expl: '.predict(exog) with the constant included — the design matrix must match the fitted X.' },
+      r: { code: 'predict(model, ___ = data.frame(ermarket = 2))', correct: 'newdata', opts: ['newdata', 'data', 'new', 'x'], expl: 'predict.lm takes new observations through the "newdata" argument.' }
+    }
+  ];
+  let lang = 'py';
+  const solved = new Array(QS.length).fill(false);
+
+  function shuffled(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function render() {
+    const wrap = $('cc-list');
+    wrap.innerHTML = '';
+    QS.forEach(function (q, i) {
+      const v = q[lang];
+      const card = document.createElement('div'); card.className = 'cc-card';
+      const p = document.createElement('div'); p.className = 'cc-prompt';
+      p.textContent = (i + 1) + '. ' + q.prompt + (solved[i] ? '  ✅' : '');
+      card.appendChild(p);
+      const pre = document.createElement('pre'); pre.className = 'code';
+      const parts = v.code.split('___');
+      pre.appendChild(document.createTextNode(parts[0]));
+      const sel = document.createElement('select');
+      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '▾ choose…'; sel.appendChild(ph);
+      shuffled(v.opts).forEach(function (o) {
+        const op = document.createElement('option'); op.value = o; op.textContent = o; sel.appendChild(op);
+      });
+      pre.appendChild(sel);
+      if (parts[1]) pre.appendChild(document.createTextNode(parts[1]));
+      card.appendChild(pre);
+      const row = document.createElement('div'); row.className = 'cc-row';
+      const btn = document.createElement('button'); btn.textContent = 'Check'; btn.className = 'alt';
+      const res = document.createElement('span'); res.className = 'cc-res';
+      btn.addEventListener('click', function () {
+        if (!sel.value) { res.className = 'cc-res no'; res.textContent = 'Pick an option first.'; return; }
+        if (sel.value === v.correct) {
+          res.className = 'cc-res ok'; res.textContent = '✓ ' + v.expl;
+          if (!solved[i]) { solved[i] = true; $('ccScore').textContent = solved.filter(Boolean).length; }
+          p.textContent = (i + 1) + '. ' + q.prompt + '  ✅';
+        } else {
+          res.className = 'cc-res no'; res.textContent = '✗ Not that one — ' + v.expl;
+        }
+      });
+      row.appendChild(btn); row.appendChild(res);
+      card.appendChild(row);
+      wrap.appendChild(card);
+    });
+  }
+  $('ccPy').addEventListener('click', function () { lang = 'py'; $('ccPy').className = 'on'; $('ccR').className = 'alt'; render(); });
+  $('ccR').addEventListener('click', function () { lang = 'r'; $('ccR').className = 'on'; $('ccPy').className = 'alt'; render(); });
+  render();
+})();
+</script>
+</body>
+</html>

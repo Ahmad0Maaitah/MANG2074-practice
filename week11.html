@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MANG2074 · Week 11 — Research Methods Lab</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--panel2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#fbbf24;--good:#34d399;--bad:#f87171;--font:'Segoe UI',system-ui,sans-serif;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.6;}
+header{position:sticky;top:0;z-index:50;background:rgba(15,23,42,.93);backdrop-filter:blur(6px);border-bottom:1px solid #334155;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+header .brand{font-weight:600;color:var(--accent);font-size:.95rem;}
+header .wk{color:var(--muted);font-size:.9rem;}
+header a{color:var(--accent2);text-decoration:none;font-size:.9rem;}
+header a:hover{text-decoration:underline;}
+main{max-width:1000px;margin:0 auto;padding:18px 16px 40px;}
+.intro{background:var(--panel);border-radius:14px;padding:20px;margin:14px 0;}
+section{background:var(--panel);border-radius:14px;padding:20px;margin:18px 0;}
+h1{font-size:1.45rem;margin:6px 0 0;}
+h2{font-size:1.3rem;margin:0 0 10px;}
+h3{font-size:1.05rem;margin:14px 0 6px;color:var(--accent);}
+button{background:var(--accent);color:#0b1220;border:0;border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer;font-family:var(--font);font-size:.95rem;}
+button:hover{filter:brightness(1.1);}
+button.alt{background:var(--panel2);color:var(--text);border:1px solid #334155;}
+button.choice{display:block;width:100%;text-align:left;margin:6px 0;background:var(--panel2);color:var(--text);border:1px solid #334155;}
+button.choice:hover{border-color:var(--accent);}
+button:disabled{opacity:.45;cursor:default;}
+canvas{width:100%;display:block;background:var(--panel);border:1px solid #334155;border-radius:8px;margin:10px 0;}
+.notice{background:var(--panel2);border-left:4px solid var(--accent2);border-radius:8px;padding:12px 14px;font-size:.93rem;margin-top:10px;}
+.gamebar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0;}
+.pill{background:var(--panel2);border-radius:999px;padding:4px 14px;font-size:.9rem;}
+.chip{background:var(--panel2);border:1px solid #334155;border-radius:999px;padding:4px 14px;font-size:.85rem;color:var(--muted);}
+.chip.done{border-color:var(--good);color:var(--good);}
+.feedback{border-radius:8px;padding:12px 14px;margin-top:10px;font-size:.95rem;display:none;}
+.feedback.good{background:rgba(52,211,153,.12);border:1px solid var(--good);display:block;}
+.feedback.bad{background:rgba(248,113,113,.12);border:1px solid var(--bad);display:block;}
+.feedback.info{background:var(--panel2);border:1px solid #334155;display:block;}
+.feedback a{color:var(--accent);}
+.step{border:1px solid #334155;border-radius:10px;padding:14px;margin:12px 0;background:rgba(39,52,73,.45);}
+.step h3{margin-top:0;}
+pre.code{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px;overflow-x:auto;font-size:.88rem;line-height:1.6;color:#dbeafe;font-family:Consolas,Menlo,monospace;white-space:pre-wrap;}
+pre.code select{font-family:inherit;font-size:inherit;background:var(--panel2);color:var(--accent2);border:1px solid var(--accent);border-radius:6px;padding:1px 4px;max-width:100%;}
+.q{border:1px solid #334155;border-radius:10px;padding:14px;margin:12px 0;background:var(--panel2);}
+.q .why{font-size:.88rem;margin-top:8px;display:none;}
+.timerwrap{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;margin:8px 0;}
+.timerbar{height:100%;width:100%;background:linear-gradient(90deg,var(--good),var(--accent2),var(--bad));transition:width .1s linear;}
+footer{border-top:1px solid #334155;color:var(--muted);font-size:.85rem;text-align:center;padding:18px 12px 30px;}
+footer a{color:var(--accent);text-decoration:none;margin:0 8px;}
+footer a:hover{text-decoration:underline;}
+.legend{font-size:.82rem;color:var(--muted);margin:2px 0 6px;}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="brand">MANG2074 · Financial Econometrics 1</div><div class="wk">Week 11 — Research Methods Lab</div></div>
+  <a href="index.html">← All topics</a>
+</header>
+<main>
+<h1>🔬 Research Methods Lab — Research Sprint</h1>
+<div class="intro">
+The final week puts the whole module together: a real piece of empirical research is a <b>pipeline</b> — question → data → model class → diagnostics → interpretation. Below you can assemble a mini "paper" step by step for three classic research questions, then play <b>Research Sprint</b>: ten rapid-fire situations every empirical researcher meets, where you must pick the econometrically correct next move.
+</div>
+
+<section id="simsec">
+<h2>🔬 Simulation — mini research pipeline</h2>
+<p>Pick a research question. Then work through the four steps; the tracker shows your paper being assembled. Wrong turns are allowed — that is what research feels like.</p>
+<div class="gamebar" id="presets">
+  <button class="alt" data-p="fdi">🌍 Does FDI raise growth?</button>
+  <button class="alt" data-p="gbp">💷 Is GBP volatility persistent?</button>
+  <button class="alt" data-p="hp">🏠 Do house prices mean-revert?</button>
+</div>
+<div class="gamebar" id="tracker" style="display:none">
+  <span class="chip" id="ch0">❓ Question</span>
+  <span class="chip" id="ch1">📊 Data</span>
+  <span class="chip" id="ch2">🧰 Method</span>
+  <span class="chip" id="ch3">🩺 Diagnostics</span>
+  <span class="chip" id="ch4">🧾 Findings</span>
+</div>
+<div id="steps"></div>
+</section>
+
+<section id="gamesec">
+<h2>🎮 Game: Research Sprint</h2>
+<p>Ten rapid rounds. Each shows a situation from the trenches of empirical work — choose the econometrically correct next step. <b>+10</b> per correct answer, <b>+5</b> streak bonus from 3 in a row. The bar is a 15-second <i>soft</i> timer: pure adrenaline, no penalty.</p>
+<div class="gamebar">
+  <button id="g_start">▶ Start sprint</button>
+  <span class="pill">Round: <b id="g_round">–</b>/10</span>
+  <span class="pill">Score: <b id="g_score">0</b></span>
+  <span class="pill">Streak: <b id="g_streak">0</b>🔥</span>
+  <span class="pill" id="g_best">Best: –</span>
+</div>
+<div class="timerwrap" id="g_timerwrap" style="display:none"><div class="timerbar" id="g_timer"></div></div>
+<div id="g_q" style="display:none">
+  <h3 id="g_scen"></h3>
+  <div id="g_opts"></div>
+</div>
+<div id="g_msg" class="feedback info">Press <b>Start sprint</b> when your coffee is ready.</div>
+<div id="g_fb" class="feedback"></div>
+<div class="gamebar"><button id="g_next" style="display:none">Next round →</button></div>
+</section>
+
+<section id="codesec">
+<h2>⌨️ Code challenges — best of the module</h2>
+<p>One key line from each earlier topic. Fill the blank (toggle Python/R). One attempt per question.</p>
+<div id="quiz"></div>
+</section>
+</main>
+<footer>
+MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah<br>
+<a href="week10.html">← Week 10: Panel Data</a> · <a href="index.html">Back to all topics →</a>
+</footer>
+
+<script>
+'use strict';
+window.MANG = (function(){
+  function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
+  function gauss(rng){var u=0,v=0;while(u===0)u=rng();v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  function setup(cv){var dpr=window.devicePixelRatio||1;var W=cv.clientWidth||640;var H=parseInt(cv.getAttribute('data-h')||'260',10);cv.style.height=H+'px';cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);var ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#1e293b';ctx.fillRect(0,0,W,H);return {ctx:ctx,W:W,H:H};}
+  function fmt(v){var a=Math.abs(v);if(a>=100)return v.toFixed(0);if(a>=10)return v.toFixed(1);if(a>=1)return v.toFixed(1);if(v===0)return '0';return v.toFixed(2);}
+  function axes(ctx,W,H,xmin,xmax,ymin,ymax,xlab,ylab){
+    var pad={l:48,r:14,t:14,b:32};
+    function X(v){return pad.l+(v-xmin)/(xmax-xmin)*(W-pad.l-pad.r);}
+    function Y(v){return H-pad.b-(v-ymin)/(ymax-ymin)*(H-pad.t-pad.b);}
+    ctx.font='11px Segoe UI, sans-serif';ctx.lineWidth=1;
+    var i,v,x,y;
+    for(i=0;i<=4;i++){v=ymin+(ymax-ymin)*i/4;y=Y(v);ctx.strokeStyle='#334155';ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.fillStyle='#94a3b8';ctx.textAlign='right';ctx.fillText(fmt(v),pad.l-6,y+4);}
+    for(i=0;i<=5;i++){v=xmin+(xmax-xmin)*i/5;x=X(v);ctx.strokeStyle='#334155';ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,H-pad.b);ctx.stroke();ctx.fillStyle='#94a3b8';ctx.textAlign='center';ctx.fillText(fmt(v),x,H-pad.b+15);}
+    if(xlab){ctx.fillStyle='#94a3b8';ctx.textAlign='center';ctx.fillText(xlab,(pad.l+W-pad.r)/2,H-4);}
+    if(ylab){ctx.save();ctx.translate(12,(pad.t+H-pad.b)/2);ctx.rotate(-Math.PI/2);ctx.fillStyle='#94a3b8';ctx.textAlign='center';ctx.fillText(ylab,0,0);ctx.restore();}
+    return {X:X,Y:Y,pad:pad};
+  }
+  function line(ctx,M,xs,ys,color,w){ctx.strokeStyle=color;ctx.lineWidth=w||2;ctx.beginPath();for(var i=0;i<xs.length;i++){var x=M.X(xs[i]),y=M.Y(ys[i]);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();}
+  function grade(score,max){var p=100*score/max;
+    if(p>=70)return ['1st','First Class — the external examiner weeps with joy. 🏆'];
+    if(p>=60)return ['2:1','Upper Second — solidly employable. 👍'];
+    if(p>=50)return ['2:2','Lower Second — respectable, but replay for glory. 📚'];
+    if(p>=40)return ['3rd','Third — you turned up, and it shows. ☕'];
+    return ['Fail','Fail — see you at the resit board. Replay! 😅'];}
+  function saveBest(key,score){var prev=parseInt(localStorage.getItem(key)||'-1',10);if(score>prev){try{localStorage.setItem(key,String(score));}catch(e){}return true;}return false;}
+  function getBest(key){var v=localStorage.getItem(key);return v===null?null:parseInt(v,10);}
+  function quiz(rootId,QS){
+    var root=document.getElementById(rootId);var lang='py';
+    var done=QS.map(function(){return {answered:false,right:false};});
+    var bar=document.createElement('div');bar.className='gamebar';
+    var bp=document.createElement('button');bp.textContent='Python';
+    var br=document.createElement('button');br.textContent='R';br.className='alt';
+    var sc=document.createElement('span');sc.className='pill';
+    bar.appendChild(bp);bar.appendChild(br);bar.appendChild(sc);root.appendChild(bar);
+    var cards=QS.map(function(q,i){
+      var d=document.createElement('div');d.className='q';
+      var pr=document.createElement('div');pr.innerHTML='<b>Q'+(i+1)+'.</b> '+q.q;d.appendChild(pr);
+      var pre=document.createElement('pre');pre.className='code';
+      var s1=document.createElement('span');var sel=document.createElement('select');var s2=document.createElement('span');
+      pre.appendChild(s1);pre.appendChild(sel);pre.appendChild(s2);d.appendChild(pre);
+      var btn=document.createElement('button');btn.textContent='Check';
+      var why=document.createElement('div');why.className='why';
+      d.appendChild(btn);d.appendChild(why);
+      btn.addEventListener('click',function(){
+        if(done[i].answered)return;
+        var v=(lang==='py')?q.py:q.r;
+        var k=parseInt(sel.value,10);
+        if(isNaN(k)||k<0){why.style.display='block';why.style.color='var(--accent2)';why.textContent='Pick an option first.';return;}
+        done[i].answered=true;done[i].right=(k===v.ans);
+        sel.disabled=true;btn.disabled=true;
+        why.style.display='block';
+        why.style.color=done[i].right?'var(--good)':'var(--bad)';
+        why.textContent=(done[i].right?'✓ Correct. ':'✗ Not quite — answer: '+v.opts[v.ans]+'. ')+q.why;
+        upd();
+      });
+      return {div:d,s1:s1,s2:s2,sel:sel};
+    });
+    cards.forEach(function(c){root.appendChild(c.div);});
+    function fill(){cards.forEach(function(c,i){
+      var v=(lang==='py')?QS[i].py:QS[i].r;
+      c.s1.textContent=v.code[0];c.s2.textContent=v.code[1];
+      c.sel.innerHTML='';
+      var ph=document.createElement('option');ph.value='-1';ph.textContent='— ? —';c.sel.appendChild(ph);
+      v.opts.forEach(function(o,k){var op=document.createElement('option');op.value=String(k);op.textContent=o;c.sel.appendChild(op);});
+      if(done[i].answered){c.sel.value=String(v.ans);c.sel.disabled=true;}else{c.sel.disabled=false;c.sel.value='-1';}
+    });}
+    function upd(){var n=done.filter(function(d){return d.right;}).length;sc.textContent='Score: '+n+'/'+QS.length;}
+    bp.addEventListener('click',function(){lang='py';bp.className='';br.className='alt';fill();});
+    br.addEventListener('click',function(){lang='r';br.className='';bp.className='alt';fill();});
+    fill();upd();
+  }
+  return {mulberry32:mulberry32,gauss:gauss,setup:setup,axes:axes,line:line,fmt:fmt,grade:grade,saveBest:saveBest,getBest:getBest,quiz:quiz};
+})();
+
+/* ---------- SECTION A: mini research pipeline ---------- */
+(function(){
+  var M=window.MANG;
+  var COLS=['#38bdf8','#fbbf24','#34d399','#f87171','#a78bfa'];
+  function drawFDI(cv){
+    var rng=M.mulberry32(424242);
+    var pts=[],c,t;
+    for(c=0;c<5;c++){
+      var alpha=-2+c*1.0;          // country effect
+      var mfdi=1.2+c*1.3;          // FDI mean correlated with effect
+      for(t=0;t<12;t++){
+        var x=mfdi+1.6*(rng()-0.5)*2;
+        if(x<0)x=0.1;
+        var y=1.5+alpha+0.3*x+0.6*M.gauss(rng);
+        pts.push([x,y,c]);
+      }
+    }
+    var xs=pts.map(function(p){return p[0];}),ys=pts.map(function(p){return p[1];});
+    var cset=M.setup(cv),ctx=cset.ctx;
+    var A=M.axes(ctx,cset.W,cset.H,0,Math.max.apply(null,xs)+0.5,Math.min.apply(null,ys)-0.5,Math.max.apply(null,ys)+0.5,'FDI inflows (% of GDP)','GDP growth (%)');
+    pts.forEach(function(p){ctx.fillStyle=COLS[p[2]];ctx.beginPath();ctx.arc(A.X(p[0]),A.Y(p[1]),3,0,2*Math.PI);ctx.fill();});
+    ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='left';
+    ctx.fillText('each colour = one country (5 of 30 shown), 12 of 20 years',A.pad.l+6,A.pad.t+12);
+  }
+  function drawGBP(cv){
+    var rng=M.mulberry32(80808);
+    var n=300,r=[],s2=0.1;
+    for(var t=0;t<n;t++){
+      var e=Math.sqrt(s2)*M.gauss(rng);
+      r.push(e);
+      s2=0.01+0.09*e*e+0.90*s2;
+    }
+    var cset=M.setup(cv),ctx=cset.ctx;
+    var lo=Math.min.apply(null,r),hi=Math.max.apply(null,r);
+    var A=M.axes(ctx,cset.W,cset.H,0,n-1,lo-0.2,hi+0.2,'trading day','GBP/USD return (%)');
+    var xs=[];for(var u=0;u<n;u++)xs.push(u);
+    M.line(ctx,A,xs,r,'#38bdf8',1.4);
+    ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='left';
+    ctx.fillText('calm spells and wild spells cluster together — volatility clustering',A.pad.l+6,A.pad.t+12);
+  }
+  function drawHP(cv){
+    var rng=M.mulberry32(151515);
+    var n=240,y=[],v=0;
+    for(var t=0;t<n;t++){v=0.92*v+1.0*M.gauss(rng);y.push(v);}
+    var cset=M.setup(cv),ctx=cset.ctx;
+    var lo=Math.min.apply(null,y),hi=Math.max.apply(null,y);
+    var A=M.axes(ctx,cset.W,cset.H,0,n-1,lo-1,hi+1,'month','real house prices: % deviation from trend');
+    ctx.strokeStyle='#475569';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(A.pad.l,A.Y(0));ctx.lineTo(cset.W-A.pad.r,A.Y(0));ctx.stroke();ctx.setLineDash([]);
+    var xs=[];for(var u=0;u<n;u++)xs.push(u);
+    M.line(ctx,A,xs,y,'#38bdf8',1.5);
+    ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='left';
+    ctx.fillText('long swings away from trend… that keep coming back',A.pad.l+6,A.pad.t+12);
+  }
+  var P={
+    fdi:{
+      q:'Does foreign direct investment raise GDP growth?',
+      dataTitle:'The data: a panel — 30 countries × 20 years.',
+      dataNote:'Each colour is a country. Two things jump out: countries differ in <b>level</b> (institutions, geography — things that do not change), and the high-FDI countries are also the high-growth ones. Is that FDI working, or just good countries doing both?',
+      draw:drawFDI,
+      models:[
+        {t:'Pooled OLS on all 600 observations',ok:false,why:'Tempting — but the country-specific factors (institutions!) sit in the error and are correlated with FDI, so pooled OLS is biased. We met exactly this in Week 10.'},
+        {t:'Fixed-effects panel regression',ok:true,why:'Yes. The within estimator compares each country with itself over time, wiping out fixed country traits — the obvious confounders here.'},
+        {t:'GARCH(1,1) on growth',ok:false,why:'GARCH models the time-varying <i>volatility</i> of a single series. Our question is about the conditional <i>mean</i> of growth across many countries.'},
+        {t:'ARMA(2,1) on average world growth',ok:false,why:'Averaging across countries throws away the whole cross-country dimension — the very variation that identifies the FDI effect.'}
+      ],
+      diagBtn:'⚙ Run the Hausman test',
+      diagResult:'Hausman χ²(3) = 14.2, <b>p = 0.003</b> → reject H₀ that the country effect is uncorrelated with FDI. Random effects would be inconsistent: stay with <b>fixed effects</b>, and cluster the standard errors by country.',
+      coef:'Headline result (FE, clustered SEs): β̂(FDI/GDP) = <b>0.18</b>, SE = 0.05, t = 3.6.',
+      interp:{opts:[
+        'Within a country, a 1 percentage-point rise in FDI/GDP is associated with ≈0.18pp higher annual growth, holding fixed country characteristics constant (significant at 1%).',
+        'FDI raises growth by 18% per year in every country.',
+        'Countries with more FDI grow faster, which proves FDI causes growth across countries.',
+        'The effect is insignificant because 0.18 is less than 1.96.'],
+        ans:0,
+        why:'It is a within-country, percentage-point statement. Option 2 confuses 0.18pp with 18%; option 3 is the between-country claim that FE deliberately does NOT make; option 4 compares the coefficient (not the t-stat = 3.6) with 1.96.'}
+    },
+    gbp:{
+      q:'Is GBP/USD volatility persistent?',
+      dataTitle:'The data: ~300 daily GBP/USD returns.',
+      dataNote:'The mean looks like zero and returns look unpredictable — but the <b>size</b> of the moves is clearly not constant: quiet weeks, then turbulent weeks. The question is about the variance, not the mean.',
+      draw:drawGBP,
+      models:[
+        {t:'OLS of returns on a time trend',ok:false,why:'The conditional mean is roughly zero and flat — a trend line through returns says nothing about how volatility evolves.'},
+        {t:'ARMA(1,1) for the returns',ok:false,why:'ARMA models the conditional mean. Returns themselves are nearly uncorrelated; the action is in the squared returns — the variance.'},
+        {t:'GARCH(1,1)',ok:true,why:'Yes. GARCH lets today\'s variance depend on yesterday\'s squared shock (α) and yesterday\'s variance (β): σ²ₜ = ω + αε²ₜ₋₁ + βσ²ₜ₋₁. Persistence is α+β.'},
+        {t:'Fixed-effects panel regression',ok:false,why:'There is only one exchange rate series here — no cross-section, so no panel.'}
+      ],
+      diagBtn:'⚙ Run the ARCH-LM test',
+      diagResult:'ARCH-LM(12) = 87.4, <b>p &lt; 0.001</b> → strong ARCH effects, so a GARCH model is justified. Estimates: ω̂ = 0.01, α̂ = 0.07, β̂ = 0.90.',
+      coef:'Headline result: persistence α̂ + β̂ = <b>0.97</b>.',
+      interp:{opts:[
+        'Volatility is highly persistent but stationary: a variance shock decays at rate 0.97 per day (half-life ≈ ln 0.5 / ln 0.97 ≈ 23 trading days).',
+        'Returns are 97% predictable from yesterday\'s returns.',
+        'The variance process is explosive, so the model is invalid.',
+        'Volatility is constant because α+β is close to 1.'],
+        ans:0,
+        why:'α+β = 0.97 < 1: covariance-stationary but very slow-decaying — shocks to volatility linger for weeks. It says nothing about predicting the returns themselves (option 2), it is below 1 so not explosive (option 3), and high persistence is the opposite of constant volatility (option 4).'}
+    },
+    hp:{
+      q:'Do house prices mean-revert?',
+      dataTitle:'The data: 240 months of real house prices, as % deviation from trend.',
+      dataNote:'Prices wander far from trend — sometimes for years — but they keep coming back to the dashed line. "Mean reversion" is a statement about <b>stationarity</b> of these deviations.',
+      draw:drawHP,
+      models:[
+        {t:'An AR / ARMA model for the deviations',ok:true,why:'Yes. Mean reversion = stationary autoregressive dynamics: in y_t = φy_{t-1} + ε_t, |φ| < 1 means deviations decay back to zero. First confirm stationarity, then read φ.'},
+        {t:'GARCH(1,1)',ok:false,why:'GARCH is about time-varying volatility. The question — do deviations die out? — is about the conditional mean dynamics.'},
+        {t:'Fixed-effects panel regression',ok:false,why:'We have one national series, not a cross-section of entities. (A regional panel would be a lovely extension, though.)'},
+        {t:'No model — assume a random walk',ok:false,why:'A random walk never mean-reverts, so this assumes the answer is "no" before looking. Test it instead.'}
+      ],
+      diagBtn:'⚙ Run the ADF unit-root test',
+      diagResult:'ADF on the deviations: t = −3.41, <b>p = 0.012</b> → reject the unit root at 5%. The deviations are stationary — there <i>is</i> mean reversion to test further.',
+      coef:'Headline result: AR(1) on deviations: φ̂ = <b>0.92</b>, SE = 0.03.',
+      interp:{opts:[
+        'Shocks fade slowly: about 8% of any deviation from trend is corrected each month — a half-life of ln 0.5 / ln 0.92 ≈ 8 months. Mean reversion, but gradual.',
+        'φ̂ = 0.92 is close to 1, which proves house prices are a random walk.',
+        'House prices correct 92% of any deviation within one month.',
+        'φ̂ > 0 means house prices trend upward forever.'],
+        ans:0,
+        why:'With φ = 0.92, each month a deviation shrinks to 92% of itself — i.e. 8% is corrected, half-life ≈ 8 months. The ADF test already rejected the random walk (option 2); option 3 reads φ backwards; option 4 confuses persistence of deviations with a price trend.'}
+    }
+  };
+  var stepsEl=document.getElementById('steps');
+  function chip(i,on){var c=document.getElementById('ch'+i);if(on)c.classList.add('done');else c.classList.remove('done');}
+  function build(key){
+    var p=P[key];
+    document.getElementById('tracker').style.display='flex';
+    for(var i=0;i<5;i++)chip(i,false);
+    chip(0,true);
+    stepsEl.innerHTML='';
+    // Step 1 — data
+    var s1=document.createElement('div');s1.className='step';
+    s1.innerHTML='<h3>Step 1 — Look at the data</h3><p><b>'+p.q+'</b><br>'+p.dataTitle+'</p>';
+    var cv=document.createElement('canvas');cv.setAttribute('data-h','250');s1.appendChild(cv);
+    var note1=document.createElement('p');note1.innerHTML=p.dataNote;s1.appendChild(note1);
+    var b1=document.createElement('button');b1.textContent='Looks interesting — continue →';s1.appendChild(b1);
+    stepsEl.appendChild(s1);
+    p.draw(cv);
+    // Step 2 — model class
+    var s2=document.createElement('div');s2.className='step';s2.style.display='none';
+    s2.innerHTML='<h3>Step 2 — Choose the model class</h3><p>Which tool from the module fits this question?</p>';
+    var fb2=document.createElement('div');fb2.className='feedback';
+    p.models.forEach(function(m){
+      var b=document.createElement('button');b.className='choice';b.textContent=m.t;
+      b.addEventListener('click',function(){
+        if(m.ok){
+          fb2.className='feedback good';fb2.innerHTML='✓ '+m.why;
+          chip(2,true);
+          setTimeout(function(){s3.style.display='block';s3.scrollIntoView({behavior:'smooth',block:'nearest'});},350);
+          s2.querySelectorAll('button.choice').forEach(function(x){x.disabled=true;});
+          b.style.borderColor='var(--good)';
+        } else {
+          fb2.className='feedback bad';fb2.innerHTML='✗ '+m.why+' <i>Try another.</i>';
+        }
+      });
+      s2.appendChild(b);
+    });
+    s2.appendChild(fb2);
+    stepsEl.appendChild(s2);
+    // Step 3 — diagnostic
+    var s3=document.createElement('div');s3.className='step';s3.style.display='none';
+    s3.innerHTML='<h3>Step 3 — Check the key diagnostic</h3><p>Before believing any estimate, run the test that justifies your specification.</p>';
+    var b3=document.createElement('button');b3.textContent=p.diagBtn;
+    var fb3=document.createElement('div');fb3.className='feedback';
+    var b3c=document.createElement('button');b3c.textContent='Noted — on to the results →';b3c.style.display='none';b3c.style.marginTop='10px';
+    b3.addEventListener('click',function(){
+      fb3.className='feedback info';fb3.innerHTML=p.diagResult;
+      b3.disabled=true;b3c.style.display='inline-block';chip(3,true);
+    });
+    s3.appendChild(b3);s3.appendChild(fb3);s3.appendChild(b3c);
+    stepsEl.appendChild(s3);
+    // Step 4 — interpret
+    var s4=document.createElement('div');s4.className='step';s4.style.display='none';
+    s4.innerHTML='<h3>Step 4 — Interpret the headline coefficient</h3><p>'+p.coef+'</p>';
+    var fb4=document.createElement('div');fb4.className='feedback';
+    var done=document.createElement('div');done.className='notice';done.style.display='none';
+    p.interp.opts.forEach(function(o,i){
+      var b=document.createElement('button');b.className='choice';b.textContent=o;
+      b.addEventListener('click',function(){
+        if(i===p.interp.ans){
+          fb4.className='feedback good';fb4.innerHTML='✓ Exactly. '+p.interp.why;
+          chip(4,true);
+          s4.querySelectorAll('button.choice').forEach(function(x){x.disabled=true;});
+          b.style.borderColor='var(--good)';
+          done.style.display='block';
+          done.innerHTML='📜 <b>Paper assembled!</b> Question → data → '+(key==='fdi'?'fixed-effects panel':'time-series model')+' → diagnostics → finding. That five-step skeleton <i>is</i> the structure of your coursework and of most empirical papers. Replay with another question above.';
+        } else {
+          fb4.className='feedback bad';fb4.innerHTML='✗ Not quite — read the numbers again. <i>Try another interpretation.</i>';
+        }
+      });
+      s4.appendChild(b);
+    });
+    s4.appendChild(fb4);s4.appendChild(done);
+    stepsEl.appendChild(s4);
+    // wiring
+    b1.addEventListener('click',function(){chip(1,true);s2.style.display='block';b1.disabled=true;s2.scrollIntoView({behavior:'smooth',block:'nearest'});});
+    b3c.addEventListener('click',function(){s4.style.display='block';b3c.disabled=true;s4.scrollIntoView({behavior:'smooth',block:'nearest'});});
+  }
+  document.querySelectorAll('#presets button').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('#presets button').forEach(function(x){x.className='alt';});
+      b.className='';
+      build(b.getAttribute('data-p'));
+    });
+  });
+})();
+
+/* ---------- SECTION B: Research Sprint ---------- */
+(function(){
+  var M=window.MANG;
+  var KEY='mang2074_w11_best',ROUNDS=10,SOFT=15000;
+  var el=function(id){return document.getElementById(id);};
+  var best=M.getBest(KEY);
+  if(best!==null)el('g_best').textContent='Best: '+best;
+  var POOL=[
+    {txt:'The ACF of your regression residuals spikes at lag 1, then dies out quickly.',
+     opts:['Add an MA(1)/AR(1) term — model the dynamics','Drop the constant from the regression','Collect more data; the spike will vanish','Ignore it — residual ACF is irrelevant for inference'],
+     ans:0,why:'A short, sharp residual ACF means leftover dynamics: fold them into the model (ARMA terms or a lagged dependent variable). It will not vanish with more data, and it biases your SEs if ignored.',wk:'Week 5 — ARMA',link:'week05.html'},
+    {txt:'Your Hausman test on a firm panel returns p = 0.002.',
+     opts:['Use fixed effects','Use random effects — they are efficient','Average the FE and RE estimates','Re-run until p > 0.05'],
+     ans:0,why:'Rejecting the Hausman null means the firm effect is correlated with the regressors: RE is inconsistent, FE is the safe verdict. (And no, p-hacking is not an estimator.)',wk:'Week 10 — Panel Data',link:'week10.html'},
+    {txt:'ADF test on the price LEVEL: p = 0.61.',
+     opts:['Cannot reject a unit root — difference the series (use returns)','The series is stationary — proceed with ARMA on levels','Add more lags until p < 0.05','Take the square of the series instead'],
+     ans:0,why:'p = 0.61 means you cannot reject a unit root: levels are (likely) non-stationary, so model the differences/returns. Regressions on non-stationary levels risk being spurious.',wk:'Week 5 — ARMA',link:'week05.html'},
+    {txt:'Your GARCH(1,1) output reports α̂ + β̂ = 1.01.',
+     opts:['Treat with caution: variance is non-stationary; re-check the data/spec (IGARCH territory)','Perfect — higher persistence means a better model','Double ω to compensate','Conclude volatility is constant'],
+     ans:0,why:'α+β ≥ 1 means variance shocks never die out — the unconditional variance does not exist and long-run forecasts are meaningless. Check for structural breaks or use an IGARCH/alternative spec, and do not quote a long-run variance.',wk:'Week 7 — ARCH & GARCH',link:'week07.html'},
+    {txt:'Your t-stat is 2.1 with robust (White) SEs but 4.8 with plain OLS SEs.',
+     opts:['Report the robust version — heteroskedasticity is inflating the naive precision','Report 4.8 — bigger is better','Average the two t-stats','Drop the variable; the results disagree'],
+     ans:0,why:'A large gap between plain and robust SEs is itself evidence of heteroskedasticity. The plain SEs are wrong; the robust t = 2.1 is the honest one.',wk:'Week 4 — OLS Diagnostics',link:'week04.html'},
+    {txt:'You regress one trending series on another: R² = 0.95, but DW ≈ 0.3.',
+     opts:['Suspect a spurious regression — test for unit roots / cointegration','Celebrate the high R² and publish','Add a cubic time trend and move on','Report bootstrap SEs and keep the levels regression'],
+     ans:0,why:'High R² + near-zero Durbin-Watson is the classic spurious-regression signature (Granger & Newbold). Check unit roots; only a cointegrating relationship justifies a levels regression.',wk:'Week 3 — Multiple Regression & F-tests',link:'week03.html'},
+    {txt:'Your daily returns have kurtosis = 9.2.',
+     opts:['Fat tails: do not rely on normality — consider a t-distribution / robust risk measures','Normal returns confirmed (kurtosis ≈ 3 is impossible in finance)','Delete the largest 1% of observations','Multiply returns by 100 to fix the kurtosis'],
+     ans:0,why:'Normal kurtosis is 3; 9.2 means far more extreme days than the normal predicts. Normal-based VaR will understate tail risk; use fat-tailed distributions or empirical quantiles. (Rescaling changes nothing — kurtosis is scale-free.)',wk:'Week 1 — Returns & Distributions',link:'week01.html'},
+    {txt:'Backtest: your 1% VaR was breached on 6% of days.',
+     opts:['The model understates risk — re-estimate (e.g. GARCH variance, fatter tails)','Fine — 6% is a small number','Report 6% as the new confidence level','Shorten the backtest window until breaches disappear'],
+     ans:0,why:'A correct 1% VaR should be breached on ≈1% of days. Six times too many exceptions means the model badly understates tail risk — typically constant-variance + normality. Kupiec would reject instantly.',wk:'Week 8 — Volatility & VaR',link:'week08.html'},
+    {txt:'Your Markov-switching model: smoothed P(regime 2) jumps to 0.95 in March 2020.',
+     opts:['Interpret: the market very likely switched to the high-volatility regime then','Conclude the model is broken — probabilities should stay near 0.5','Delete March 2020 as an outlier','Re-estimate with one regime to simplify'],
+     ans:0,why:'That is the model working: smoothed probabilities near 1 date the regime confidently — March 2020 (COVID crash) is exactly when markets jumped to the crisis regime.',wk:'Week 9 — Markov Switching',link:'week09.html'},
+    {txt:'Out of sample, your ARMA(3,2) forecasts have HIGHER RMSE than a naive "no-change" forecast.',
+     opts:['Prefer the simpler benchmark — the big model is overfitting in-sample','Add more AR lags until RMSE falls','Trust in-sample fit; out-of-sample tests are optional','Report only the in-sample R²'],
+     ans:0,why:'If a model cannot beat the naive forecast out of sample, its in-sample fit was memorising noise. Forecast evaluation is done out of sample — always.',wk:'Week 6 — Forecasting',link:'week06.html'},
+    {txt:'CAPM regression for your stock: β̂ = 1.4 (SE 0.1). You must hedge a £1m position with index futures.',
+     opts:['Short ≈ £1.4m of index futures — the hedge ratio is the regression beta','Short £1m exactly — match the position','Go long the index to diversify','Short £0.71m (= 1/1.4)'],
+     ans:0,why:'The OLS slope is the minimum-variance hedge ratio: the stock moves ≈1.4% per 1% market move, so you need 1.4× the exposure on the other side.',wk:'Week 2 — OLS, Hedge Ratios & the CAPM',link:'week02.html'},
+    {txt:'Returns show no autocorrelation, but SQUARED returns are strongly autocorrelated.',
+     opts:['Classic ARCH effects — model the conditional variance (GARCH)','Contradiction in the data — re-download it','Returns are predictable after all — build an AR trading rule','White noise confirmed; nothing to model'],
+     ans:0,why:'Uncorrelated returns + autocorrelated squares is the signature of volatility clustering: the mean is unpredictable but the variance is not. That is precisely what ARCH/GARCH models.',wk:'Week 7 — ARCH & GARCH',link:'week07.html'},
+    {txt:'Your supervisor wants the effect of ownership type (never changes) on firm growth, and you ran FE.',
+     opts:['FE cannot estimate time-invariant effects — switch to RE / correlated-random-effects','Report the FE coefficient on ownership (it must be in the output somewhere)','Interact ownership with itself','Drop ownership; it clearly does not matter'],
+     ans:0,why:'Demeaning wipes out anything constant within a firm — FE literally cannot identify it. Use RE or a Mundlak/CRE specification, and be honest about the assumption you are buying.',wk:'Week 10 — Panel Data',link:'week10.html'}
+  ];
+  var state=null,timerId=null,deadline=0;
+  function stopTimer(){if(timerId){clearInterval(timerId);timerId=null;}}
+  function startTimer(){
+    stopTimer();
+    deadline=Date.now()+SOFT;
+    el('g_timerwrap').style.display='block';
+    el('g_timer').style.width='100%';
+    timerId=setInterval(function(){
+      var left=Math.max(0,deadline-Date.now());
+      el('g_timer').style.width=(100*left/SOFT)+'%';
+      if(left<=0){
+        stopTimer();
+        el('g_msg').className='feedback info';
+        el('g_msg').innerHTML='⏱ Soft timer elapsed — no penalty, but referees are tapping their watches…';
+      }
+    },100);
+  }
+  function startGame(){
+    var rng=M.mulberry32((Date.now()&0xffffff)>>>0);
+    var idx=POOL.map(function(_,i){return i;});
+    for(var i=idx.length-1;i>0;i--){var k=Math.floor(rng()*(i+1));var t=idx[i];idx[i]=idx[k];idx[k]=t;}
+    state={rounds:idx.slice(0,ROUNDS),round:0,score:0,streak:0,awaiting:false,rng:rng};
+    el('g_start').textContent='▶ Restart';
+    el('g_q').style.display='block';
+    el('g_fb').className='feedback';el('g_fb').style.display='none';
+    el('g_next').style.display='none';
+    nextRound();
+  }
+  function nextRound(){
+    state.round++;state.awaiting=true;
+    var sc=POOL[state.rounds[state.round-1]];
+    el('g_round').textContent=state.round;
+    el('g_scen').textContent='📌 '+sc.txt;
+    var box=el('g_opts');box.innerHTML='';
+    // shuffle displayed options
+    var ord=sc.opts.map(function(_,i){return i;});
+    for(var i=ord.length-1;i>0;i--){var k=Math.floor(state.rng()*(i+1));var t=ord[i];ord[i]=ord[k];ord[k]=t;}
+    ord.forEach(function(oi){
+      var b=document.createElement('button');b.className='choice';b.textContent=sc.opts[oi];
+      b.addEventListener('click',function(){answer(oi===sc.ans,sc,b);});
+      box.appendChild(b);
+    });
+    el('g_fb').className='feedback';el('g_fb').style.display='none';
+    el('g_next').style.display='none';
+    el('g_msg').className='feedback info';
+    el('g_msg').innerHTML='Round '+state.round+' of '+ROUNDS+': what is the econometrically correct next step?';
+    startTimer();
+  }
+  function answer(ok,sc,btn){
+    if(!state.awaiting)return;
+    state.awaiting=false;stopTimer();
+    el('g_opts').querySelectorAll('button').forEach(function(x){x.disabled=true;});
+    btn.style.borderColor=ok?'var(--good)':'var(--bad)';
+    var bonus=0;
+    if(ok){state.streak++;if(state.streak>=3)bonus=5;state.score+=10+bonus;}else state.streak=0;
+    el('g_score').textContent=state.score;
+    el('g_streak').textContent=state.streak;
+    var fb=el('g_fb');
+    fb.className='feedback '+(ok?'good':'bad');
+    fb.innerHTML=(ok?'✓ Correct! <b>+10</b>'+(bonus?' +'+bonus+' streak bonus 🔥':''):'✗ Not this time. Correct: <b>'+sc.opts[sc.ans]+'</b>')+
+      '.<br>'+sc.why+'<br><span style="color:var(--muted)">Topic: '+sc.wk+' → <a href="'+sc.link+'">'+sc.link+'</a></span>';
+    if(state.round>=ROUNDS){
+      var g=M.grade(state.score,120);
+      var isNew=M.saveBest(KEY,state.score);
+      el('g_best').textContent='Best: '+M.getBest(KEY);
+      el('g_msg').className='feedback info';
+      el('g_msg').innerHTML='🏁 Sprint finished! Final score <b>'+state.score+'</b>. Grade: <b>'+g[0]+'</b> — '+g[1]+(isNew?' <b>New personal best!</b>':'');
+      el('g_start').textContent='▶ Run it again';
+      el('g_timerwrap').style.display='none';
+    } else el('g_next').style.display='inline-block';
+  }
+  el('g_start').addEventListener('click',startGame);
+  el('g_next').addEventListener('click',nextRound);
+})();
+
+/* ---------- SECTION C: code challenges ---------- */
+(function(){
+  var QS=[
+    {q:'<b>Week 1:</b> compute continuously-compounded (log) returns from a price series.',
+     py:{code:['import numpy as np\nret = np.log(prices / ',').dropna() * 100'],
+         opts:['prices.shift(1)','prices.shift(-1)','prices.diff()','prices.mean()'],ans:0},
+     r:{code:['ret <- 100 * diff(','(prices))'],
+        opts:['log','exp','lag','cumsum'],ans:0},
+     why:'r_t = ln(P_t / P_{t-1}) = Δln(P_t). shift(1)/diff(log()) align today with yesterday; shift(-1) would peek into the future.'},
+    {q:'<b>Week 4:</b> OLS with heteroskedasticity-robust (White) standard errors.',
+     py:{code:['import statsmodels.api as sm\nres = sm.OLS(y, X).fit(',')'],
+         opts:["cov_type='HC1'","robust=True","se='white'","weights='auto'"],ans:0},
+     r:{code:['library(lmtest); library(sandwich)\ncoeftest(m, vcov = ','(m, type = "HC1"))'],
+        opts:['vcovHC','vcovHAC','anova','confint'],ans:0},
+     why:'cov_type="HC1" / vcovHC give White SEs: same β̂, honest standard errors under heteroskedasticity. (vcovHAC is the Newey-West flavour for autocorrelation.)'},
+    {q:'<b>Week 5:</b> choose ARMA order by information criterion inside a loop — which attribute do you minimise?',
+     py:{code:['from statsmodels.tsa.arima.model import ARIMA\n# inside: for p in range(3): for q in range(3):\ncrit = ARIMA(ret, order=(p, 0, q)).fit().',''],
+         opts:['bic','rsquared','nobs','llf'],ans:0},
+     r:{code:['# inside: for (p in 0:2) for (q in 0:2)\ncrit <- ','(arima(ret, order = c(p, 0, q)))'],
+        opts:['BIC','summary','residuals','coef'],ans:0},
+     why:'Pick the (p,q) with the LOWEST BIC. R² and the log-likelihood always improve as you add terms — they cannot choose a parsimonious model; BIC penalises the extra parameters.'},
+    {q:'<b>Week 7:</b> specify a GARCH(1,1) for daily returns.',
+     py:{code:['from arch import arch_model\nam = arch_model(ret, vol=',', p=1, q=1)\nres = am.fit(disp="off")'],
+         opts:["'GARCH'","'OLS'","'ARMA'","'EWMA'"],ans:0},
+     r:{code:['library(rugarch)\nspec <- ugarchspec(variance.model = list(model = "sGARCH",\n                   garchOrder = ','))'],
+        opts:['c(1, 1)','c(0, 0)','1','list(1, 1)'],ans:0},
+     why:'vol="GARCH" with p=1, q=1 (arch) and garchOrder=c(1,1) (rugarch) give σ²ₜ = ω + αε²ₜ₋₁ + βσ²ₜ₋₁ — the workhorse volatility model.'},
+    {q:'<b>Week 9:</b> fit a 2-regime Markov-switching model where the variance switches too.',
+     py:{code:['mod = sm.tsa.MarkovRegression(ret, k_regimes=2, ',')\nres = mod.fit()'],
+         opts:['switching_variance=True','switching_variance=False','k_states=2','vol="switch"'],ans:0},
+     r:{code:['library(MSwM)\nmod <- msmFit(lm(ret ~ 1), k = 2, ',')'],
+        opts:['sw = c(TRUE, TRUE)','sw = c(TRUE, FALSE)','k2 = TRUE','regimes = 2'],ans:0},
+     why:'Calm-vs-crisis regimes are mostly a variance story, so let σ² switch: switching_variance=True / sw=c(TRUE,TRUE) (intercept and residual s.d. both regime-dependent).'},
+    {q:'<b>Week 10:</b> fixed effects with standard errors clustered by firm.',
+     py:{code:['from linearmodels.panel import PanelOLS\nres = PanelOLS(y, X, entity_effects=True).fit(\n        ', ', cluster_entity=True)'],
+         opts:["cov_type='clustered'","cov_type='unadjusted'","robust=True","se='firm'"],ans:0},
+     r:{code:['mod <- plm(y ~ x, data = pdat, model = "within")\ncoeftest(mod, vcov = vcovHC(mod, method = "arellano", cluster = ','))'],
+        opts:['"group"','"time"','"none"','TRUE'],ans:0},
+     why:'Cluster by entity ("group" in plm): firm-level shocks persist over time, and ignoring that typically makes panel SEs look 2-5× too precise.'}
+  ];
+  window.MANG.quiz('quiz',QS);
+})();
+</script>
+</body>
+</html>

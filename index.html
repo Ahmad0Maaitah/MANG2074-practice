@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MANG2074 · Financial Econometrics 1 — Practice Hub</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--panel2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#fbbf24;--good:#34d399;--bad:#f87171;--font:'Segoe UI',system-ui,sans-serif;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.6;}
+header{position:sticky;top:0;z-index:50;background:rgba(15,23,42,.93);backdrop-filter:blur(6px);border-bottom:1px solid #334155;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+header .brand{font-weight:600;color:var(--accent);font-size:.95rem;}
+header .wk{color:var(--muted);font-size:.9rem;}
+main{max-width:1000px;margin:0 auto;padding:18px 16px 40px;}
+.hero{background:linear-gradient(135deg,var(--panel) 0%,#1a2c4a 100%);border-radius:14px;padding:28px 24px;margin:16px 0;text-align:center;}
+.hero h1{font-size:1.8rem;margin:0 0 4px;}
+.hero .yr{color:var(--accent2);font-weight:600;letter-spacing:.05em;}
+.hero p{color:var(--muted);margin:8px 0 0;font-size:1.05rem;}
+.progresswrap{background:var(--panel);border-radius:14px;padding:16px 20px;margin:14px 0;}
+.progresswrap .lbl{display:flex;justify-content:space-between;font-size:.9rem;color:var(--muted);margin-bottom:6px;}
+.pbar{height:12px;background:var(--panel2);border-radius:8px;overflow:hidden;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--good));border-radius:8px;width:0;transition:width .6s ease;}
+.howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:14px 0;}
+.howto .stepcard{background:var(--panel);border-radius:14px;padding:16px 20px;font-size:.92rem;color:var(--muted);}
+.howto .stepcard b{display:block;color:var(--text);font-size:1rem;margin-bottom:4px;}
+.howto .num{display:inline-block;background:var(--accent);color:#0b1220;border-radius:50%;width:24px;height:24px;text-align:center;line-height:24px;font-weight:700;margin-right:8px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin:18px 0;}
+.card{background:var(--panel);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:6px;border:1px solid transparent;transition:border-color .15s, transform .15s;}
+.card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.card .wkno{font-size:.78rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.card h3{margin:0;font-size:1.06rem;}
+.card .game{color:var(--accent2);font-size:.9rem;font-weight:600;}
+.card .desc{color:var(--muted);font-size:.88rem;flex-grow:1;}
+.card .meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+.card .best{font-size:.85rem;color:var(--muted);}
+.card .best.played{color:var(--good);font-weight:600;}
+.card a.play{background:var(--accent);color:#0b1220;border-radius:8px;padding:6px 14px;font-weight:600;text-decoration:none;font-size:.9rem;}
+.card a.play:hover{filter:brightness(1.1);}
+.card .emoji{font-size:1.6rem;}
+footer{border-top:1px solid #334155;color:var(--muted);font-size:.85rem;text-align:center;padding:18px 12px 30px;}
+footer a{color:var(--accent);text-decoration:none;margin:0 8px;}
+@media(max-width:720px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="brand">MANG2074 · Financial Econometrics 1</div><div class="wk">Practice Hub — all topics</div></div>
+  <div class="wk">University of Southampton</div>
+</header>
+<main>
+<div class="hero">
+  <h1>📈 Financial Econometrics 1</h1>
+  <div class="yr">MANG2074 · 2026–27</div>
+  <p>Learn econometrics by playing — 11 weeks of simulations, games and code challenges.</p>
+</div>
+
+<div class="progresswrap">
+  <div class="lbl"><span>Module progress (topics with a saved best score)</span><span id="ptext">0 / 11</span></div>
+  <div class="pbar"><div class="pfill" id="pfill"></div></div>
+</div>
+
+<div class="howto">
+  <div class="stepcard"><b><span class="num">1</span>Read</b>Work through the week's lecture notes and slides on the module GitHub page first — the theory makes the games make sense.</div>
+  <div class="stepcard"><b><span class="num">2</span>Play &amp; simulate</b>Open the week below: drag the sliders to build intuition, then beat the game and save your best score.</div>
+  <div class="stepcard"><b><span class="num">3</span>Code it</b>Finish the code challenges here, then reproduce the week's results yourself in the lab notebook (Python or R).</div>
+</div>
+
+<div class="grid" id="grid"></div>
+</main>
+<footer>
+MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah
+</footer>
+
+<script>
+'use strict';
+(function(){
+  var WEEKS=[
+    {n:1, emoji:'📊', title:'Returns & Distributions', game:'Normal or Not?', desc:'Compute simple vs log returns and learn why fat tails ruin the bell curve.'},
+    {n:2, emoji:'📈', title:'OLS, Hedge Ratios & the CAPM', game:'Guess the Beta', desc:'Fit lines by eye, estimate market betas and minimum-variance hedge ratios.'},
+    {n:3, emoji:'🧮', title:'Multiple Regression & F-tests', game:'Significant or Spurious?', desc:'Judge t-stats and F-tests — and learn to smell a spurious regression.'},
+    {n:4, emoji:'🩺', title:'OLS Diagnostics', game:'Regression Doctor', desc:'Diagnose heteroskedasticity, autocorrelation and other OLS ailments.'},
+    {n:5, emoji:'🔁', title:'ARMA Models', game:'Match the Correlogram', desc:'Read ACF/PACF fingerprints and pick the right p and q.'},
+    {n:6, emoji:'🔮', title:'Forecasting', game:'Forecast Duel', desc:'Pit your model against the naive forecast — out of sample, where it counts.'},
+    {n:7, emoji:'🌋', title:'ARCH & GARCH', game:'Calm or Crisis?', desc:'Volatility clustering, news impact and persistence α + β.'},
+    {n:8, emoji:'🛡️', title:'Volatility & VaR', game:'Risk Manager', desc:'Set Value-at-Risk limits, survive the backtest, keep your trading desk.'},
+    {n:9, emoji:'🕵️', title:'Markov Switching', game:'Regime Detective', desc:'Spot the hidden switch between calm and crisis regimes from the data alone.'},
+    {n:10, emoji:'⚖️', title:'Panel Data', game:'Hausman Court', desc:'Watch pooled OLS lie, then rule FE vs RE on the evidence, like a judge.'},
+    {n:11, emoji:'🔬', title:'Research Methods Lab', game:'Research Sprint', desc:'Assemble a mini paper: question → data → model → diagnostics → finding.'}
+  ];
+  var grid=document.getElementById('grid');
+  var played=0;
+  WEEKS.forEach(function(w){
+    var nn=(w.n<10?'0':'')+w.n;
+    var key='mang2074_w'+nn+'_best';
+    var best=null;
+    try{best=localStorage.getItem(key);}catch(e){}
+    if(best!==null)played++;
+    var card=document.createElement('div');card.className='card';
+    var bestHtml=(best!==null)?'<span class="best played">🏅 Best: '+best+'</span>':'<span class="best">Not played yet</span>';
+    card.innerHTML=
+      '<div class="emoji">'+w.emoji+'</div>'+
+      '<div class="wkno">Week '+w.n+'</div>'+
+      '<h3>'+w.title+'</h3>'+
+      '<div class="game">🎮 '+w.game+'</div>'+
+      '<div class="desc">'+w.desc+'</div>'+
+      '<div class="meta">'+bestHtml+'<a class="play" href="week'+nn+'.html">Play →</a></div>';
+    grid.appendChild(card);
+  });
+  document.getElementById('ptext').textContent=played+' / 11';
+  var pct=Math.round(100*played/11);
+  setTimeout(function(){document.getElementById('pfill').style.width=pct+'%';},80);
+})();
+</script>
+</body>
+</html>
