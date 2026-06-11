@@ -56,6 +56,26 @@ pre{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px;o
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 footer{max-width:1000px;margin:30px auto 0;padding:0 20px 40px;color:var(--muted);font-size:.85rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
+/* ---- v2 upgrade ---- */
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.tabbar button{background:var(--panel2);color:var(--text);border:1px solid #334155;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:400;}
+.tabbar button.active{background:var(--accent);color:#0f172a;font-weight:600;}
+.plat{display:none;}
+.plat.active{display:block;}
+.plat h3{font-size:1.05rem;margin:4px 0 10px;}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
+.pcard{background:var(--panel2);border:1px solid #334155;border-radius:10px;padding:12px 14px;cursor:pointer;}
+.pcard .sym{font-size:1.12rem;font-weight:700;color:var(--accent);margin-right:8px;}
+.pcard .nm{font-weight:600;}
+.pcard .one{color:var(--muted);font-size:.87rem;margin-top:2px;}
+.pcard .more{display:none;font-size:.88rem;margin-top:9px;border-top:1px solid #334155;padding-top:8px;line-height:1.55;}
+.pcard.open .more{display:block;}
+.pcard .more b{color:var(--accent2);}
+.pcard .arrow{float:right;color:var(--muted);font-size:.78rem;}
+.try{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:10px 16px;margin-top:14px;font-size:.92rem;}
+.try ol{margin:6px 0 2px;padding-left:20px;}
+.try li{margin:7px 0;}
+.try button{font-size:.78rem;padding:2px 10px;margin-left:8px;background:transparent;color:var(--accent);border:1px solid var(--accent);}
 @media(max-width:720px){.grid2{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -68,7 +88,87 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
 <p class="intro">Value-at-Risk answers one question: “How much could we lose tomorrow, on a bad day, with q% confidence?” Here you build VaR from the parametric formula, see how Student-t tails and GARCH clustering change the answer, backtest it Basel-style — then run a trading desk for ten days and find out whether the regulator smiles or frowns.</p>
 
 <section class="card">
-<h2>🔬 Simulation — VaR workbench</h2>
+<h2>📚 Parameters &amp; concepts</h2>
+<p style="font-size:.92rem;color:var(--muted)">The risk manager&rsquo;s vocabulary. Click a card for the formula, the numbers desks actually see, the extremes, and what goes wrong in estimation.</p>
+<div class="pgrid">
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">c</span><span class="nm">Confidence level (95% / 99%)</span>
+<div class="one">How deep into the tail the VaR quantile sits.</div>
+<div class="more"><b>Meaning.</b> VaR at level c is the loss exceeded only (1−c) of the time: by construction we EXPECT breaches on (1−c) of days.<br>
+<b>Formula.</b> P(loss &gt; VaR<sub>c</sub>) = 1 − c.<br>
+<b>Typical values.</b> Basel market risk: 99% (and 97.5% for ES under FRTB); internal desk limits often 95%.<br>
+<b>At the extremes.</b> c → 99.9%+: the estimate hangs on a handful of observations and its variance explodes. c low (90%): plenty of breaches to count, but it says little about catastrophes.<br>
+<b>Estimation problems.</b> Validation starves at high c: 99% with 250 days ⇒ 2.5 expected breaches — distinguishing a good model from a bad one on 2.5 events is statistically heroic (that is why the Basel zones are so wide).</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">z, t<sub>ν</sub></span><span class="nm">Normal &amp; t quantiles</span>
+<div class="one">The tail multipliers: how many σ&rsquo;s out the cut-off sits.</div>
+<div class="more"><b>Meaning.</b> The distributional ingredient of parametric VaR — all the disagreement between models lives here.<br>
+<b>Formula.</b> z<sub>0.05</sub> = −1.645, z<sub>0.01</sub> = −2.326; unit-variance t(ν): t<sub>ν,q</sub>·√((ν−2)/ν), e.g. ν = 6 at 1%: −2.566.<br>
+<b>Typical values.</b> The t premium over the normal at 99% runs 10–25% for ν = 4–8 — material capital.<br>
+<b>At the extremes.</b> ν → ∞ recovers z. At 95% the unit-variance t quantile can sit INSIDE the normal one — fat tails only bite in the far tail.<br>
+<b>Estimation problems.</b> Forgetting the √((ν−2)/ν) rescaling double-counts fat tails (σ would no longer mean the standard deviation); ν̂ itself is pinned down by a few extreme days.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">σ̂<sub>t+1</sub></span><span class="nm">Volatility forecast</span>
+<div class="one">Tomorrow&rsquo;s conditional σ — the engine room of any VaR number.</div>
+<div class="more"><b>Meaning.</b> VaR scales one-for-one with σ, so the volatility model IS most of the VaR model.<br>
+<b>Formula.</b> From GARCH: σ²<sub>t+1</sub> = ω + αr²<sub>t</sub> + βσ²<sub>t</sub>; RiskMetrics: σ²<sub>t+1</sub> = 0.06r²<sub>t</sub> + 0.94σ²<sub>t</sub>.<br>
+<b>Typical values.</b> Equity index: 0.5–1.5% per day in calm markets, 4–8% in crises — an 8× swing that static models simply miss.<br>
+<b>At the extremes.</b> Static σ̂ (full-sample sd): breaches cluster violently in storms (Platform 2 proves it). Over-reactive σ̂: capital requirements whipsaw.<br>
+<b>Estimation problems.</b> All of week 7&rsquo;s problems flow downstream into VaR: persistence bias from breaks, ω̂ ≈ 0, normal tails — risk numbers inherit every one.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">VaR</span><span class="nm">Value-at-Risk</span>
+<div class="one">&ldquo;With c% confidence, we will not lose more than THIS tomorrow.&rdquo;</div>
+<div class="more"><b>Meaning.</b> A quantile of the P&amp;L distribution, translated into money. The lingua franca of market-risk limits since the 1990s.<br>
+<b>Formula.</b> Parametric: VaR<sub>c</sub> = −(μ + z<sub>1−c</sub>σ)·V. Historical simulation: the empirical (1−c) quantile of past returns × V.<br>
+<b>Typical values.</b> A diversified equity desk: 1-day 99% VaR ≈ 2–4% of book value.<br>
+<b>At the extremes.</b> VaR is NOT subadditive: merging two desks can RAISE measured risk — a pathological property for a risk measure (ES fixes this).<br>
+<b>Estimation problems.</b> It says nothing about how bad the bad day is — two desks with identical VaR can hide wildly different catastrophes (Platform 3 shows the trick).</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">ES</span><span class="nm">Expected Shortfall</span>
+<div class="one">The AVERAGE loss on the days VaR is breached — &ldquo;how bad is bad?&rdquo;.</div>
+<div class="more"><b>Meaning.</b> The conditional mean of the tail beyond VaR. Coherent (subadditive), tail-sensitive, and now the Basel standard.<br>
+<b>Formula.</b> ES<sub>c</sub> = E[loss | loss &gt; VaR<sub>c</sub>]; normal case: ES = σ·φ(z<sub>q</sub>)/q − μ, so ES<sub>99</sub> = 2.665σ vs VaR<sub>99</sub> = 2.326σ.<br>
+<b>Typical values.</b> ES<sub>97.5</sub> ≈ VaR<sub>99</sub> under normality — exactly why Basel&rsquo;s FRTB chose 97.5%.<br>
+<b>At the extremes.</b> Fat tails push ES/VaR far above its normal ratio of ≈ 1.15; for very heavy tails ES may not even exist.<br>
+<b>Estimation problems.</b> Needs more tail data than VaR; backtesting it is subtler (elicitability debate) — the standard answer is to backtest VaR levels alongside.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">x</span><span class="nm">Breach / exception</span>
+<div class="one">A day when the realised loss exceeds the VaR — the unit of backtesting.</div>
+<div class="more"><b>Meaning.</b> The hit sequence I<sub>t</sub> = 1[loss<sub>t</sub> &gt; VaR<sub>t</sub>] should be iid Bernoulli(1−c): the right NUMBER of breaches, at UNPREDICTABLE times.<br>
+<b>Formula.</b> E[x] = n(1−c): 2.5 breaches per 250 days at 99%.<br>
+<b>Typical values.</b> Static-σ models in clustered markets: the right count over years, delivered in one terrible fortnight.<br>
+<b>At the extremes.</b> x = 0 over years is itself a failure — an over-conservative model wasting capital. x clustered: the independence condition is violated even if the count is fine.<br>
+<b>Estimation problems.</b> Counting breaches tests only the count; clustering needs an independence test (Christoffersen — see the clinic).</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">LR<sub>POF</sub></span><span class="nm">Kupiec POF test</span>
+<div class="one">Is the observed breach count consistent with the promised 1−c?</div>
+<div class="more"><b>Meaning.</b> A likelihood-ratio test of &ldquo;proportion of failures&rdquo;: were x breaches in n days plausible if the true breach probability were p = 1−c?<br>
+<b>Formula.</b> LR = −2ln[(1−p)<sup>n−x</sup>p<sup>x</sup>] + 2ln[(1−x/n)<sup>n−x</sup>(x/n)<sup>x</sup>] ~ χ²(1).<br>
+<b>Typical values.</b> At x exactly = np, LR = 0 (perfect calibration); LR &gt; 3.84 rejects at 5%.<br>
+<b>At the extremes.</b> Two-sided: it also rejects too FEW breaches — with n = 250, c = 99%, x = 0 gives LR = 5.02, p ≈ 0.025: zero breaches is statistically suspicious, not virtuous.<br>
+<b>Estimation problems.</b> Low power in regulatory samples (250 days), and blind to clustering — pair it with an independence test before declaring victory.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">🚦</span><span class="nm">Basel traffic-light zones</span>
+<div class="one">Green ≤ 4, yellow 5–9, red ≥ 10 breaches per 250 days at 99%.</div>
+<div class="more"><b>Meaning.</b> The regulator&rsquo;s pragmatic backtest: count last year&rsquo;s exceptions and look up the zone. Yellow raises the capital multiplier from 3 towards 4; red usually kills the model.<br>
+<b>Formula.</b> The zones are binomial cumulative probabilities: green covers outcomes up to the 95th percentile of Binomial(250, 0.01), yellow to 99.99% — computed, not arbitrary.<br>
+<b>Typical values.</b> P(x ≤ 4) ≈ 89%, so even a perfect model lands yellow ~11% of the time — supervisors expect the occasional unlucky yellow.<br>
+<b>At the extremes.</b> A model that under-reports risk by 25% still has a good chance of staying green for a year — the test&rsquo;s power is weak by design (small n).<br>
+<b>Estimation problems.</b> One year of data per verdict; clustering ignored; and the multiplier mechanics give desks an incentive to game the boundary (clinic, card 5).</div></div>
+
+</div>
+</section>
+
+<section class="card">
+<h2>🔬 Platforms — four risk workbenches</h2>
+<div class="tabbar" id="tabbar">
+  <button class="active" data-plat="plat1">1 · VaR workbench</button>
+  <button data-plat="plat2">2 · Backtest lab</button>
+  <button data-plat="plat3">3 · ES vs VaR</button>
+  <button data-plat="plat4">4 · √time lab</button>
+</div>
+<div class="plat active" id="plat1">
+<h3>VaR workbench</h3>
 <div class="controls">
   <span class="ctl"><label>Portfolio value V (£)</label><input type="number" id="inV" value="1000000" min="1000" step="10000"></span>
   <span class="ctl"><label>Confidence</label>
@@ -89,6 +189,147 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
 <canvas id="cBack"></canvas>
 <div id="backVerdict"></div>
 <div class="notice"><b>What to notice.</b> <span id="simNote"></span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>99% with Student-t, ν = 3: the fattest tails the slider allows — watch the t premium over the normal VaR. This is the difference between surviving 2008 and not. <button onclick="MANG.exp1(0)">Set it up</button></li>
+<li>Switch the same setup to 95%: the unit-variance t VaR can fall BELOW the normal one. Fat tails are a far-tail phenomenon — mid-tail they actually give some probability back. <button onclick="MANG.exp1(1)">Set it up</button></li>
+<li>Crisis volatility: σ = 4%. VaR scales linearly in σ — whoever forecasts σ controls the VaR. The distribution choice is the garnish; the vol model is the meal. <button onclick="MANG.exp1(2)">Set it up</button></li>
+<li>Run the 250-day backtest five times and watch WHERE the breaches land: almost always bunched in the stormy stretch. The count can pass while the timing screams model failure.</li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat2">
+<h3>Backtest lab — four VaR models vs a 3-year GARCH-t market</h3>
+<p style="font-size:.92rem;color:var(--muted)">We simulate 3 trading years (750 days, after a 260-day warm-up) of a market with real-world features: GARCH volatility (α = 0.09, β = 0.89, σ̄ = 1.2%/day) and Student-t(6) shocks. Four risk desks then publish daily VaR: a <b>static normal</b> (σ estimated once from the warm-up year), a <b>normal-GARCH</b> (perfect σₜ, wrong tails), a <b>t-GARCH</b> (the well-specified model), and <b>historical simulation</b> (rolling 250-day empirical quantile). Kupiec&rsquo;s LR = −2ln[(1−p)ⁿ⁻ˣpˣ] + 2ln[(1−x/n)ⁿ⁻ˣ(x/n)ˣ] ~ χ²(1) judges each count; the traffic light applies the Basel zones to the most recent 250 days.</p>
+<div class="controls">
+  <span class="ctl"><label>Confidence</label>
+    <button id="bt99" class="alt on" style="padding:5px 10px">99%</button>
+    <button id="bt95" class="alt" style="padding:5px 10px">95%</button></span>
+  <span class="ctl"><label>Model shown in the chart</label>
+    <select id="btModel">
+      <option value="stat">Static normal</option>
+      <option value="gn">Normal-GARCH</option>
+      <option value="gt" selected>t-GARCH</option>
+      <option value="hs">Historical simulation (250d)</option>
+    </select></span>
+  <button id="btRun">🎲 New 3-year market &amp; backtest</button>
+</div>
+<canvas id="btChart"></canvas>
+<div id="btTbl"></div>
+<div class="notice"><b>What to notice.</b> <span id="btNote"></span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>Chart the static normal: its VaR line is dead flat, so every volatility storm produces a burst of breaches. It often passes 95% and fails 99% — tails AND clustering both bite at the deep quantile. <button onclick="MANG.exp2(0)">Show it</button></li>
+<li>Chart the t-GARCH: the VaR line breathes with the market and the breaches scatter like rain — roughly the right number, at unpredictable times. That is what &ldquo;well-specified&rdquo; looks like. <button onclick="MANG.exp2(1)">Show it</button></li>
+<li>Chart historical simulation and find the step pattern: after a calm year its VaR is tiny, and the first week of a storm punches straight through it. Run several markets and watch the breach bursts at regime turns. <button onclick="MANG.exp2(2)">Show it</button></li>
+<li>Switch to 95%: with 37.5 expected breaches the Kupiec test suddenly has power — models that hid comfortably behind 7.5 expected breaches at 99% get exposed. <button onclick="MANG.exp2(3)">Switch &amp; re-run</button></li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat3">
+<h3>ES vs VaR explorer — what the quantile cannot see</h3>
+<p style="font-size:.92rem;color:var(--muted)">VaR is a cut-off; Expected Shortfall is the average of everything beyond it: ES = E[loss | loss &gt; VaR]. Pick a distribution (σ = 1 throughout), slide the confidence level, and watch the shaded tail — then press the two-desks button for the demo that explains why Basel moved to ES.</p>
+<div class="controls">
+  <span class="ctl"><label>Distribution of returns</label>
+    <select id="esDist">
+      <option value="n">Normal</option>
+      <option value="t" selected>Student-t (unit variance)</option>
+      <option value="mix">Crash-prone mixture (0.8% disaster state)</option>
+    </select></span>
+  <span class="ctl" id="esBoxNu"><label>ν (t degrees of freedom)</label><input type="range" id="esNu" min="3" max="30" step="1" value="6"><span class="val" id="esVNu">6</span></span>
+  <span class="ctl"><label>Confidence c</label><input type="range" id="esC" min="90" max="99.5" step="0.5" value="97.5"><span class="val" id="esVC">97.5%</span></span>
+  <button id="esTwo">⚖️ Two desks, same VaR</button>
+</div>
+<div class="statgrid" id="esStats"></div>
+<canvas id="esPdf"></canvas>
+<canvas id="esBars" style="display:none"></canvas>
+<div class="notice"><b>What to notice.</b> <span id="esNote"></span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>Normal, slide c from 90% to 99.5%: ES/VaR falls towards 1 — under thin tails the average bad day is barely worse than the threshold. <button onclick="MANG.exp3(0)">Set it up</button></li>
+<li>Student-t, ν = 4, c = 99%: ES/VaR ≈ 1.5 — beyond the quantile lives real horror that VaR never reports. <button onclick="MANG.exp3(1)">Set it up</button></li>
+<li>The mixture at c = 95%: the disaster state is INVISIBLE to VaR (it hides beyond the quantile) but ES sees it. Slide c up and watch VaR suddenly &ldquo;discover&rdquo; the crash state near 99%. <button onclick="MANG.exp3(2)">Set it up</button></li>
+<li>Press ⚖️: two desks with IDENTICAL 99% VaR — and desk B&rsquo;s ES is ~40% larger. Desk B is short disaster insurance; VaR cannot tell. That demo is the FRTB argument in one chart. <button onclick="MANG.exp3(3)">Run the demo</button></li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat4">
+<h3>Square-root-of-time lab — when scaling 1-day VaR by √10 lies</h3>
+<p style="font-size:.92rem;color:var(--muted)">Basel lets banks scale 1-day VaR to 10 days by √10 — exactly right for iid returns, quietly wrong under volatility clustering. We start a GARCH market (σ̄ = 1.2%/day, α = 0.05) from a calm, typical or crisis day, simulate 2,000 ten-day paths, and compare the √10-scaled VaR with the true simulated 10-day 99% VaR.</p>
+<div class="controls">
+  <span class="ctl"><label>α+β (persistence)</label><input type="range" id="stP" min="0" max="0.99" step="0.01" value="0.90"><span class="val" id="stVP">0.90</span></span>
+  <span class="ctl"><label>Starting state (today&rsquo;s σ²)</label>
+    <select id="stState">
+      <option value="calm">Calm day — σ² = 0.4 × σ̄²</option>
+      <option value="typ" selected>Typical day — σ² = σ̄²</option>
+      <option value="crisis">Crisis day — σ² = 4 × σ̄²</option>
+    </select></span>
+  <button id="stRun">▶ Simulate 2,000 ten-day paths</button>
+</div>
+<div class="statgrid" id="stStats"></div>
+<canvas id="stHist"></canvas>
+<div class="notice"><b>What to notice.</b> <span id="stNote">Press ▶ to simulate.</span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>Calm start, persistence 0.90: the true 10-day VaR comes out ~20–25% ABOVE the √10 rule — volatility mean-reverts UP towards σ̄ over the window, and the rule never sees it coming. <button onclick="MANG.exp4(0)">Set it up &amp; run</button></li>
+<li>Crisis start, persistence 0.90: now the rule OVERSTATES — vol decays towards σ̄ inside the 10 days (though vol-of-vol fat tails claw some back). <button onclick="MANG.exp4(1)">Set it up &amp; run</button></li>
+<li>Persistence 0: iid returns — the rule is almost exact (ratio ≈ 1). √time scaling is an iid theorem, not a law of nature. <button onclick="MANG.exp4(2)">Set it up &amp; run</button></li>
+<li>So is √10 scaling conservative or reckless? Answer: it depends on where you START — which is precisely why regulators increasingly demand full 10-day simulation instead.</li>
+</ol></div>
+</div>
+</section>
+
+<section class="card clinic">
+<h2>⚠️ Problems clinic</h2>
+<p style="font-size:.92rem;color:var(--muted)">Six classic VaR failures. Click each card; three carry live demos.</p>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">VaR says nothing beyond the quantile</span>
+<div class="one">Two books, identical VaR, catastrophically different tails.</div>
+<div class="more"><b>What it is.</b> VaR is one point on the loss distribution. Everything past it — the size of the disaster — is invisible by construction.<br>
+<b>How it bites.</b> Selling deep out-of-the-money puts books steady premium income, leaves VaR untouched, and concentrates ruin just past the quantile. Pre-2008 CDO books had exactly this shape.<br>
+<b>How to detect.</b> Report ES next to VaR and watch the ratio: ES/VaR drifting up means tail mass is being parked beyond the cut-off. Stress tests and max-loss scenarios catch what quantiles cannot.<br>
+<b>Remedy.</b> ES as the headline measure (as FRTB now requires), scenario limits, and payoff-shape review for anything optionable. Platform 3&rsquo;s ⚖️ demo is this card in chart form.</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Breach clustering (independence violated)</span>
+<div class="one">The right NUMBER of breaches — all in the same fortnight.</div>
+<div class="more"><b>What it is.</b> Correct unconditional coverage but dependent hits: P(breach today | breach yesterday) ≫ P(breach today | calm yesterday). Static-σ models in GARCH markets fail exactly this way.<br>
+<b>How it bites.</b> Five breaches scattered over a year are survivable; five in ten days exhaust liquidity, trigger margin calls and end desks — with the SAME Kupiec statistic.<br>
+<b>How to detect.</b> Christoffersen&rsquo;s independence test: build the 2×2 transition matrix of the hit sequence and LR-test whether P(hit|hit) = P(hit|no hit); or simply chart the breach dates (demo).<br>
+<b>Remedy.</b> Conditional VaR — let σₜ come from a GARCH/EWMA filter so the VaR line breathes with the market; then the hits decluster.
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('cl','dcCL')">▦ Demo: same count, different stories</button></div>
+<canvas id="dcCL" style="display:none"></canvas></div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Historical-simulation window staleness</span>
+<div class="one">HS-VaR is a rear-view mirror with a 250-day memory.</div>
+<div class="more"><b>What it is.</b> The empirical quantile only moves when observations enter or leave the window: it reacts to a crisis AFTER the losses arrive, and forgets it abruptly 250 days later (&ldquo;ghost effects&rdquo;).<br>
+<b>How it bites.</b> On the eve of a vol regime change, HS-VaR is calibrated to the dead calm regime — the first week of the storm blows straight through it. A year later VaR halves overnight as the crisis exits the window, just as memories fade.<br>
+<b>How to detect.</b> A stepped, plateau-shaped VaR series; breach bursts concentrated immediately after regime turns (Platform 2, model 4).<br>
+<b>Remedy.</b> Filtered HS (scale past returns by σ̂ₜ/σ̂ₜ₋ⱼ), exponentially weighted quantiles, or shorter windows with a vol floor.
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('hs','dcHS')">▦ Demo: HS-VaR lagging a vol regime change</button></div>
+<canvas id="dcHS" style="display:none"></canvas></div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Normality in stressed markets</span>
+<div class="one">The tails fatten and the correlations go to 1 — exactly when it matters.</div>
+<div class="more"><b>What it is.</b> Gaussian VaR assumes thin tails and stable dependence. Crises deliver fat tails, skew, and diversification that evaporates as everything sells off together.<br>
+<b>How it bites.</b> &ldquo;We were seeing 25-standard-deviation moves, several days in a row&rdquo; (Goldman&rsquo;s CFO, August 2007). Under normality one 8σ day occurs once per several lifetimes of the universe; the model, not the universe, was wrong.<br>
+<b>How to detect.</b> QQ-plots of standardised residuals; breach counts at 99% far above 1% while 95% looks fine (a tail-shape signature); kurtosis ≫ 3.<br>
+<b>Remedy.</b> Student-t or EVT tails, stressed calibration windows (Basel&rsquo;s stressed VaR/ES), and scenario analysis that does not trust estimated correlations.</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Gaming the VaR</span>
+<div class="one">Whatever you measure, traders will optimise. VaR is very gameable.</div>
+<div class="more"><b>What it is.</b> Goodhart&rsquo;s law on a trading floor: positions engineered to look small in VaR terms — risk tucked just beyond the quantile, short-vol carry trades, basis positions whose risk is in the spread the model ignores.<br>
+<b>How it bites.</b> The desk&rsquo;s reported VaR is flat while its true exposure compounds; the blow-up, when it comes, is &ldquo;outside the model&rdquo;. Bonus formulas based on return-over-VaR actively reward this.<br>
+<b>How to detect.</b> ES/VaR ratio drifting upward; P&amp;L distributions with steady small gains and rare huge losses (negative skew); positions concentrated in instruments the model maps crudely.<br>
+<b>Remedy.</b> Multiple measures (ES, stress, notional and concentration limits), model-risk review of mapping choices, and compensation that claws back tail losses.</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Expect breaches! (2.5 per year is the target)</span>
+<div class="one">Zero breaches is not prudence — it is mispriced capital.</div>
+<div class="more"><b>What it is.</b> At 99% over 250 days the DESIGN target is 2.5 exceptions. A correctly calibrated model breaches regularly, on schedule, in small doses.<br>
+<b>How it bites.</b> A desk reporting zero breaches for three years is either extraordinarily lucky (P(x = 0) = 0.99²⁵⁰ ≈ 8% per year) or running VaR far above the true quantile — idle capital that costs basis points every day and strangles the business.<br>
+<b>How to detect.</b> Kupiec is two-sided: x = 0 with n = 250 gives LR = 5.02, p ≈ 0.025 — statistically rejectable over-conservatism. The binomial demo shows the full distribution of honest breach counts.<br>
+<b>Remedy.</b> Backtest for too FEW breaches as seriously as for too many; track capital efficiency next to safety; remember the traffic light&rsquo;s green zone starts at zero but its sweet spot is 2–3.
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('bin','dcBIN')">▦ Demo: the honest distribution of breach counts</button></div>
+<canvas id="dcBIN" style="display:none"></canvas></div></div>
 </section>
 
 <section class="card">
@@ -109,7 +350,7 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
 
 <section class="card">
 <h2>⌨️ Code challenges</h2>
-<p>Fill the blank in each snippet. Toggle Python (scipy / numpy / arch) / R. Score: <span style="color:var(--accent2)">x/6</span> top-right.</p>
+<p>Fill the blank in each snippet. Toggle Python (scipy / numpy / arch) / R. Score: <span style="color:var(--accent2)">x/8</span> top-right.</p>
 <div id="quiz"></div>
 </section>
 </main>
@@ -530,9 +771,497 @@ window.MANG = (function(){
          why:'A boolean array summed counts the True values — the breach count. Compare with 1% of the sample; Basel’s zones: green ≤4, yellow 5–9, red ≥10 (250 days).'},
      r:{code:'# VaR_pct is a positive % loss; a breach is a return below -VaR_pct\nbreaches <- ___(returns < -VaR_pct)\nbreaches / (0.01 * length(returns))   # ratio to expected',
         opts:['sum','any','which','length'],correct:0,
-        why:'sum() over a logical vector counts the TRUEs. which() would list the breach dates — useful for spotting breach clustering.'}}
+        why:'sum() over a logical vector counts the TRUEs. which() would list the breach dates — useful for spotting breach clustering.'}},
+    {title:'Kupiec proportion-of-failures test',
+     py:{code:'from scipy.stats import chi2\n# x breaches in n days; p = 1 - confidence (e.g. 0.01)\nLR = (-2*np.log((1-p)**(n-x) * p**x)\n      + 2*np.log((1-x/n)**(n-x) * (x/n)**x))\npval = ___          # H0: true breach probability = p',
+         opts:['chi2.sf(LR, 1)','chi2.cdf(LR, 1)','chi2.pdf(LR, 1)','norm.sf(LR)'],correct:0,
+         why:'LR ~ χ²(1) under H0, and sf (the survival function) gives the upper-tail p-value. Using cdf instead of sf is the classic flip — it returns 1 minus the p-value. Note LR = 0 exactly when x = np.'},
+     r:{code:'# x breaches in n days; p = 1 - confidence (e.g. 0.01)\nLR <- -2*log((1-p)^(n-x) * p^x) +\n       2*log((1-x/n)^(n-x) * (x/n)^x)\npval <- 1 - ___(LR, df = 1)   # H0: true breach probability = p',
+        opts:['pchisq','qchisq','dchisq','rchisq'],correct:0,
+        why:'pchisq is the χ² CDF, so 1 − pchisq(LR, 1) is the p-value. The test is two-sided in spirit: too FEW breaches also inflate LR — zero breaches in 250 days at 99% gives LR ≈ 5.02, p ≈ 0.025.'}},
+    {title:'Scaling VaR over horizons (and when not to)',
+     py:{code:'# Basel square-root-of-time rule:\nVaR_10d = VaR_1d * np.sqrt(___)\n# valid for iid returns; GARCH clustering breaks it (see Platform 4)',
+         opts:['10','100','252','2'],correct:0,
+         why:'Variances add over independent days, so volatility — and VaR — scales by √h. Under volatility clustering the rule misprices risk: it understates from calm days (vol reverts UP) and overstates from crisis days.'},
+     r:{code:'# Basel square-root-of-time rule:\nVaR_10d <- VaR_1d * sqrt(___)\n# valid for iid returns; GARCH clustering breaks it (see Platform 4)',
+        opts:['10','100','252','2'],correct:0,
+        why:'√10 ≈ 3.16. The honest alternative is to simulate (or iterate) the variance model out 10 days and take the quantile of the simulated 10-day P&L — exactly what the √time lab does.'}}
   ];
   MANG.quiz('quiz',Q);
+})();
+
+/* ---------- v2 shared helpers ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  function logGamma(x){
+    var c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.001208650973866179,-0.000005395239384953];
+    var y=x,tmp=x+5.5;tmp-=(x+0.5)*Math.log(tmp);var ser=1.000000000190015;
+    for(var j=0;j<6;j++){y+=1;ser+=c[j]/y;}
+    return -tmp+Math.log(2.5066282746310005*ser/x);
+  }
+  function gammaP(a,x){
+    if(x<=0)return 0;
+    var i;
+    if(x<a+1){
+      var ap=a,sum=1/a,del=sum;
+      for(i=0;i<500;i++){ap++;del*=x/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-13)break;}
+      return sum*Math.exp(-x+a*Math.log(x)-logGamma(a));
+    }
+    var b=x+1-a,c=1e300,d=1/b,h=d;
+    for(i=1;i<500;i++){
+      var an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;
+      c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;var del2=d*c;h*=del2;
+      if(Math.abs(del2-1)<1e-13)break;
+    }
+    return 1-Math.exp(-x+a*Math.log(x)-logGamma(a))*h;
+  }
+  M.chi2cdf=function(x,k){return x<=0?0:gammaP(k/2,x/2);};
+  M.normCdf=function(x){var t=1/(1+0.2316419*Math.abs(x));var d=0.3989422804014327*Math.exp(-x*x/2);
+    var p=d*t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+    return x>=0?1-p:p;};
+  M.normPdf=function(x){return 0.3989422804014327*Math.exp(-x*x/2);};
+  M.tPdf=function(x,df){return Math.exp(logGamma((df+1)/2)-logGamma(df/2)-0.5*Math.log(df*Math.PI)-(df+1)/2*Math.log(1+x*x/df));};
+  M.binomCdf=function(x,n,p){
+    var c=0;
+    for(var k=0;k<=x;k++)c+=Math.exp(logGamma(n+1)-logGamma(k+1)-logGamma(n-k+1)+k*Math.log(p)+(n-k)*Math.log(1-p));
+    return Math.min(1,c);
+  };
+  M.binomPmf=function(k,n,p){return Math.exp(logGamma(n+1)-logGamma(k+1)-logGamma(n-k+1)+k*Math.log(p)+(n-k)*Math.log(1-p));};
+  M.kupiec=function(n,x,p){
+    var lr;
+    if(x===0)lr=-2*n*Math.log(1-p);
+    else if(x===n)lr=-2*n*Math.log(p);
+    else lr=-2*((n-x)*Math.log(1-p)+x*Math.log(p))+2*((n-x)*Math.log(1-x/n)+x*Math.log(x/n));
+    return {lr:lr,p:1-M.chi2cdf(lr,1)};
+  };
+  M.genGARCHt=function(omega,alpha,beta,nu,n,seed){
+    var rng=M.mulberry32(seed),g=M.gauss(rng);
+    var p=alpha+beta,s2=(p<1)?omega/(1-p):omega*20;
+    var burn=200,r=[],sig=[],eps=0,sc=Math.sqrt((nu-2)/nu);
+    for(var t=0;t<n+burn;t++){
+      s2=omega+alpha*eps*eps+beta*s2;
+      var ch=0;
+      for(var j=0;j<nu;j++){var x=g();ch+=x*x;}
+      var z=g()/Math.sqrt(ch/nu)*sc;
+      eps=Math.sqrt(s2)*z;
+      if(t>=burn){r.push(eps);sig.push(Math.sqrt(s2));}
+    }
+    return {r:r,sigma:sig};
+  };
+  M.setCtl=function(map){Object.keys(map).forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.value=String(map[id]);el.dispatchEvent(new Event('input'));});};
+  M.chip=function(k,v){return '<span class="stat"><span class="v">'+v+'</span><br><span class="k">'+k+'</span></span>';};
+  M.exp1=function(k){
+    if(k===0){document.getElementById('selDist').value='t';M.setCtl({sDf:3});document.getElementById('b99').click();}
+    else if(k===1){document.getElementById('selDist').value='t';M.setCtl({sDf:3});document.getElementById('b95').click();}
+    else {M.setCtl({sSig:4});document.getElementById('b99').click();}
+  };
+})();
+
+/* ---------- v2 platform 2: backtest lab ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat2=function(){
+    var b99=document.getElementById('bt99'),b95=document.getElementById('bt95'),
+        modSel=document.getElementById('btModel'),tbl=document.getElementById('btTbl'),
+        note=document.getElementById('btNote');
+    var conf=0.99,sim=null,EVAL=750,WARM=260;
+    var NAMES={stat:'Static normal',gn:'Normal-GARCH',gt:'t-GARCH (well-specified)',hs:'Historical sim (250d)'};
+    function newMarket(){
+      var seed=(Math.random()*4294967296)>>>0;
+      sim=M.genGARCHt(1.44*0.02,0.09,0.89,6,WARM+EVAL,seed);
+      compute();
+    }
+    function varSeries(key,q){
+      var i,out=[];
+      var zN=M.normInv(q),zT=M.tInv(q,6)*Math.sqrt(4/6);
+      if(key==='stat'){
+        var s=0;
+        for(i=0;i<250;i++)s+=sim.r[i]*sim.r[i];
+        var sd0=Math.sqrt(s/250);
+        for(i=0;i<EVAL;i++)out.push(-zN*sd0);
+      }else if(key==='gn'){
+        for(i=0;i<EVAL;i++)out.push(-zN*sim.sigma[WARM+i]);
+      }else if(key==='gt'){
+        for(i=0;i<EVAL;i++)out.push(-zT*sim.sigma[WARM+i]);
+      }else{
+        for(i=0;i<EVAL;i++){
+          var win=sim.r.slice(WARM+i-250,WARM+i).slice().sort(function(a,b){return a-b;});
+          var pos=q*(win.length-1),i0=Math.floor(pos);
+          var qv=win[i0]+(pos-i0)*(win[Math.min(win.length-1,i0+1)]-win[i0]);
+          out.push(-qv);
+        }
+      }
+      return out;
+    }
+    function zoneOf(x250,q){
+      var cp=M.binomCdf(x250,250,q);
+      return cp<0.95?['green','🟢 green']:(cp<0.9999?['yellow','🟡 yellow']:['red','🔴 red']);
+    }
+    function compute(){
+      var q=1-conf,i,k;
+      b99.className=conf===0.99?'alt on':'alt';
+      b95.className=conf===0.95?'alt on':'alt';
+      var keys=['stat','gn','gt','hs'],res={};
+      keys.forEach(function(key){
+        var v=varSeries(key,q),br=[];
+        for(i=0;i<EVAL;i++)if(sim.r[WARM+i]<-v[i])br.push(i);
+        var x250=0;
+        for(i=0;i<br.length;i++)if(br[i]>=EVAL-250)x250++;
+        var kt=M.kupiec(EVAL,br.length,q);
+        res[key]={v:v,br:br,x250:x250,kt:kt,zone:zoneOf(x250,q)};
+      });
+      /* table */
+      var exp750=EVAL*q,html='<table><tr><th>VaR model</th><th>breaches / '+EVAL+'d (exp. '+M.fmt(exp750,1)+')</th><th>Kupiec LR</th><th>p-value</th><th>last 250d: x → Basel zone</th></tr>';
+      keys.forEach(function(key){
+        var r=res[key],pass=r.kt.p>0.05;
+        html+='<tr'+(key===modSel.value?' style="outline:2px solid var(--accent)"':'')+'><td>'+NAMES[key]+'</td>'+
+          '<td>'+r.br.length+'</td><td>'+M.fmt(r.kt.lr,2)+'</td>'+
+          '<td style="color:'+(pass?'var(--good)':'var(--bad)')+'">'+M.fmt(r.kt.p,3)+(pass?' ✓':' ✗')+'</td>'+
+          '<td><span class="verdict '+r.zone[0]+'" style="padding:2px 10px">'+r.x250+' → '+r.zone[1]+'</span></td></tr>';
+      });
+      html+='</table>';
+      tbl.innerHTML=html;
+      /* chart selected model */
+      var key=modSel.value,r=res[key];
+      var lo=Math.min.apply(null,sim.r.slice(WARM)),hi=Math.max.apply(null,sim.r.slice(WARM));
+      lo=Math.min(lo,-Math.max.apply(null,r.v));
+      var m=(hi-lo)*0.08;
+      var c=M.Chart(document.getElementById('btChart'),260);
+      c.range(0,EVAL-1,lo-m,hi+m).clear();
+      c.axes(M.ticks(0,EVAL-1,6),M.ticks(lo-m,hi+m,5),null,function(v){return M.fmt(v,0);});
+      c.hline(0,'#334155');
+      var xs=[],vneg=[];
+      for(i=0;i<EVAL;i++){xs.push(i);vneg.push(-r.v[i]);}
+      c.line(xs,sim.r.slice(WARM),'#38bdf8',1);
+      c.line(xs,vneg,'#fbbf24',1.8);
+      c.dots(r.br,r.br.map(function(j){return sim.r[WARM+j];}),'#f87171',4);
+      c.text(NAMES[key]+' · gold = −VaR'+Math.round(conf*100)+' · red dots = '+r.br.length+' breaches over 3 years',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      /* clustering stat for selected */
+      var maxw=0;
+      for(i=0;i<r.br.length;i++){
+        var cnt=0;
+        for(k=i;k<r.br.length;k++)if(r.br[k]-r.br[i]<20)cnt++;
+        if(cnt>maxw)maxw=cnt;
+      }
+      note.innerHTML='Expected breaches over '+EVAL+' days at '+Math.round(conf*100)+'%: <b>'+M.fmt(exp750,1)+'</b>. '+
+        'Static normal scored '+res.stat.br.length+' — and '+(maxw>=3&&key==='stat'?maxw+' of the plotted breaches fall inside one 20-day window: ':'')+
+        'its flat VaR line cannot breathe with the volatility, so exceptions arrive in clusters during the storms (and at 99% the thin normal tail makes it worse). '+
+        'The t-GARCH desk scored '+res.gt.br.length+' (Kupiec p = '+M.fmt(res.gt.kt.p,2)+') with scattered timing — the boring, correct answer. '+
+        'Historical simulation ('+res.hs.br.length+') typically concentrates its failures just after regime turns, while its window is still full of dead calm. '+
+        (key!=='stat'&&maxw>=3?('Selected model: largest 20-day breach cluster = '+maxw+'.'):'');
+    }
+    b99.onclick=function(){conf=0.99;compute();};
+    b95.onclick=function(){conf=0.95;compute();};
+    modSel.addEventListener('input',compute);
+    document.getElementById('btRun').onclick=newMarket;
+    window.addEventListener('resize',function(){if(sim&&document.getElementById('plat2').classList.contains('active'))compute();});
+    M.exp2=function(k){
+      if(k===0)modSel.value='stat';
+      else if(k===1)modSel.value='gt';
+      else if(k===2)modSel.value='hs';
+      if(k===3){conf=0.95;newMarket();return;}
+      compute();
+    };
+    newMarket();
+  };
+})();
+
+/* ---------- v2 platform 3: ES vs VaR explorer ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat3=function(){
+    var dSel=document.getElementById('esDist'),sNu=document.getElementById('esNu'),vNu=document.getElementById('esVNu'),
+        sC=document.getElementById('esC'),vC=document.getElementById('esVC'),
+        stats=document.getElementById('esStats'),note=document.getElementById('esNote');
+    var MW=0.008,MJ=-4,MS=1,MB=0.9;   /* mixture: body N(0,0.9), crash N(-4,1) w.p. 0.8% */
+    function pdfOf(x,dist,nu){
+      if(dist==='n')return M.normPdf(x);
+      if(dist==='t'){var sc=Math.sqrt((nu-2)/nu);return M.tPdf(x/sc,nu)/sc;}
+      return (1-MW)*M.normPdf(x/MB)/MB+MW*M.normPdf((x-MJ)/MS)/MS;
+    }
+    function cdfOf(x,dist,nu){
+      if(dist==='n')return M.normCdf(x);
+      if(dist==='t'){var sc=Math.sqrt((nu-2)/nu);return M.tCdf(x/sc,nu);}
+      return (1-MW)*M.normCdf(x/MB)+MW*M.normCdf((x-MJ)/MS);
+    }
+    function quantOf(q,dist,nu){
+      var lo=-40,hi=10;
+      for(var i=0;i<200;i++){var mid=(lo+hi)/2;if(cdfOf(mid,dist,nu)<q)lo=mid;else hi=mid;}
+      return (lo+hi)/2;
+    }
+    function partExp(u,m2,s2){ /* E[X 1(X<u)] for X~N(m2,s2) */
+      return m2*M.normCdf((u-m2)/s2)-s2*M.normPdf((u-m2)/s2);
+    }
+    function esOf(q,dist,nu){
+      if(dist==='n'){var z=M.normInv(q);return M.normPdf(z)/q;}
+      if(dist==='t'){
+        var sc=Math.sqrt((nu-2)/nu),tq=M.tInv(q,nu);
+        return M.tPdf(tq,nu)*(nu+tq*tq)/((nu-1)*q)*sc;
+      }
+      var u=quantOf(q,dist,nu);
+      return -((1-MW)*partExp(u,0,MB)+MW*partExp(u,MJ,MS))/q;
+    }
+    function draw(){
+      var dist=dSel.value,nu=+sNu.value,cpct=+sC.value,q=1-cpct/100;
+      vNu.textContent=String(nu);vC.textContent=M.fmt(cpct,1)+'%';
+      sNu.disabled=(dist!=='t');
+      document.getElementById('esBoxNu').className=(dist==='t')?'ctl':'ctl off';
+      var VaR=-quantOf(q,dist,nu),ES=esOf(q,dist,nu);
+      stats.innerHTML=
+        M.chip('VaR ('+M.fmt(cpct,1)+'%, σ = 1)',M.fmt(VaR,3))+
+        M.chip('ES — average loss beyond VaR',M.fmt(ES,3))+
+        M.chip('ES / VaR',M.fmt(ES/VaR,3))+
+        M.chip('tail probability 1−c',M.fmt(100*q,1)+'%');
+      /* density chart with shaded tail */
+      var XMIN=-8,XMAX=4,NPTS=240,xs=[],ys=[],i;
+      var ymax=0;
+      for(i=0;i<=NPTS;i++){
+        var x=XMIN+(XMAX-XMIN)*i/NPTS;
+        var y=pdfOf(x,dist,nu);
+        xs.push(x);ys.push(y);if(y>ymax)ymax=y;
+      }
+      var c=M.Chart(document.getElementById('esPdf'),250);
+      c.range(XMIN,XMAX,0,ymax*1.12).clear();
+      c.axes(M.ticks(XMIN,XMAX,6),[],function(v){return M.fmt(v,0)+'%';},null);
+      /* shade tail beyond VaR */
+      var tx=[],tl=[],tu=[];
+      for(i=0;i<=NPTS;i++){
+        if(xs[i]<=-VaR){tx.push(xs[i]);tl.push(0);tu.push(ys[i]);}
+      }
+      if(tx.length>1)c.band(tx,tl,tu,'rgba(248,113,113,0.35)');
+      c.line(xs,ys,'#38bdf8',2);
+      c.vline(-VaR,'#fbbf24',[5,4]);
+      c.text('VaR = '+M.fmt(VaR,2),c.px(-VaR)+4,c.pad.t+18,'#fbbf24');
+      c.vline(-ES,'#f87171',[5,4]);
+      c.text('ES = '+M.fmt(ES,2),c.px(-ES)+4,c.pad.t+32,'#f87171');
+      c.text('Return density (σ = 1) · shaded = the (1−c) tail VaR ignores the shape of',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      var txt;
+      if(dist==='n')txt='Normal world: ES/VaR = '+M.fmt(ES/VaR,2)+' — the average bad day is only modestly worse than the threshold, and the ratio shrinks towards 1 as c rises. Thin tails make VaR almost sufficient.';
+      else if(dist==='t')txt='Student-t(ν = '+nu+'): ES/VaR = '+M.fmt(ES/VaR,2)+'. The tail beyond VaR is long, so the AVERAGE exceedance is much worse than the threshold. Lower ν or raise c and watch the ratio grow — the deeper the tail, the more VaR under-tells the story.';
+      else txt='Crash-prone mixture: with probability 0.8% returns come from a disaster state centred at −4%. At low c the disaster hides entirely beyond the quantile — VaR literally cannot see it, but ES ('+M.fmt(ES,2)+' vs VaR '+M.fmt(VaR,2)+') can. Slide c towards 99.5% and watch VaR suddenly “discover” the crash state.';
+      note.innerHTML=txt;
+    }
+    function twoDesks(){
+      /* Desk A: normal sigma=1. Desk B: mixture calibrated to the SAME 99% VaR */
+      var q=0.01,varA=-M.normInv(q),esA=M.normPdf(M.normInv(q))/q;
+      function mixQ(p2,sb){
+        var lo=-30,hi=10;
+        for(var i=0;i<200;i++){var mid=(lo+hi)/2;
+          if((1-MW)*M.normCdf(mid/sb)+MW*M.normCdf((mid-MJ)/MS)<p2)lo=mid;else hi=mid;}
+        return (lo+hi)/2;
+      }
+      var lo=0.3,hi=1.5;
+      for(var i=0;i<100;i++){var mid=(lo+hi)/2;if(-mixQ(q,mid)>varA)hi=mid;else lo=mid;}
+      var sb=(lo+hi)/2,u=mixQ(q,sb);
+      var esB=-((1-MW)*partExp(u,0,sb)+MW*partExp(u,MJ,MS))/q;
+      var cv=document.getElementById('esBars');
+      cv.style.display='block';
+      var vals=[varA,-mixQ(q,sb),esA,esB],labs=['Desk A VaR99','Desk B VaR99','Desk A ES99','Desk B ES99'],
+          cols=['#38bdf8','#38bdf8','#fbbf24','#f87171'];
+      var top=Math.max.apply(null,vals)*1.25;
+      var c=M.Chart(cv,210);
+      c.range(0,4,0,top).clear();
+      c.axes([],M.ticks(0,top,4),null,function(v){return M.fmt(v,1)+'%';});
+      vals.forEach(function(v,i2){
+        var bw=(c.px(0.7)-c.px(0));
+        c.bars([i2+0.5],[v],cols[i2],bw);
+        c.text(M.fmt(v,2),c.px(i2+0.5),c.py(v)-6,'#e2e8f0','center');
+        c.text(labs[i2],c.px(i2+0.5),c.h-8,'#94a3b8','center');
+      });
+      c.text('Two desks, identical 99% VaR — desk B (short disaster insurance) hides '+M.fmt(100*(esB/esA-1),0)+'% more expected tail loss',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      note.innerHTML='<b>The two-desk demo.</b> Desk A holds a plain normal book (σ = 1). Desk B holds mostly small risks (σ = '+M.fmt(sb,2)+') plus a 0.8% chance of a −4% disaster — calibrated so both report <b>exactly the same 99% VaR ('+M.fmt(varA,2)+'%)</b>. Their Expected Shortfalls differ by '+M.fmt(100*(esB/esA-1),0)+'%: '+M.fmt(esA,2)+' vs '+M.fmt(esB,2)+'. A VaR-only limit treats these desks as equally risky; ES does not. This is precisely why Basel’s FRTB replaced 99% VaR with 97.5% ES as the capital measure.';
+    }
+    [dSel,sNu,sC].forEach(function(el){el.addEventListener('input',draw);});
+    document.getElementById('esTwo').onclick=twoDesks;
+    window.addEventListener('resize',function(){if(document.getElementById('plat3').classList.contains('active'))draw();});
+    M.exp3=function(k){
+      if(k===0){dSel.value='n';M.setCtl({esC:99});}
+      else if(k===1){dSel.value='t';M.setCtl({esNu:4,esC:99});}
+      else if(k===2){dSel.value='mix';M.setCtl({esC:95});}
+      else {twoDesks();return;}
+      draw();
+    };
+    draw();
+  };
+})();
+
+/* ---------- v2 platform 4: square-root-of-time lab ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat4=function(){
+    var sP=document.getElementById('stP'),vP=document.getElementById('stVP'),
+        stateSel=document.getElementById('stState'),stats=document.getElementById('stStats'),
+        note=document.getElementById('stNote'),runBtn=document.getElementById('stRun');
+    var runId=0,SBAR2=1.44;
+    sP.addEventListener('input',function(){vP.textContent=M.fmt(+sP.value,2);});
+    vP.textContent=M.fmt(+sP.value,2);
+    function run(){
+      var my=++runId,p=+sP.value,state=stateSel.value,NREP=2000;
+      var alpha=Math.min(0.05,p),beta=p-alpha,omega=SBAR2*(1-p);
+      var s20=state==='calm'?0.4*SBAR2:(state==='crisis'?4*SBAR2:SBAR2);
+      var rng=M.mulberry32((Math.random()*4294967296)>>>0),g=M.gauss(rng);
+      var sums=[],done=0;
+      runBtn.disabled=true;
+      function chunk(){
+        if(my!==runId)return;
+        var stop=Math.min(NREP,done+200);
+        for(;done<stop;done++){
+          var s2=s20,sum=0;
+          for(var d=0;d<10;d++){
+            var eps=Math.sqrt(s2)*g();
+            sum+=eps;
+            s2=omega+alpha*eps*eps+beta*s2;
+          }
+          sums.push(sum);
+        }
+        runBtn.textContent='Simulating… '+done+'/'+NREP;
+        if(done<NREP){setTimeout(chunk,0);return;}
+        runBtn.disabled=false;runBtn.textContent='▶ Simulate 2,000 ten-day paths';
+        finish(p,s20,sums);
+      }
+      chunk();
+    }
+    function finish(p,s20,sums){
+      sums.sort(function(a,b){return a-b;});
+      var n=sums.length,pos=0.01*(n-1),i0=Math.floor(pos);
+      var q01=sums[i0]+(pos-i0)*(sums[i0+1]-sums[i0]);
+      var var1=-M.normInv(0.01)*Math.sqrt(s20);
+      var scaled=var1*Math.sqrt(10);
+      var simVaR=-q01;
+      var ratio=simVaR/scaled;
+      stats.innerHTML=
+        M.chip('1-day 99% VaR (today’s σ)',M.fmt(var1,2)+'%')+
+        M.chip('√10-scaled 10-day VaR',M.fmt(scaled,2)+'%')+
+        M.chip('TRUE simulated 10-day VaR',M.fmt(simVaR,2)+'%')+
+        M.chip('truth / rule',M.fmt(ratio,3));
+      /* histogram of 10-day returns */
+      var lo=sums[0],hi=sums[n-1];
+      lo=Math.min(lo,-Math.max(scaled,simVaR)*1.1);
+      var NB=40,w=(hi-lo)/NB,bins=new Array(NB).fill(0),i;
+      for(i=0;i<n;i++){var b=Math.min(NB-1,Math.max(0,Math.floor((sums[i]-lo)/w)));bins[b]++;}
+      var bmax=Math.max.apply(null,bins);
+      var c=M.Chart(document.getElementById('stHist'),240);
+      c.range(lo,hi,0,bmax*1.15).clear();
+      c.axes(M.ticks(lo,hi,6),M.ticks(0,bmax*1.15,4),function(v){return M.fmt(v,0)+'%';},function(v){return M.fmt(v,0);});
+      var xs=[],ys=[];
+      for(i=0;i<NB;i++){xs.push(lo+(i+0.5)*w);ys.push(bins[i]);}
+      var bw=Math.max(2,(c.px(lo+w)-c.px(lo))*0.85);
+      c.bars(xs,ys,'#38bdf8',bw);
+      c.vline(-scaled,'#fbbf24',[5,4]);
+      c.text('√10 rule: −'+M.fmt(scaled,1)+'%',c.px(-scaled)+4,c.pad.t+18,'#fbbf24');
+      c.vline(-simVaR,'#f87171',[5,4]);
+      c.text('true 1%: −'+M.fmt(simVaR,1)+'%',c.px(-simVaR)+4,c.pad.t+32,'#f87171');
+      c.text('2,000 simulated 10-day returns from today’s state (σ² = '+M.fmt(s20,2)+', persistence '+M.fmt(p,2)+')',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      var verdict;
+      if(ratio>1.05)verdict='the √10 rule UNDERSTATES true 10-day risk by '+M.fmt(100*(ratio-1),0)+'%: starting calm, volatility mean-reverts UP towards σ̄ during the window — and the vol-of-vol fattens the 10-day tail on top. Scaling a calm day’s VaR is how desks walk into storms under-capitalised.';
+      else if(ratio<0.95)verdict='the √10 rule OVERSTATES true 10-day risk by '+M.fmt(100*(1-ratio),0)+'%: from a crisis day volatility decays towards σ̄ inside the window, so the scaled number prices a 10-day crisis that mostly will not persist.';
+      else verdict='the √10 rule is nearly exact (ratio '+M.fmt(ratio,2)+') — with little persistence or a typical starting day, returns aggregate almost like iid and the textbook scaling holds.';
+      note.innerHTML='Here '+verdict+' The rule is an <b>iid theorem</b>: variances add only when nothing connects tomorrow to today. GARCH clustering is exactly such a connection.';
+    }
+    runBtn.onclick=run;
+    M.exp4=function(k){
+      if(k===0){M.setCtl({stP:0.90});stateSel.value='calm';}
+      else if(k===1){M.setCtl({stP:0.90});stateSel.value='crisis';}
+      else {M.setCtl({stP:0});stateSel.value='typ';}
+      run();
+    };
+    run();
+  };
+})();
+
+/* ---------- v2 clinic demos ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.clinicDemo=function(kind,cid){
+    var cv=document.getElementById(cid);
+    cv.style.display='block';
+    var rng=M.mulberry32((Math.random()*4294967296)>>>0),g=M.gauss(rng),i;
+    if(kind==='cl'){
+      var iidPos=[],clPos=[],used={};
+      while(iidPos.length<5){var p2=Math.floor(rng()*250);if(!used[p2]){used[p2]=1;iidPos.push(p2);}}
+      var st=110+Math.floor(rng()*30);
+      for(i=0;i<5;i++)clPos.push(st+Math.floor(rng()*18));
+      var c=M.Chart(cv,170);
+      c.range(0,250,0,3).clear();
+      c.axes(M.ticks(0,250,6),[],null,null);
+      c.hline(2,'#334155');c.hline(1,'#334155');
+      c.dots(iidPos,iidPos.map(function(){return 2;}),'#34d399',5);
+      c.dots(clPos,clPos.map(function(){return 1;}),'#f87171',5);
+      c.text('5 breaches, independent timing — survivable (Kupiec identical for both rows)',c.pad.l+6,c.py(2)-12,'#34d399');
+      c.text('5 breaches, one terrible fortnight — desk-ending. Christoffersen separates them.',c.pad.l+6,c.py(1)-12,'#f87171');
+      c.text('250 trading days →',c.pad.l+6,c.pad.t+4,'#94a3b8');
+    }else if(kind==='hs'){
+      var n=250,r=[],t;
+      for(t=0;t<n;t++)r.push((t<150?1:3)*g());
+      var W=100,varLine=[],xs=[],breach=[];
+      for(t=W;t<n;t++){
+        var win=r.slice(t-W,t).slice().sort(function(a,b){return a-b;});
+        var pos=0.01*(W-1),i0=Math.floor(pos);
+        var v=-(win[i0]+(pos-i0)*(win[i0+1]-win[i0]));
+        varLine.push(-v);xs.push(t);
+        if(r[t]<-v)breach.push(t);
+      }
+      var lo=Math.min.apply(null,r),hi=Math.max.apply(null,r),m=(hi-lo)*0.08;
+      var c2=M.Chart(cv,190);
+      c2.range(0,n-1,lo-m,hi+m).clear();
+      c2.axes(M.ticks(0,n-1,5),M.ticks(lo-m,hi+m,4),null,function(v){return M.fmt(v,0);});
+      var xall=[];for(i=0;i<n;i++)xall.push(i);
+      c2.line(xall,r,'#38bdf8',1);
+      c2.line(xs,varLine,'#fbbf24',2);
+      c2.vline(150,'#f87171',[5,4]);
+      c2.dots(breach,breach.map(function(j){return r[j];}),'#f87171',4);
+      c2.text('σ jumps 1→3 at the red line: HS-VaR (gold, 100d window) reacts only AFTER the losses arrive',c2.pad.l+6,c2.pad.t+4,'#e2e8f0');
+    }else{
+      var probs=[],K=12;
+      for(var k=0;k<=K;k++)probs.push(M.binomPmf(k,250,0.01));
+      var top=Math.max.apply(null,probs)*1.2;
+      var c3=M.Chart(cv,190);
+      c3.range(-0.5,K+0.5,0,top).clear();
+      c3.axes(M.ticks(0,K,7),M.ticks(0,top,4),function(v){return M.fmt(v,0);},function(v){return M.fmt(100*v,0)+'%';});
+      var bw=Math.max(4,(c3.px(1)-c3.px(0))*0.7);
+      for(k=0;k<=K;k++){
+        var col=k<=4?'#34d399':(k<=9?'#fbbf24':'#f87171');
+        c3.bars([k],[probs[k]],col,bw);
+      }
+      c3.text('P(x breaches | 250 days, perfect 99% model) · green/yellow/red = Basel zones',c3.pad.l+6,c3.pad.t+4,'#e2e8f0');
+      c3.text('P(0) = '+M.fmt(100*probs[0],1)+'% · P(≥5) = '+M.fmt(100*(1-M.binomCdf(4,250,0.01)),1)+'% — even perfect models go yellow sometimes',c3.pad.l+6,c3.pad.t+18,'#94a3b8');
+    }
+  };
+})();
+
+/* ---------- v2 tabs + accordions ---------- */
+(function(){
+  'use strict';
+  document.querySelectorAll('.pcard').forEach(function(card){
+    card.addEventListener('click',function(e){
+      var tag=e.target.tagName;
+      if(tag==='BUTTON'||tag==='CANVAS'||tag==='SELECT'||tag==='INPUT'||tag==='OPTION')return;
+      card.classList.toggle('open');
+      var ar=card.querySelector('.arrow');
+      if(ar)ar.textContent=card.classList.contains('open')?'▴ close':'▾ details';
+    });
+  });
+  var bar=document.getElementById('tabbar');
+  if(!bar)return;
+  var btns=Array.prototype.slice.call(bar.querySelectorAll('button'));
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      btns.forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      document.querySelectorAll('.plat').forEach(function(p){p.classList.remove('active');});
+      var id=b.getAttribute('data-plat');
+      document.getElementById(id).classList.add('active');
+      var init=window.MANG['init_'+id];
+      if(init&&!init._done){init._done=true;init();}
+    });
+  });
 })();
 </script>
 </body>

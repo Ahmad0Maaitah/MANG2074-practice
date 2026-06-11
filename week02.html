@@ -31,6 +31,7 @@ button.choice:hover{border-color:var(--accent)}
 .ctl .val{color:var(--accent2);font-weight:600}
 input[type=range]{width:100%;accent-color:var(--accent)}
 canvas{display:block;width:100%;background:var(--panel);border:1px solid #334155;border-radius:10px;margin:10px 0}
+.charts2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
 .stat{background:var(--panel2);border-radius:10px;padding:8px 12px;text-align:center}
 .stat .k{font-size:.8rem;color:var(--muted)}
@@ -61,14 +62,39 @@ table.reg th,table.reg td{border:1px solid #334155;padding:5px 10px;text-align:r
 table.reg th:first-child,table.reg td:first-child{text-align:left}
 table.reg th{background:var(--panel2);color:var(--muted)}
 .rsswrap{margin:10px 0}
-.rsswrap .lbl{font-size:.85rem;color:var(--muted)}
+.rsswrap .lbl2{font-size:.85rem;color:var(--muted)}
 .rssbar{height:18px;border-radius:6px;background:var(--bg);overflow:hidden;margin:3px 0 10px}
 .rssbar>div{height:100%;border-radius:6px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.pcard{background:var(--panel2);border-radius:10px;padding:12px 16px;cursor:pointer;border:1px solid #334155}
+.pcard:hover{border-color:var(--accent)}
+.pcard .sym{font-weight:700;color:var(--accent2);font-size:1.05rem}
+.pcard .one{color:var(--muted);font-size:.9rem}
+.pcard .body{display:none;font-size:.9rem;margin-top:8px;border-top:1px solid #334155;padding-top:8px}
+.pcard.open .body{display:block}
+.pcard .body p{margin:6px 0}
+.lbl{color:var(--accent);font-weight:600}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tabbar button{background:var(--panel2);color:var(--text);border:1px solid #334155;padding:8px 14px;border-radius:8px;cursor:pointer;font:600 .9rem var(--font)}
+.tabbar button.active{background:var(--accent);color:#0f172a;font-weight:600}
+.platform{display:none}
+.platform.active{display:block}
+.xp{background:var(--panel2);border-radius:10px;padding:12px 16px;margin-top:14px;font-size:.93rem}
+.xp ol{margin:6px 0 0;padding-left:20px}
+.xp li{margin:8px 0}
+button.setit{padding:3px 10px;font-size:.8rem;margin-left:8px;background:var(--accent2)}
+.clinic{border:1px solid #334155;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.clinic>.head{padding:10px 16px;cursor:pointer;background:var(--panel2);font-weight:600;font-size:.97rem}
+.clinic>.head:hover{color:var(--accent)}
+.clinic>.body{display:none;padding:12px 16px;font-size:.93rem}
+.clinic.open>.body{display:block}
+.clinic .body p{margin:6px 0}
+canvas.mini{height:160px}
 footer{max-width:1000px;margin:0 auto;padding:18px 16px 34px;color:var(--muted);font-size:.9rem;text-align:center}
 footer .nav{display:flex;justify-content:space-between;margin-bottom:10px}
 footer a{color:var(--accent);text-decoration:none}
 footer a:hover{text-decoration:underline}
-@media(max-width:720px){header{padding:10px 14px}}
+@media(max-width:720px){.charts2{grid-template-columns:1fr}header{padding:10px 14px}}
 </style>
 </head>
 <body>
@@ -78,14 +104,106 @@ footer a:hover{text-decoration:underline}
 </header>
 <main>
 <div class="intro">
-  OLS picks the line that minimises the residual sum of squares — this week you race it by hand.
-  Drag your own α̂ and β̂ through a CAPM scatter of excess returns and see how close your RSS gets to the OLS minimum,
-  then train your eye to read the market beta straight off a cloud of points in “Guess the Beta”.
+  OLS picks the line that minimises the residual sum of squares — this week you race it by hand. Learn the eight numbers of
+  the CAPM regression in the cards, then work four platforms: fit your own line, watch the sampling distribution of β̂ build
+  up draw by draw, run a futures hedging desk, and chase a time-varying beta with rolling windows. The clinic covers the
+  classic disasters, then it's "Guess the Beta" and real Python/R code.
 </div>
 
-<!-- ============ SECTION A: SIMULATION ============ -->
-<section id="sim">
-<h2>🔬 Simulation — Fit your own line</h2>
+<!-- ============ PARAMETERS & CONCEPTS ============ -->
+<section id="params">
+<h2>📚 Parameters &amp; concepts</h2>
+<p style="color:var(--muted);font-size:.93rem;margin-top:0">Click a card to expand. The regression is r<sub>i</sub> − r<sub>f</sub> = α + β·(r<sub>m</sub> − r<sub>f</sub>) + ε.</p>
+<div class="pgrid">
+
+<div class="pcard"><div class="sym">α — intercept (Jensen's alpha)</div><div class="one">Return earned with the market switched off — "skill", allegedly.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the average excess return left over after paying for market exposure. The single most fought-over number in fund management.</p>
+<p><span class="lbl">Formula:</span> α̂ = ȳ − β̂·x̄ in the CAPM regression on <em>excess</em> returns. CAPM theory says α = 0.</p>
+<p><span class="lbl">Typical values:</span> for most stocks and funds, statistically zero. A persistent monthly α̂ of even 0.2–0.3% (≈3%/yr) before costs is exceptional; after fees, the average mutual fund's α is slightly negative.</p>
+<p><span class="lbl">At the extremes:</span> large positive α with low t — luck; large α with high t — check the data before celebrating (survivorship? stale prices? wrong r<sub>f</sub>?).</p>
+<p><span class="lbl">Estimation problems:</span> SE(α̂) is huge relative to plausible true alphas — you need decades of data to "prove" skill; and using raw instead of excess returns mechanically fakes α (see clinic).</p>
+</div></div>
+
+<div class="pcard"><div class="sym">β — slope (market beta)</div><div class="one">How many % the stock moves when the market moves 1%.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> systematic risk exposure — the part of the stock's movement you can't diversify away.</p>
+<p><span class="lbl">Formula:</span> β̂ = Cov(x,y)/Var(x) = Σ(x−x̄)(y−ȳ)/Σ(x−x̄)².</p>
+<p><span class="lbl">Typical values:</span> utilities/staples 0.3–0.7; the average stock 1 by construction; banks and tech 1.2–1.8; levered crypto-linked names 2+.</p>
+<p><span class="lbl">At the extremes:</span> β = 0 — market-neutral (cash, some hedge funds); β &lt; 0 — a genuine hedge (rare: gold miners sometimes, long-vol strategies); β = 1 — moves one-for-one (test H₀: β = 1, not just β = 0!).</p>
+<p><span class="lbl">Estimation problems:</span> unstable over time (see Platform 4), attenuated by thin trading, hijacked by single outliers, and sensitive to the return frequency you choose.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">σ<sub>ε</sub> — residual volatility</div><div class="one">Idiosyncratic risk: the stock's own private drama.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the standard deviation of ε — moves the market cannot explain (earnings surprises, CEO tweets).</p>
+<p><span class="lbl">Formula:</span> s = √(RSS/(n−2)); total variance splits as β²σ²<sub>m</sub> + σ²<sub>ε</sub>.</p>
+<p><span class="lbl">Typical values:</span> for monthly stock returns, σ<sub>ε</sub> ≈ 4–10% — usually BIGGER than the systematic part for a single stock; near zero for index trackers.</p>
+<p><span class="lbl">At the extremes:</span> σ<sub>ε</sub> → 0 ⇒ R² → 1 (the stock IS the market); huge σ<sub>ε</sub> ⇒ scatter is a shapeless cloud and β̂ is poorly determined.</p>
+<p><span class="lbl">Estimation problems:</span> it sits in the numerator of every SE — heteroscedastic ε (vol clustering) makes the usual s wrong, biasing all your t-stats.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">SE(β̂) — standard error of beta</div><div class="one">How much β̂ would wobble across alternative samples.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the sampling-noise yardstick: the sd of the sampling distribution of β̂ (watch it materialise on Platform 2).</p>
+<p><span class="lbl">Formula:</span> SE(β̂) = s/√Σ(x−x̄)² ≈ σ<sub>ε</sub>/(σ<sub>x</sub>√n).</p>
+<p><span class="lbl">Typical values:</span> with 60 monthly observations a stock beta carries SE ≈ 0.15–0.3 — so "β = 1.2" really means "somewhere between 0.7 and 1.7". Humbling.</p>
+<p><span class="lbl">At the extremes:</span> quadruple n to halve SE; double the noise σ<sub>ε</sub> to double it; a market that never moves (tiny σ<sub>x</sub>) makes β unidentifiable.</p>
+<p><span class="lbl">Estimation problems:</span> the formula assumes homoscedastic, uncorrelated errors — both routinely false in finance; robust (White/Newey–West, Week 4) versions are bigger and more honest.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">t-stat — estimate ÷ its SE</div><div class="one">How many standard errors the estimate sits from the hypothesised value.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the signal-to-noise ratio of a coefficient; |t| &gt; ~2 means "hard to explain by sampling luck alone".</p>
+<p><span class="lbl">Formula:</span> t = (β̂ − β₀)/SE(β̂) ~ t(n−2) under H₀. β₀ = 0 for "is there any market exposure?", β₀ = 1 for "does it move one-for-one?".</p>
+<p><span class="lbl">Typical values:</span> betas are nearly always significant vs 0 (t of 5–20); alphas almost never are (t of 0–1.5).</p>
+<p><span class="lbl">At the extremes:</span> t = 1.96 ⇔ p = 0.05 with large n; in big samples economically tiny effects become "significant" — read the size of β̂, not just its stars.</p>
+<p><span class="lbl">Estimation problems:</span> garbage SEs ⇒ garbage t-stats — autocorrelation and heteroscedasticity typically inflate |t| and manufacture false discoveries.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">R² — goodness of fit</div><div class="one">The share of the stock's variance the market explains.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> in the CAPM context, the systematic share of total risk. Also the squared correlation between x and y in the bivariate case.</p>
+<p><span class="lbl">Formula:</span> R² = 1 − RSS/TSS = β̂²Σ(x−x̄)²/Σ(y−ȳ)².</p>
+<p><span class="lbl">Typical values:</span> single stocks vs the index: 0.1–0.4; diversified portfolios: 0.8+; index trackers: 0.99+. A LOW R² is normal and fine for a single stock.</p>
+<p><span class="lbl">At the extremes:</span> R² ≈ 1 in a "returns" regression should ring alarm bells — you probably regressed price LEVELS (see clinic); R² ≈ 0 with significant β is perfectly possible in big samples.</p>
+<p><span class="lbl">Estimation problems:</span> R² says nothing about whether the MODEL is right, and maximising it invites junk regressors (next week's topic).</p>
+</div></div>
+
+<div class="pcard"><div class="sym">n — sample size</div><div class="one">Observations: the only free lunch — except it isn't.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> number of return periods in the regression window.</p>
+<p><span class="lbl">Formula:</span> SE ∝ 1/√n; df = n − 2 for the t-tests.</p>
+<p><span class="lbl">Typical values:</span> the industry-standard beta uses 60 monthly or 252 daily observations.</p>
+<p><span class="lbl">At the extremes:</span> n = 20 — SEs so wide the estimate is decorative; n = 2500 (10y daily) — precise estimate of an average that may mix several different regimes.</p>
+<p><span class="lbl">Estimation problems:</span> the n vs stability trade-off — long windows shrink sampling noise but smear over genuine changes in β (Platform 4 makes you feel this).</p>
+</div></div>
+
+<div class="pcard"><div class="sym">h* — optimal hedge ratio</div><div class="one">Futures per unit of spot that minimises P&amp;L variance.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> how many futures contracts to short per unit of spot exposure. It is exactly an OLS slope: regress spot returns on futures returns.</p>
+<p><span class="lbl">Formula:</span> h* = Cov(Δs, Δf)/Var(Δf); hedged variance = Var(Δs)·(1 − ρ²).</p>
+<p><span class="lbl">Typical values:</span> hedging an equity portfolio with index futures: h* ≈ portfolio beta; cross-hedges (jet fuel with crude futures) h* ≈ 0.5–0.9 with sizeable basis risk.</p>
+<p><span class="lbl">At the extremes:</span> ρ = 1 ⇒ perfect hedge, zero residual risk; ρ = 0 ⇒ h* = 0, hedging adds pure noise; h = 1 ("naive full hedge") is only optimal if Cov = Var.</p>
+<p><span class="lbl">Estimation problems:</span> estimated from history — if the spot–futures relationship shifts (basis blow-outs, 2020 oil), yesterday's h* mis-hedges today; time-varying versions need GARCH (Week 7).</p>
+</div></div>
+
+</div>
+</section>
+
+<!-- ============ PLATFORMS ============ -->
+<section id="platforms">
+<h2>🔬 Platforms — the OLS trading floor</h2>
+<div class="tabbar">
+  <button data-p="p1">1 · Fit your own line</button>
+  <button data-p="p2">2 · Sampling distribution</button>
+  <button data-p="p3">3 · Hedging desk</button>
+  <button data-p="p4">4 · Rolling beta</button>
+</div>
+
+<!-- ---- Platform 1 ---- -->
+<div class="platform" id="p1">
+<h3>Fit your own line — race the OLS estimator</h3>
 <p>Each point is one month: x = market excess return (r<sub>m</sub> − r<sub>f</sub>), y = stock excess return (r<sub>i</sub> − r<sub>f</sub>), both in %. The DGP is y = α + β·x + u. OLS solves β̂ = Cov(x,y)/Var(x), α̂ = ȳ − β̂·x̄.</p>
 <div class="controls">
   <div class="ctl"><label><b>n</b> observations: <span class="val" id="nV">60</span></label>
@@ -104,9 +222,9 @@ footer a:hover{text-decoration:underline}
 </div>
 <canvas id="scatC" style="height:330px"></canvas>
 <div class="rsswrap">
-  <div class="lbl">Your RSS = <b id="rssYou" style="color:var(--accent2)">–</b></div>
+  <div class="lbl2">Your RSS = <b id="rssYou" style="color:var(--accent2)">–</b></div>
   <div class="rssbar"><div id="barYou" style="background:var(--accent2);width:0%"></div></div>
-  <div class="lbl">OLS minimum RSS = <b id="rssOls" style="color:var(--good)">–</b></div>
+  <div class="lbl2">OLS minimum RSS = <b id="rssOls" style="color:var(--good)">–</b></div>
   <div class="rssbar"><div id="barOls" style="background:var(--good);width:0%"></div></div>
 </div>
 <div id="olsBox" style="display:none">
@@ -123,6 +241,162 @@ footer a:hover{text-decoration:underline}
   </div>
 </div>
 <div class="notice" id="simNotice"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>Easy mode: n = 200, σ<sub>u</sub> = 1. The cloud is a pencil line — your eyeball fit will nearly tie OLS. <button class="setit" data-x="0">Set it up</button></li>
+<li>Hard mode: n = 20, σ<sub>u</sub> = 8. Reveal OLS and look at SE(β̂) — with this little data even OLS is basically guessing. <button class="setit" data-x="1">Set it up</button></li>
+<li>Snap your sliders to the OLS solution and watch your RSS bar drop exactly onto the green one — you can tie OLS, never beat it. <button class="setit" data-x="2">Set it up</button></li>
+<li>n = 200 but σ<sub>u</sub> = 8: lots of noise, lots of data. Reveal OLS — SE(β̂) is respectable again, because SE ∝ σ/√n. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 2 ---- -->
+<div class="platform" id="p2">
+<h3>Sampling distribution lab — where standard errors come from</h3>
+<p>Fix a TRUE β, then repeatedly draw fresh samples and re-estimate. Left: the latest sample and its fitted line. Right: the histogram of all the β̂'s so far, with the theoretical normal N(β, SE²) overlaid — SE(β̂) ≈ σ<sub>u</sub>/(σ<sub>x</sub>√n) with σ<sub>x</sub> = 3 here. The "standard error" printed by software is exactly the predicted width of this histogram.</p>
+<div class="controls">
+  <div class="ctl"><label>True <b>β</b>: <span class="val" id="b2TV">1.20</span></label>
+    <input type="range" id="b2T" min="0.2" max="2.5" step="0.05" value="1.2"></div>
+  <div class="ctl"><label><b>n</b> per sample: <span class="val" id="n2V">60</span></label>
+    <input type="range" id="n2" min="20" max="400" step="10" value="60"></div>
+  <div class="ctl"><label><b>σ<sub>u</sub></b> noise sd (%): <span class="val" id="s2V">3.0</span></label>
+    <input type="range" id="s2" min="0.5" max="8" step="0.25" value="3"></div>
+  <div class="ctl" style="display:flex;align-items:center;gap:8px">
+    <button id="draw2" style="flex:1">▶ Draw 200 samples</button>
+    <button id="reset2" class="alt" style="flex:1">Reset</button></div>
+</div>
+<div class="hud">
+  <span class="pill">Samples drawn <b id="cnt2">0</b></span>
+  <span class="pill">mean(β̂) <b id="mb2">–</b></span>
+  <span class="pill">sd(β̂) empirical <b id="sb2">–</b></span>
+  <span class="pill">SE theoretical <b id="tb2">–</b></span>
+</div>
+<div class="charts2">
+  <canvas id="sampC" style="height:240px"></canvas>
+  <canvas id="histB" style="height:240px"></canvas>
+</div>
+<div class="notice" id="ntc2"><b>What to notice:</b> press ▶ to start drawing samples.</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>n = 30, σ<sub>u</sub> = 5: a wide, sloppy histogram — single-sample betas scatter ±0.6 around the truth. This is why two data providers quote different betas for the same stock. <button class="setit" data-x="0">Set it up</button></li>
+<li>Now n = 300, σ<sub>u</sub> = 5: ten times the data shrinks the spread by √10 ≈ 3.2×. Precision is bought at the rate √n. <button class="setit" data-x="1">Set it up</button></li>
+<li>Back to n = 30 but σ<sub>u</sub> = 1: the SAME tightening, achieved through less noise instead of more data. SE = σ<sub>u</sub>/(σ<sub>x</sub>√n) treats them symmetrically. <button class="setit" data-x="2">Set it up</button></li>
+<li>True β = 2.5: the histogram re-centres on 2.5 but its WIDTH doesn't change — OLS is unbiased whatever the true value. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 3 ---- -->
+<div class="platform" id="p3">
+<h3>Hedging desk — minimum-variance hedge ratio</h3>
+<p>You hold spot exposure; you can short h futures per unit. Daily: Δf = 1.2%·z (futures), Δs = 0.9·Δf + basis noise (spot). Hedged P&amp;L: Δs − h·Δf, with variance Var(Δs) − 2h·Cov + h²·Var(Δf) — a parabola in h, minimised at <b>h* = Cov/Var(Δf)</b> (an OLS slope!). Sample of 250 trading days.</p>
+<div class="controls">
+  <div class="ctl"><label>Your hedge ratio <b>h</b>: <span class="val" id="h3V">0.50</span></label>
+    <input type="range" id="h3" min="0" max="2" step="0.01" value="0.5"></div>
+  <div class="ctl"><label><b>σ<sub>b</sub></b> basis noise (%/day): <span class="val" id="b3V">0.6</span></label>
+    <input type="range" id="b3" min="0" max="3" step="0.1" value="0.6"></div>
+  <div class="ctl" style="display:flex;align-items:center"><button id="regen3" style="width:100%">🎲 New 250 days</button></div>
+</div>
+<div class="stats">
+  <div class="stat"><div class="k">ĥ* = Cov/Var</div><div class="v" id="st3h">–</div></div>
+  <div class="stat"><div class="k">ρ(Δs, Δf)</div><div class="v" id="st3r">–</div></div>
+  <div class="stat"><div class="k">var. reduction at YOUR h</div><div class="v" id="st3u">–</div></div>
+  <div class="stat"><div class="k">max reduction (= ρ²)</div><div class="v" id="st3m">–</div></div>
+</div>
+<div class="charts2">
+  <canvas id="parC" style="height:240px"></canvas>
+  <canvas id="pnlC" style="height:240px"></canvas>
+</div>
+<div class="notice" id="ntc3"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>σ<sub>b</sub> = 0: a perfect proxy. The parabola bottoms out at ĥ* ≈ 0.9 with ~100% variance reduction — the gold P&amp;L line flattens to nothing. <button class="setit" data-x="0">Set it up</button></li>
+<li>σ<sub>b</sub> = 2: heavy basis risk (think jet fuel hedged with crude). Even at the optimum, most variance survives: max reduction = ρ². <button class="setit" data-x="1">Set it up</button></li>
+<li>The "naive" full hedge h = 1: read how much worse it is than ĥ* — h = 1 is only right when Cov = Var(Δf). <button class="setit" data-x="2">Set it up</button></li>
+<li>Over-hedge at h = 2: you've ADDED futures risk. Check whether variance is now higher than not hedging at all (h = 0)! <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 4 ---- -->
+<div class="platform" id="p4">
+<h3>Rolling beta explorer — chasing a moving target</h3>
+<p>500 days of returns where the TRUE beta jumps at day 250 (gold step). The blue line is the rolling OLS β̂ using the last w days. Short windows react fast but wobble; long windows are smooth but arrive late. There is no free lunch — only a trade-off.</p>
+<div class="controls">
+  <div class="ctl"><label><b>w</b> window length (days): <span class="val" id="w4V">90</span></label>
+    <input type="range" id="w4" min="30" max="250" step="10" value="90"></div>
+  <div class="ctl"><label><b>β₁</b> (days 1–250): <span class="val" id="b41V">0.9</span></label>
+    <input type="range" id="b41" min="0.3" max="2.2" step="0.1" value="0.9"></div>
+  <div class="ctl"><label><b>β₂</b> (days 251–500): <span class="val" id="b42V">1.6</span></label>
+    <input type="range" id="b42" min="0.3" max="2.2" step="0.1" value="1.6"></div>
+  <div class="ctl"><label><b>σ<sub>ε</sub></b> idiosyncratic noise (%): <span class="val" id="s4V">2.0</span></label>
+    <input type="range" id="s4" min="0.5" max="5" step="0.25" value="2"></div>
+  <div class="ctl" style="display:flex;align-items:center"><button id="regen4" style="width:100%">🎲 New 500 days</button></div>
+</div>
+<canvas id="rollC" style="height:280px"></canvas>
+<div class="stats">
+  <div class="stat"><div class="k">sd of β̂ around β₁ (pre-break)</div><div class="v" id="st4n">–</div></div>
+  <div class="stat"><div class="k">detection lag (days)</div><div class="v" id="st4l">–</div></div>
+  <div class="stat"><div class="k">theoretical sd ≈ σ<sub>ε</sub>/(σ<sub>m</sub>√w)</div><div class="v" id="st4t">–</div></div>
+</div>
+<div class="notice" id="ntc4"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>w = 30: the estimate hugs every turn of the true beta — and everything else. The wiggles are pure estimation noise of size σ<sub>ε</sub>/(σ<sub>m</sub>√30). <button class="setit" data-x="0">Set it up</button></li>
+<li>w = 250: silk-smooth, but after the break it takes the full 250 days to finish converging — half the window mixes old and new regimes. <button class="setit" data-x="1">Set it up</button></li>
+<li>A subtle shift: β 1.0 → 1.2 with w = 60. Can you even see the break through the noise? This is most real-world beta drift. <button class="setit" data-x="2">Set it up</button></li>
+<li>2008 mode: β 0.9 → 1.8, noisy market (σ<sub>ε</sub> = 3), w = 120. The bank that "had beta 0.9" was running 1.8 for months before the 120-day estimate admitted it. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+</section>
+
+<!-- ============ PROBLEMS CLINIC ============ -->
+<section id="clinicSec">
+<h2>⚠️ Problems clinic</h2>
+<p style="color:var(--muted);font-size:.93rem;margin-top:0">Six classic ways CAPM regressions and hedge ratios go wrong on a real desk.</p>
+
+<div class="clinic"><div class="head">▸ 1 · Beta instability: yesterday's beta, today's risk</div><div class="body">
+<p><span class="lbl">What it is:</span> β is treated as a constant but drifts with leverage, business mix and market regime. The number you estimated is a backward-looking average.</p>
+<p><span class="lbl">How it bites:</span> banks went into 2008 with "β ≈ 0.9" estimated on calm years, then traded like β ≈ 1.8 through the crisis — hedges sized on the old number were half the size they needed to be.</p>
+<p><span class="lbl">How to detect:</span> rolling-window β̂ (Platform 4); Chow test for a break at a known date; recursive estimates drifting outside their bands (Week 4).</p>
+<p><span class="lbl">Remedy:</span> shorter/exponentially-weighted windows, shrink extreme betas toward 1 (Vasicek/Bloomberg adjustment: 0.67·β̂ + 0.33·1), or model the time variation explicitly.</p>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 2 · Price levels instead of returns: the R² = 0.99 trap</div><div class="body">
+<p><span class="lbl">What it is:</span> regressing one trending price LEVEL on another. Both wander upward, so the regression "fits" superbly — even when the assets are completely unrelated. The spurious regression problem.</p>
+<p><span class="lbl">How it bites:</span> a student regresses Apple's price on the S&amp;P level, gets R² = 0.98 and t = 40, and concludes Apple is "almost perfectly explained by the market". Re-done in returns, R² is 0.3.</p>
+<p><span class="lbl">How to detect:</span> R² suspiciously near 1 plus a Durbin–Watson statistic near 0 is the classic signature; ask yourself "did I difference the data?"</p>
+<p><span class="lbl">Remedy:</span> regress RETURNS on RETURNS. Levels regressions are only legitimate for cointegrated pairs (Year 3 material).</p>
+<button class="alt" id="c2btn">▶ Demo: regress two INDEPENDENT random walks on each other</button>
+<div id="c2out" style="font-size:.9rem;color:var(--muted)"></div>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 3 · Thin trading: the incredible shrinking beta</div><div class="body">
+<p><span class="lbl">What it is:</span> illiquid stocks don't trade every period, so quoted prices are stale. Today's market move shows up in the stock's <em>measured</em> return tomorrow — contemporaneous covariance is understated and β̂ is biased toward zero (attenuation).</p>
+<p><span class="lbl">How it bites:</span> small-cap and frontier-market funds look "low risk" (β̂ ≈ 0.4) purely because of stale pricing; risk budgets and hedge sizes set on these betas are too small.</p>
+<p><span class="lbl">How to detect:</span> regress the stock's return on the market's current AND lagged returns — significant lagged coefficients betray staleness; β̂ rises when you use weekly instead of daily returns.</p>
+<p><span class="lbl">Remedy:</span> Dimson beta (sum of coefficients on lags −1, 0, +1), or estimate at lower frequency where staleness washes out.</p>
+<button class="alt" id="c3btn">▶ Demo: true β = 1.2, but prices only update on half of days</button>
+<div id="c3out" style="font-size:.9rem;color:var(--muted)"></div>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 4 · One outlier owns the slope</div><div class="body">
+<p><span class="lbl">What it is:</span> OLS minimises SQUARED errors, so a single extreme (x, y) pair — especially one far out in x — exerts enormous leverage on β̂.</p>
+<p><span class="lbl">How it bites:</span> estimate a beta over a window containing one crash day with a data error (or a genuine freak event) and β̂ can halve, double, or change sign. Your hedge follows it.</p>
+<p><span class="lbl">How to detect:</span> ALWAYS plot the scatter; leverage statistics/Cook's distance; re-estimate dropping the largest |x| observation and compare.</p>
+<p><span class="lbl">Remedy:</span> verify the data point first (fact, not noise?). If it's an error, fix it; if real, report both estimates — and consider robust regression for sizing decisions.</p>
+<button class="alt" id="c4btn">▶ Demo: 40 tame months + ONE bad print → watch β̂ flip</button>
+<canvas id="c4cv" class="mini" style="display:none"></canvas>
+<div id="c4out" style="font-size:.9rem;color:var(--muted)"></div>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 5 · "Just hedge 1-for-1": the h = 1 fallacy</div><div class="body">
+<p><span class="lbl">What it is:</span> assuming the right hedge is always one futures contract per unit of spot. h = 1 is only optimal when Cov(Δs,Δf) = Var(Δf) — i.e. a regression slope of exactly 1.</p>
+<p><span class="lbl">How it bites:</span> cross-hedges (airline fuel with Brent, a stock portfolio with index futures when portfolio β = 1.4) mis-hedge badly at h = 1: you're left with either residual exposure or, worse, added futures risk.</p>
+<p><span class="lbl">How to detect:</span> estimate the regression Δs = a + h·Δf + u. If the slope's CI excludes 1, the naive hedge is statistically wrong; the hedging-desk platform shows how much variance it costs.</p>
+<p><span class="lbl">Remedy:</span> use h* = Cov/Var (the OLS slope), re-estimate it regularly, and remember the hedge quality ceiling is ρ² — no ratio fixes a bad proxy.</p>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 6 · Jensen's alpha on raw returns: free fake skill</div><div class="body">
+<p><span class="lbl">What it is:</span> the CAPM is a statement about <em>excess</em> returns. Regressing raw returns on raw market returns gives an intercept of α + (1−β)·r̄<sub>f</sub> — not alpha.</p>
+<p><span class="lbl">How it bites:</span> a low-beta fund (β = 0.5) in a 4% interest-rate world picks up a fake "alpha" of (1−0.5)·4% = 2%/yr from the arithmetic alone. Marketing departments adore this error.</p>
+<p><span class="lbl">How to detect:</span> check the data pipeline — was r<sub>f</sub> subtracted from BOTH sides? Suspect any reported alpha that shrinks when rates fall.</p>
+<p><span class="lbl">Remedy:</span> build excess returns first (r − r<sub>f,monthly</sub>, mind the annual→monthly conversion: divide the annual % by 12), then regress.</p>
+</div></div>
 </section>
 
 <!-- ============ SECTION B: GAME ============ -->
@@ -152,7 +426,7 @@ Points = max(0, 20 − 40·|guess−β|/β). Within 10% of the truth = 🎯 bull
 <div class="langtog">
   <button id="ccPy" class="on">Python</button>
   <button id="ccR" class="alt">R</button>
-  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/6</span>
+  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/8</span>
 </div>
 <div id="cc-list"></div>
 </section>
@@ -255,17 +529,59 @@ window.MANG = (function () {
     const seA = Math.sqrt(s2 * (1 / n + xb * xb / sxx));
     return { a: a, b: b, seA: seA, seB: seB, tA: a / seA, tB: b / seB, rss: rss, tss: syy, r2: 1 - rss / syy, s: Math.sqrt(s2), sxx: sxx, n: n };
   }
-  return { mulberry32: mulberry32, gauss: gauss, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, ols2: ols2, fmt: fmt };
+  function normPdf(z) { return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI); }
+  /* --- platform tab plumbing --- */
+  const platforms = {};
+  function registerPlatform(id, obj) { platforms[id] = { obj: obj, inited: false }; }
+  function openPlatform(id) {
+    document.querySelectorAll('.tabbar button[data-p]').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-p') === id);
+    });
+    document.querySelectorAll('.platform').forEach(function (p) {
+      p.classList.toggle('active', p.id === id);
+    });
+    const rec = platforms[id];
+    if (rec) {
+      if (!rec.inited) { rec.inited = true; rec.obj.init(); }
+      else if (rec.obj.redraw) { rec.obj.redraw(); }
+    }
+  }
+  function isActive(id) {
+    const el = document.getElementById(id);
+    return el && el.classList.contains('active');
+  }
+  return { mulberry32: mulberry32, gauss: gauss, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, ols2: ols2, normPdf: normPdf, fmt: fmt, registerPlatform: registerPlatform, openPlatform: openPlatform, isActive: isActive };
+})();
+
+/* ===== Accordions + tab clicks ===== */
+(function () {
+  'use strict';
+  document.querySelectorAll('.pcard').forEach(function (c) {
+    c.addEventListener('click', function () { c.classList.toggle('open'); });
+  });
+  document.querySelectorAll('.clinic > .head').forEach(function (h) {
+    h.addEventListener('click', function () { h.parentElement.classList.toggle('open'); });
+  });
+  document.querySelectorAll('.tabbar button[data-p]').forEach(function (b) {
+    b.addEventListener('click', function () { window.MANG.openPlatform(b.getAttribute('data-p')); });
+  });
 })();
 </script>
 
 <script>
-/* ===== SECTION A: Fit your own line ===== */
+/* ===== Platform 1: Fit your own line ===== */
 (function () {
   'use strict';
   const M = window.MANG;
   const $ = id => document.getElementById(id);
   let seed = 20742, data = null, ols = null, revealed = false;
+
+  function labels() {
+    $('nV').textContent = $('nObs').value;
+    $('sV').textContent = parseFloat($('sNoise').value).toFixed(2);
+    $('aV').textContent = parseFloat($('aHat').value).toFixed(2);
+    $('bV').textContent = parseFloat($('bHat').value).toFixed(2);
+  }
 
   function generate() {
     const n = parseInt($('nObs').value, 10);
@@ -295,9 +611,7 @@ window.MANG = (function () {
     const f = M.frame(c.ctx, c.W, c.H, xlo - xm, xhi + xm, ylo - ym, yhi + ym,
       { title: 'x = market excess return (%) → y = stock excess return (%)' });
     M.drawDots(c.ctx, f, data.x, data.y, '#38bdf8', 3);
-    // your line (gold)
     M.drawLine(c.ctx, f, [xlo - xm, xhi + xm], [aH + bH * (xlo - xm), aH + bH * (xhi + xm)], '#fbbf24', 2);
-    // OLS line (green) if revealed
     if (revealed) {
       M.drawLine(c.ctx, f, [xlo - xm, xhi + xm], [ols.a + ols.b * (xlo - xm), ols.a + ols.b * (xhi + xm)], '#34d399', 2);
       c.ctx.fillStyle = '#34d399'; c.ctx.font = '12px Segoe UI, sans-serif'; c.ctx.textAlign = 'left';
@@ -305,7 +619,6 @@ window.MANG = (function () {
     }
     c.ctx.fillStyle = '#fbbf24'; c.ctx.font = '12px Segoe UI, sans-serif'; c.ctx.textAlign = 'left';
     c.ctx.fillText('you', f.X(xhi) - 30, f.Y(aH + bH * xhi) + 14);
-    // RSS comparison
     let rssYou = 0;
     for (let i = 0; i < data.n; i++) { const e = data.y[i] - aH - bH * data.x[i]; rssYou += e * e; }
     $('rssYou').textContent = rssYou.toFixed(1);
@@ -313,7 +626,6 @@ window.MANG = (function () {
     const mx = Math.max(rssYou, ols.rss);
     $('barYou').style.width = (100 * rssYou / mx).toFixed(1) + '%';
     $('barOls').style.width = (100 * ols.rss / mx).toFixed(1) + '%';
-    // notice
     const gap = 100 * (rssYou - ols.rss) / ols.rss;
     let msg = '<b>What to notice:</b> OLS is <em>defined</em> as the (α̂, β̂) minimising RSS — you can tie it but never beat it. ' +
       'Your RSS is currently <b>' + (gap < 0.05 ? 'at the OLS minimum — perfect fit by hand!' : gap.toFixed(1) + '% above the minimum.') + '</b> ';
@@ -336,20 +648,477 @@ window.MANG = (function () {
     redraw();
   }
 
-  ['nObs', 'sNoise'].forEach(id => $(id).addEventListener('input', function () {
-    $('nV').textContent = $('nObs').value;
-    $('sV').textContent = parseFloat($('sNoise').value).toFixed(2);
+  const EXPS = [
+    function () { $('nObs').value = 200; $('sNoise').value = 1; seed = (Math.random() * 1e9) >>> 0; generate(); },
+    function () { $('nObs').value = 20; $('sNoise').value = 8; seed = (Math.random() * 1e9) >>> 0; generate(); reveal(); },
+    function () {
+      if (!ols) return;
+      $('aHat').value = Math.max(-3, Math.min(3, ols.a));
+      $('bHat').value = Math.max(0, Math.min(3, ols.b));
+      redraw();
+    },
+    function () { $('nObs').value = 200; $('sNoise').value = 8; seed = (Math.random() * 1e9) >>> 0; generate(); reveal(); }
+  ];
+
+  function init() {
+    ['nObs', 'sNoise'].forEach(id => $(id).addEventListener('input', function () { labels(); generate(); }));
+    ['aHat', 'bHat'].forEach(id => $(id).addEventListener('input', function () { labels(); redraw(); }));
+    $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
+    $('reveal').addEventListener('click', reveal);
+    document.querySelectorAll('#p1 .setit').forEach(function (b) {
+      b.addEventListener('click', function () { EXPS[parseInt(b.getAttribute('data-x'), 10)](); labels(); });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p1')) redraw(); });
+    labels();
     generate();
-  }));
-  ['aHat', 'bHat'].forEach(id => $(id).addEventListener('input', function () {
-    $('aV').textContent = parseFloat($('aHat').value).toFixed(2);
-    $('bV').textContent = parseFloat($('bHat').value).toFixed(2);
+  }
+  M.registerPlatform('p1', { init: init, redraw: redraw });
+})();
+</script>
+
+<script>
+/* ===== Platform 2: Sampling distribution lab ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const SX = 3; // sd of market excess returns in the DGP
+  let betas = [], running = false, lastSample = null;
+
+  function labels() {
+    $('b2TV').textContent = parseFloat($('b2T').value).toFixed(2);
+    $('n2V').textContent = $('n2').value;
+    $('s2V').textContent = parseFloat($('s2').value).toFixed(2);
+  }
+
+  function theoSE() {
+    const n = parseInt($('n2').value, 10);
+    const s = parseFloat($('s2').value);
+    return s / (SX * Math.sqrt(n));
+  }
+
+  function oneDraw(rng) {
+    const bT = parseFloat($('b2T').value);
+    const n = parseInt($('n2').value, 10);
+    const s = parseFloat($('s2').value);
+    const x = new Array(n), y = new Array(n);
+    for (let i = 0; i < n; i++) {
+      x[i] = 0.5 + SX * M.gauss(rng);
+      y[i] = 0.2 + bT * x[i] + s * M.gauss(rng);
+    }
+    const f = M.ols2(x, y);
+    lastSample = { x: x, y: y, fit: f };
+    betas.push(f.b);
+  }
+
+  function redraw() {
+    const bT = parseFloat($('b2T').value);
+    const se = theoSE();
+    // left: latest sample
+    const c1 = M.fitCanvas($('sampC'));
+    if (lastSample) {
+      const xs = lastSample.x, ys = lastSample.y;
+      const xlo = Math.min.apply(null, xs), xhi = Math.max.apply(null, xs);
+      const ylo = Math.min.apply(null, ys), yhi = Math.max.apply(null, ys);
+      const f = M.frame(c1.ctx, c1.W, c1.H, xlo - 1, xhi + 1, ylo - 1, yhi + 1, { title: 'Latest sample + its OLS fit (β̂ = ' + lastSample.fit.b.toFixed(3) + ')' });
+      M.drawDots(c1.ctx, f, xs, ys, '#38bdf8', 2.5);
+      M.drawLine(c1.ctx, f, [xlo, xhi], [lastSample.fit.a + lastSample.fit.b * xlo, lastSample.fit.a + lastSample.fit.b * xhi], '#fbbf24', 2);
+    } else {
+      M.frame(c1.ctx, c1.W, c1.H, 0, 1, 0, 1, { title: 'Latest sample appears here — press ▶' });
+    }
+    // right: histogram of beta-hats with theoretical normal
+    const c2 = M.fitCanvas($('histB'));
+    const lo = bT - 4.5 * se, hi = bT + 4.5 * se;
+    const NB = 40, bw = (hi - lo) / NB;
+    const counts = new Array(NB).fill(0);
+    for (const b of betas) {
+      let k = Math.floor((b - lo) / bw);
+      if (k >= 0 && k < NB) counts[k]++;
+    }
+    let peak = 0; for (const c of counts) if (c > peak) peak = c;
+    const pdfPeak = betas.length * bw * M.normPdf(0) / se;
+    if (pdfPeak > peak) peak = pdfPeak;
+    if (peak === 0) peak = 1;
+    const f2 = M.frame(c2.ctx, c2.W, c2.H, lo, hi, 0, peak * 1.1, { title: 'Histogram of β̂ across samples + theoretical N(β, SE²) (gold)' });
+    c2.ctx.fillStyle = '#38bdf8';
+    for (let k = 0; k < NB; k++) {
+      const x0 = f2.X(lo + k * bw), x1 = f2.X(lo + (k + 1) * bw);
+      c2.ctx.fillRect(x0 + 0.5, f2.Y(counts[k]), Math.max(1, x1 - x0 - 1), f2.Y(0) - f2.Y(counts[k]));
+    }
+    if (betas.length > 0) {
+      c2.ctx.strokeStyle = '#fbbf24'; c2.ctx.lineWidth = 2; c2.ctx.beginPath();
+      for (let i = 0; i <= 150; i++) {
+        const x = lo + (hi - lo) * i / 150;
+        const yv = betas.length * bw * M.normPdf((x - bT) / se) / se;
+        const px = f2.X(x), py = f2.Y(yv);
+        if (i === 0) c2.ctx.moveTo(px, py); else c2.ctx.lineTo(px, py);
+      }
+      c2.ctx.stroke();
+    }
+    // true beta marker
+    c2.ctx.strokeStyle = '#34d399'; c2.ctx.setLineDash([5, 4]);
+    c2.ctx.beginPath(); c2.ctx.moveTo(f2.X(bT), f2.Y(0)); c2.ctx.lineTo(f2.X(bT), f2.Y(peak * 1.05)); c2.ctx.stroke();
+    c2.ctx.setLineDash([]);
+    // readouts
+    $('cnt2').textContent = betas.length;
+    if (betas.length > 1) {
+      let m = 0; for (const b of betas) m += b; m /= betas.length;
+      let v = 0; for (const b of betas) v += (b - m) * (b - m); v /= (betas.length - 1);
+      $('mb2').textContent = m.toFixed(3);
+      $('sb2').textContent = Math.sqrt(v).toFixed(3);
+    } else { $('mb2').textContent = '–'; $('sb2').textContent = '–'; }
+    $('tb2').textContent = se.toFixed(3);
+    if (betas.length >= 50) {
+      $('ntc2').innerHTML = '<b>What to notice:</b> the histogram of β̂ is centred on the TRUE β = ' + bT.toFixed(2) +
+        ' (unbiasedness) and its empirical sd ' + $('sb2').textContent + ' matches the theoretical SE = σ<sub>u</sub>/(σ<sub>x</sub>√n) = ' + se.toFixed(3) +
+        '. A reported "standard error" is exactly a forecast of this histogram’s width — software computes it from ONE sample, but it describes what would happen across MANY.';
+    } else if (betas.length > 0) {
+      $('ntc2').innerHTML = '<b>What to notice:</b> each draw is a fresh "history" of the same market. One sample = one β̂. Keep drawing — the histogram converges to the gold normal curve predicted by theory.';
+    }
+  }
+
+  function drawMany() {
+    if (running) return;
+    running = true;
+    $('draw2').disabled = true;
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    let done = 0;
+    function step() {
+      for (let i = 0; i < 10 && done < 200; i++, done++) oneDraw(rng);
+      redraw();
+      if (done < 200) { requestAnimationFrame(step); }
+      else { running = false; $('draw2').disabled = false; }
+    }
+    step();
+  }
+
+  function reset() { betas = []; lastSample = null; redraw(); }
+
+  const EXPS = [
+    function () { $('n2').value = 30; $('s2').value = 5; reset(); drawMany(); },
+    function () { $('n2').value = 300; $('s2').value = 5; reset(); drawMany(); },
+    function () { $('n2').value = 30; $('s2').value = 1; reset(); drawMany(); },
+    function () { $('b2T').value = 2.5; $('n2').value = 60; $('s2').value = 3; reset(); drawMany(); }
+  ];
+
+  function init() {
+    ['b2T', 'n2', 's2'].forEach(id => $(id).addEventListener('input', function () { labels(); reset(); }));
+    $('draw2').addEventListener('click', drawMany);
+    $('reset2').addEventListener('click', reset);
+    document.querySelectorAll('#p2 .setit').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (running) return;
+        EXPS[parseInt(b.getAttribute('data-x'), 10)]();
+        labels();
+      });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p2')) redraw(); });
+    labels();
     redraw();
-  }));
-  $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
-  $('reveal').addEventListener('click', reveal);
-  window.addEventListener('resize', redraw);
-  generate();
+  }
+  M.registerPlatform('p2', { init: init, redraw: redraw });
+})();
+</script>
+
+<script>
+/* ===== Platform 3: Hedging desk ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const N = 250, SF = 1.2, HTRUE = 0.9;
+  let seed = 7321, ds = null, df = null, mo = null;
+
+  function labels() {
+    $('h3V').textContent = parseFloat($('h3').value).toFixed(2);
+    $('b3V').textContent = parseFloat($('b3').value).toFixed(1);
+  }
+
+  function generate() {
+    const sb = parseFloat($('b3').value);
+    const rng = M.mulberry32(seed);
+    df = new Array(N); ds = new Array(N);
+    for (let t = 0; t < N; t++) {
+      df[t] = SF * M.gauss(rng);
+      ds[t] = HTRUE * df[t] + sb * M.gauss(rng);
+    }
+    // sample moments
+    let mf = 0, ms = 0;
+    for (let t = 0; t < N; t++) { mf += df[t]; ms += ds[t]; }
+    mf /= N; ms /= N;
+    let vf = 0, vs = 0, cv = 0;
+    for (let t = 0; t < N; t++) {
+      vf += (df[t] - mf) * (df[t] - mf);
+      vs += (ds[t] - ms) * (ds[t] - ms);
+      cv += (df[t] - mf) * (ds[t] - ms);
+    }
+    vf /= (N - 1); vs /= (N - 1); cv /= (N - 1);
+    mo = { vf: vf, vs: vs, cv: cv, hstar: cv / vf, rho: cv / Math.sqrt(vf * vs) };
+    redraw();
+  }
+
+  function hedVar(h) { return mo.vs - 2 * h * mo.cv + h * h * mo.vf; }
+
+  function redraw() {
+    if (!mo) return;
+    const h = parseFloat($('h3').value);
+    // parabola chart
+    const c1 = M.fitCanvas($('parC'));
+    const hs = [], vars = [];
+    let vmax = 0;
+    for (let i = 0; i <= 120; i++) {
+      const hh = 2.2 * i / 120;
+      hs.push(hh); vars.push(hedVar(hh));
+      if (vars[i] > vmax) vmax = vars[i];
+    }
+    const f1 = M.frame(c1.ctx, c1.W, c1.H, 0, 2.2, 0, vmax * 1.08, { title: 'Variance of hedged P&L vs hedge ratio h' });
+    M.drawLine(c1.ctx, f1, hs, vars, '#38bdf8', 2);
+    // minimum marker
+    M.drawDots(c1.ctx, f1, [mo.hstar], [hedVar(mo.hstar)], '#34d399', 5);
+    c1.ctx.fillStyle = '#34d399'; c1.ctx.font = '12px Segoe UI, sans-serif'; c1.ctx.textAlign = 'center';
+    c1.ctx.fillText('h* = ' + mo.hstar.toFixed(2), f1.X(mo.hstar), f1.Y(hedVar(mo.hstar)) - 10);
+    // your h marker
+    M.drawDots(c1.ctx, f1, [h], [hedVar(h)], '#fbbf24', 5);
+    c1.ctx.fillStyle = '#fbbf24';
+    c1.ctx.fillText('you', f1.X(h), f1.Y(hedVar(h)) - 10);
+    // P&L chart: unhedged vs hedged at your h
+    const c2 = M.fitCanvas($('pnlC'));
+    const hed = ds.map(function (v, t) { return v - h * df[t]; });
+    let mx = 0;
+    for (const v of ds) if (Math.abs(v) > mx) mx = Math.abs(v);
+    for (const v of hed) if (Math.abs(v) > mx) mx = Math.abs(v);
+    const f2 = M.frame(c2.ctx, c2.W, c2.H, 0, N, -mx * 1.1, mx * 1.1, { title: 'Daily P&L: unhedged Δs (blue) vs hedged Δs − h·Δf (gold)' });
+    c2.ctx.strokeStyle = '#475569';
+    c2.ctx.beginPath(); c2.ctx.moveTo(f2.X(0), f2.Y(0)); c2.ctx.lineTo(f2.X(N), f2.Y(0)); c2.ctx.stroke();
+    M.drawLine(c2.ctx, f2, ds.map((_, i) => i), ds, '#38bdf8', 1);
+    M.drawLine(c2.ctx, f2, hed.map((_, i) => i), hed, '#fbbf24', 1);
+    // stats
+    const redYou = 1 - hedVar(h) / mo.vs;
+    const redMax = 1 - hedVar(mo.hstar) / mo.vs;
+    $('st3h').textContent = mo.hstar.toFixed(3);
+    $('st3r').textContent = mo.rho.toFixed(3);
+    const uEl = $('st3u');
+    uEl.textContent = (redYou * 100).toFixed(1) + '%';
+    uEl.className = 'v ' + (redYou < 0 ? 'bad' : (redYou > redMax - 0.02 ? 'good' : ''));
+    $('st3m').textContent = (redMax * 100).toFixed(1) + '%';
+    // notice
+    let msg = '<b>What to notice:</b> the optimal hedge ratio ĥ* = Cov(Δs,Δf)/Var(Δf) = ' + mo.hstar.toFixed(3) +
+      ' is literally the OLS slope of regressing spot changes on futures changes. ';
+    if (redYou < 0) {
+      msg += '<b>Your h = ' + h.toFixed(2) + ' has INCREASED variance vs not hedging at all</b> — you over-hedged so hard the futures leg now dominates the risk.';
+    } else {
+      msg += 'Your h = ' + h.toFixed(2) + ' removes ' + (redYou * 100).toFixed(1) + '% of variance; the best achievable is ρ² = ' +
+        (redMax * 100).toFixed(1) + '%. ' + (mo.rho < 0.6 ? 'With this much basis noise the hedge quality ceiling is low — no clever ratio fixes a bad proxy instrument.' : 'Slide h to the green dot and you hit the ceiling.');
+    }
+    $('ntc3').innerHTML = msg;
+  }
+
+  const EXPS = [
+    function () { $('b3').value = 0; seed = (Math.random() * 1e9) >>> 0; generate(); },
+    function () { $('b3').value = 2; seed = (Math.random() * 1e9) >>> 0; generate(); },
+    function () { $('h3').value = 1; redraw(); },
+    function () { $('h3').value = 2; redraw(); }
+  ];
+
+  function init() {
+    $('h3').addEventListener('input', function () { labels(); redraw(); });
+    $('b3').addEventListener('input', function () { labels(); generate(); });
+    $('regen3').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
+    document.querySelectorAll('#p3 .setit').forEach(function (b) {
+      b.addEventListener('click', function () { EXPS[parseInt(b.getAttribute('data-x'), 10)](); labels(); });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p3')) redraw(); });
+    labels();
+    generate();
+  }
+  M.registerPlatform('p3', { init: init, redraw: redraw });
+})();
+</script>
+
+<script>
+/* ===== Platform 4: Rolling beta explorer ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const N = 500, BRK = 250, SM = 1.0; // market daily sd 1%
+  let seed = 8855, x = null, y = null, roll = null;
+
+  function labels() {
+    $('w4V').textContent = $('w4').value;
+    $('b41V').textContent = parseFloat($('b41').value).toFixed(1);
+    $('b42V').textContent = parseFloat($('b42').value).toFixed(1);
+    $('s4V').textContent = parseFloat($('s4').value).toFixed(2);
+  }
+
+  function generate() {
+    const b1 = parseFloat($('b41').value), b2 = parseFloat($('b42').value);
+    const se = parseFloat($('s4').value);
+    const rng = M.mulberry32(seed);
+    x = new Array(N); y = new Array(N);
+    for (let t = 0; t < N; t++) {
+      x[t] = SM * M.gauss(rng);
+      const b = t < BRK ? b1 : b2;
+      y[t] = 0.02 + b * x[t] + se * M.gauss(rng);
+    }
+    compute();
+  }
+
+  function compute() {
+    const w = parseInt($('w4').value, 10);
+    roll = new Array(N).fill(null);
+    for (let t = w - 1; t < N; t++) {
+      let sx = 0, sy = 0;
+      for (let i = t - w + 1; i <= t; i++) { sx += x[i]; sy += y[i]; }
+      sx /= w; sy /= w;
+      let sxx = 0, sxy = 0;
+      for (let i = t - w + 1; i <= t; i++) {
+        sxx += (x[i] - sx) * (x[i] - sx);
+        sxy += (x[i] - sx) * (y[i] - sy);
+      }
+      roll[t] = sxy / sxx;
+    }
+    redraw();
+  }
+
+  function redraw() {
+    if (!roll) return;
+    const w = parseInt($('w4').value, 10);
+    const b1 = parseFloat($('b41').value), b2 = parseFloat($('b42').value);
+    const se = parseFloat($('s4').value);
+    const c = M.fitCanvas($('rollC'));
+    let lo = Math.min(b1, b2), hi = Math.max(b1, b2);
+    for (let t = 0; t < N; t++) if (roll[t] !== null) { if (roll[t] < lo) lo = roll[t]; if (roll[t] > hi) hi = roll[t]; }
+    const pad = (hi - lo) * 0.15 + 0.05;
+    const f = M.frame(c.ctx, c.W, c.H, 0, N, lo - pad, hi + pad, { title: 'Rolling β̂ (blue, window ' + w + 'd) vs TRUE β (gold step at day 250)' });
+    M.drawLine(c.ctx, f, [0, BRK, BRK, N], [b1, b1, b2, b2], '#fbbf24', 2);
+    const xs = [], ys = [];
+    for (let t = 0; t < N; t++) if (roll[t] !== null) { xs.push(t); ys.push(roll[t]); }
+    M.drawLine(c.ctx, f, xs, ys, '#38bdf8', 1.6);
+    // stats: noise pre-break (use t in [w-1, BRK) fully inside regime 1)
+    let cnt = 0, ssq = 0;
+    for (let t = w - 1; t < BRK; t++) { ssq += (roll[t] - b1) * (roll[t] - b1); cnt++; }
+    const noise = cnt > 3 ? Math.sqrt(ssq / cnt) : NaN;
+    $('st4n').textContent = isFinite(noise) ? noise.toFixed(3) : '–';
+    $('st4t').textContent = (se / (SM * Math.sqrt(w))).toFixed(3);
+    // detection lag: first t >= BRK where estimate is closer to b2 than b1 and stays for 10 days
+    let lag = null;
+    for (let t = BRK; t < N - 10; t++) {
+      if (roll[t] === null) continue;
+      let ok = true;
+      for (let j = t; j < t + 10; j++) {
+        if (roll[j] === null || Math.abs(roll[j] - b2) > Math.abs(roll[j] - b1)) { ok = false; break; }
+      }
+      if (ok) { lag = t - BRK; break; }
+    }
+    $('st4l').textContent = lag === null ? 'never' : lag + 'd';
+    $('ntc4').innerHTML = '<b>What to notice:</b> the pre-break wobble of the blue line (' + (isFinite(noise) ? noise.toFixed(3) : '–') +
+      ') matches the theory σ<sub>ε</sub>/(σ<sub>m</sub>√w) = ' + (se / (SM * Math.sqrt(w))).toFixed(3) +
+      ' — pure estimation noise. After the break the estimate needs roughly the window length to fully reflect the new β, because old-regime days only leave the window one at a time. ' +
+      (lag === null ? 'With these settings the shift never gets reliably detected — the noise swamps it.' :
+        'Here the estimate first "switched allegiance" to β₂ after ' + lag + ' days.') +
+      ' Window choice = noise vs lag. Risk desks often run two windows and worry when they disagree.';
+  }
+
+  const EXPS = [
+    function () { $('w4').value = 30; },
+    function () { $('w4').value = 250; },
+    function () { $('b41').value = 1.0; $('b42').value = 1.2; $('w4').value = 60; $('s4').value = 2; seed = (Math.random() * 1e9) >>> 0; generate(); return true; },
+    function () { $('b41').value = 0.9; $('b42').value = 1.8; $('w4').value = 120; $('s4').value = 3; seed = (Math.random() * 1e9) >>> 0; generate(); return true; }
+  ];
+
+  function init() {
+    $('w4').addEventListener('input', function () { labels(); compute(); });
+    ['b41', 'b42', 's4'].forEach(id => $(id).addEventListener('input', function () { labels(); generate(); }));
+    $('regen4').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
+    document.querySelectorAll('#p4 .setit').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const regenerated = EXPS[parseInt(b.getAttribute('data-x'), 10)]();
+        labels();
+        if (!regenerated) compute();
+      });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p4')) redraw(); });
+    labels();
+    generate();
+  }
+  M.registerPlatform('p4', { init: init, redraw: redraw });
+  M.openPlatform('p1');
+})();
+</script>
+
+<script>
+/* ===== Problems clinic demos ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+
+  // 2: spurious levels regression
+  $('c2btn').addEventListener('click', function () {
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const n = 250;
+    const p1 = [100], p2 = [50];
+    for (let t = 1; t < n; t++) {
+      p1.push(p1[t - 1] * Math.exp((0.0005 + 0.012 * M.gauss(rng))));
+      p2.push(p2[t - 1] * Math.exp((0.0005 + 0.012 * M.gauss(rng))));
+    }
+    const lev = M.ols2(p1, p2);
+    const r1 = [], r2 = [];
+    for (let t = 1; t < n; t++) { r1.push(Math.log(p1[t] / p1[t - 1])); r2.push(Math.log(p2[t] / p2[t - 1])); }
+    const ret = M.ols2(r1, r2);
+    $('c2out').innerHTML = 'Two random walks generated with INDEPENDENT shocks.<br>LEVELS regression: R² = <b>' + lev.r2.toFixed(3) +
+      '</b>, t(β̂) = <b>' + lev.tB.toFixed(1) + '</b> — "highly significant" garbage.<br>RETURNS regression: R² = <b>' + ret.r2.toFixed(3) +
+      '</b>, t(β̂) = ' + ret.tB.toFixed(2) + ' — the truth (nothing there). Click again: the levels R² is huge almost every time.';
+  });
+
+  // 3: thin trading attenuation
+  $('c3btn').addEventListener('click', function () {
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const n = 750, betaT = 1.2;
+    const mkt = new Array(n), truePx = [Math.log(100)], obsPx = [Math.log(100)];
+    for (let t = 0; t < n; t++) {
+      mkt[t] = 0.01 * M.gauss(rng);
+      truePx.push(truePx[t] + betaT * mkt[t] + 0.012 * M.gauss(rng));
+      obsPx.push(rng() < 0.5 ? truePx[t + 1] : obsPx[t]); // trades only half of days
+    }
+    const rTrue = [], rObs = [], m2 = [];
+    for (let t = 1; t < n; t++) {
+      rTrue.push(truePx[t + 1] - truePx[t]);
+      rObs.push(obsPx[t + 1] - obsPx[t]);
+      m2.push(mkt[t]);
+    }
+    const fT = M.ols2(m2, rTrue), fO = M.ols2(m2, rObs);
+    $('c3out').innerHTML = 'True β = 1.20. Using TRUE (always-fresh) prices: β̂ = <b>' + fT.b.toFixed(2) +
+      '</b>. Using STALE prices (stock trades only ~50% of days): β̂ = <b>' + fO.b.toFixed(2) +
+      '</b> — attenuated toward zero, because part of each market move lands in the NEXT day’s measured return. A Dimson regression on lags 0 and 1 would recover most of it.';
+  });
+
+  // 4: outlier flips beta
+  $('c4btn').addEventListener('click', function () {
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const n = 40;
+    const x = [], y = [];
+    for (let i = 0; i < n; i++) {
+      x.push(2 * M.gauss(rng));
+      y.push(0.2 + 1.0 * x[i] + 2 * M.gauss(rng));
+    }
+    const clean = M.ols2(x, y);
+    const x2 = x.concat([-10]), y2 = y.concat([15]); // bad print: market -10%, stock +15%
+    const dirty = M.ols2(x2, y2);
+    const cv = $('c4cv'); cv.style.display = 'block';
+    const c = M.fitCanvas(cv);
+    const xlo = -11, xhi = Math.max.apply(null, x2) + 1;
+    const ylo = Math.min.apply(null, y2) - 2, yhi = Math.max.apply(null, y2) + 2;
+    const f = M.frame(c.ctx, c.W, c.H, xlo, xhi, ylo, yhi, { title: 'Green = OLS without outlier, red = with it' });
+    M.drawDots(c.ctx, f, x, y, '#38bdf8', 3);
+    M.drawDots(c.ctx, f, [-10], [15], '#f87171', 6);
+    M.drawLine(c.ctx, f, [xlo, xhi], [clean.a + clean.b * xlo, clean.a + clean.b * xhi], '#34d399', 2);
+    M.drawLine(c.ctx, f, [xlo, xhi], [dirty.a + dirty.b * xlo, dirty.a + dirty.b * xhi], '#f87171', 2);
+    $('c4out').innerHTML = 'Without the outlier: β̂ = <b>' + clean.b.toFixed(2) + '</b>. With ONE bad print (market −10%, stock +15%): β̂ = <b>' +
+      dirty.b.toFixed(2) + '</b>. One observation in 41, sitting far out in x, ' +
+      (dirty.b < 0 ? 'FLIPPED the sign of' : 'wrecked') + ' the slope. Plot before you regress.';
+  });
 })();
 </script>
 
@@ -497,6 +1266,16 @@ window.MANG = (function () {
       prompt: 'Predict the stock’s excess return when the market excess return is 2%.',
       py: { code: 'model.___([[1, 2.0]])   # columns: [const, ermarket]', correct: 'predict', opts: ['predict', 'forecast', 'fitted', 'eval'], expl: '.predict(exog) with the constant included — the design matrix must match the fitted X.' },
       r: { code: 'predict(model, ___ = data.frame(ermarket = 2))', correct: 'newdata', opts: ['newdata', 'data', 'new', 'x'], expl: 'predict.lm takes new observations through the "newdata" argument.' }
+    },
+    {
+      prompt: 'Compute a 60-day ROLLING beta: rolling covariance over rolling variance.',
+      py: { code: 'beta_t = ret.rolling(60).cov(mkt) / mkt.rolling(60).___()', correct: 'var', opts: ['var', 'std', 'cov', 'mean'], expl: 'β̂ = Cov(r, m)/Var(m): divide the rolling covariance by the rolling VARIANCE of the market (std would give you correlation-flavoured nonsense).' },
+      r: { code: 'library(zoo)\nbeta_t <- ___(merge(ret, mkt), width = 60,\n  FUN = function(d) cov(d[,1], d[,2]) / var(d[,2]),\n  by.column = FALSE, align = "right")', correct: 'rollapply', opts: ['rollapply', 'rollmean', 'rollbeta', 'apply.window'], expl: 'zoo::rollapply slides any function along the sample; rollmean only does averages.' }
+    },
+    {
+      prompt: 'Compute the minimum-variance hedge ratio h* = Cov(Δs, Δf)/Var(Δf).',
+      py: { code: 'import numpy as np\nh_star = np.cov(ds, df)[0, 1] / np.___(df)', correct: 'var', opts: ['var', 'std', 'cov', 'mean'], expl: 'h* divides the covariance by the VARIANCE of the futures (np.cov returns the 2×2 matrix; element [0,1] is the covariance).' },
+      r: { code: 'h_star <- cov(ds, df) / ___(df)', correct: 'var', opts: ['var', 'sd', 'cov', 'mean'], expl: 'Same formula: cov over var. Using sd(df) would leave the units wrong by a factor of sd(df).' }
     }
   ];
   let lang = 'py';

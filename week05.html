@@ -52,6 +52,30 @@ pre{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px;o
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 footer{max-width:1000px;margin:30px auto 0;padding:0 20px 40px;color:var(--muted);font-size:.85rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
+/* ---- v2 upgrade ---- */
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.tabbar button{background:var(--panel2);color:var(--text);border:1px solid #334155;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:400;}
+.tabbar button.active{background:var(--accent);color:#0f172a;font-weight:600;}
+.plat{display:none;}
+.plat.active{display:block;}
+.plat h3{font-size:1.05rem;margin:4px 0 10px;}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
+.pcard{background:var(--panel2);border:1px solid #334155;border-radius:10px;padding:12px 14px;cursor:pointer;}
+.pcard .sym{font-size:1.12rem;font-weight:700;color:var(--accent);margin-right:8px;}
+.pcard .nm{font-weight:600;}
+.pcard .one{color:var(--muted);font-size:.87rem;margin-top:2px;}
+.pcard .more{display:none;font-size:.88rem;margin-top:9px;border-top:1px solid #334155;padding-top:8px;line-height:1.55;}
+.pcard.open .more{display:block;}
+.pcard .more b{color:var(--accent2);}
+.pcard .arrow{float:right;color:var(--muted);font-size:.78rem;}
+.try{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:10px 16px;margin-top:14px;font-size:.92rem;}
+.try ol{margin:6px 0 2px;padding-left:20px;}
+.try li{margin:7px 0;}
+.try button{font-size:.78rem;padding:2px 10px;margin-left:8px;background:transparent;color:var(--accent);border:1px solid var(--accent);}
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;}
+.steps .stp{background:var(--panel2);border:1px solid #334155;border-radius:8px;padding:4px 10px;font-size:.85rem;color:var(--muted);}
+.steps .stp.on{border-color:var(--accent);color:var(--text);font-weight:600;}
+.steps .stp.done{border-color:var(--good);color:var(--good);}
 @media(max-width:720px){.grid2{grid-template-columns:1fr;}.choices{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
@@ -64,7 +88,87 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
 <p class="intro">AR, MA and ARMA processes each leave a distinctive fingerprint in the ACF and PACF — and reading those fingerprints is how econometricians choose a model. This week you drive the ARMA machine, learn the identification rules, then test yourself by unmasking hidden processes from their correlograms alone.</p>
 
 <section class="card">
-<h2>🔬 Simulation — The ARMA machine</h2>
+<h2>📚 Parameters &amp; concepts</h2>
+<p style="font-size:.92rem;color:var(--muted)">The cast of characters for this week. Click any card for the formula, real-market values, what happens at the extremes, and how estimation goes wrong.</p>
+<div class="pgrid">
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">φ</span><span class="nm">AR coefficient</span>
+<div class="one">How much of yesterday&rsquo;s <i>value</i> survives into today.</div>
+<div class="more"><b>Meaning.</b> The weight on the lagged value — the memory of the level. It controls how persistent the series is.<br>
+<b>Formula.</b> y<sub>t</sub> = c + φ<sub>1</sub>y<sub>t−1</sub> + ε<sub>t</sub>; &nbsp;ACF: ρ<sub>k</sub> = φ<sup>k</sup>; &nbsp;half-life = ln(½)/ln|φ|.<br>
+<b>Typical values.</b> Daily equity returns ≈ 0 (markets are nearly efficient); volatility, interest-rate spreads, dividend yields 0.9–0.99; GDP growth and inflation 0.3–0.8.<br>
+<b>At the extremes.</b> φ → 0: white noise, no memory. φ → 1: the random walk — shocks never die, variance explodes. φ &lt; 0: zig-zag oscillation. |φ| &gt; 1: explosive (bubble territory).<br>
+<b>Estimation problems.</b> OLS φ̂ is biased <i>downwards</i> in small samples (≈ −(1+3φ)/T); near φ = 1 its distribution is non-standard, so use Dickey–Fuller critical values, not the t-table.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">θ</span><span class="nm">MA coefficient</span>
+<div class="one">How much of yesterday&rsquo;s <i>shock</i> (not value) echoes into today.</div>
+<div class="more"><b>Meaning.</b> The weight on the lagged innovation — a one-period echo of news, not of the level itself.<br>
+<b>Formula.</b> y<sub>t</sub> = μ + ε<sub>t</sub> + θ<sub>1</sub>ε<sub>t−1</sub>; &nbsp;ρ<sub>1</sub> = θ/(1+θ²), ρ<sub>k</sub> = 0 for k &gt; 1.<br>
+<b>Typical values.</b> Bid–ask bounce induces MA(1) with θ &lt; 0 in high-frequency returns; news/announcement series 0.2–0.5. Note ρ<sub>1</sub> can never exceed 0.5, whatever θ.<br>
+<b>At the extremes.</b> θ → 0: white noise. |θ| = 1: the non-invertibility boundary — shocks cannot be recovered from the data. θ and 1/θ give the SAME ACF, so we impose |θ| &lt; 1 to identify the model.<br>
+<b>Estimation problems.</b> No closed-form OLS (the shocks are unobserved) — needs iterative ML/CSS; estimates notoriously &ldquo;pile up&rdquo; at ±1 in small samples.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">p, q</span><span class="nm">Model orders</span>
+<div class="one">How many AR lags (p) and MA lags (q) you allow the model.</div>
+<div class="more"><b>Meaning.</b> The size of the memory you grant the model. Orders are <i>chosen</i> (Box–Jenkins, information criteria), not estimated.<br>
+<b>Formula.</b> ARMA(p,q): y<sub>t</sub> = c + Σφ<sub>i</sub>y<sub>t−i</sub> + ε<sub>t</sub> + Σθ<sub>j</sub>ε<sub>t−j</sub>.<br>
+<b>Typical values.</b> Financial applications rarely need more than (2,2); daily returns are usually best described by (0,0) plus GARCH in the variance.<br>
+<b>At the extremes.</b> Too small: leftover autocorrelation, Ljung–Box rejects. Too large: overfitting, enormous standard errors, near-cancelling AR/MA roots.<br>
+<b>Estimation problems.</b> Every step up from (p,q) to (p+1,q+1) risks redundant common factors — the likelihood surface goes flat and the optimiser wanders (see the Problems clinic).</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">ρ<sub>k</sub></span><span class="nm">Autocorrelation (ACF)</span>
+<div class="one">Correlation between y<sub>t</sub> and its own value k periods ago.</div>
+<div class="more"><b>Meaning.</b> The memory fingerprint of the series, lag by lag. The whole Box–Jenkins identification step is reading this plot.<br>
+<b>Formula.</b> ρ<sub>k</sub> = Cov(y<sub>t</sub>, y<sub>t−k</sub>)/Var(y<sub>t</sub>); sample bands ±1.96/√n under white noise.<br>
+<b>Typical values.</b> |ρ<sub>1</sub>| &lt; 0.1 for daily stock returns; ≈ 0.99 for price <i>levels</i> (that is the unit root talking, not predictability).<br>
+<b>At the extremes.</b> All ρ<sub>k</sub> ≈ 0: white noise. Decay so slow it is almost linear: unit root or structural break. Dead cut-off after lag q: MA(q).<br>
+<b>Estimation problems.</b> ρ̂<sub>k</sub> is biased towards 0 in short samples; the ±1.96/√n bands assume iid data — with ARCH effects they are too narrow and you over-detect &ldquo;significant&rdquo; lags.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">φ<sub>kk</sub></span><span class="nm">Partial autocorrelation (PACF)</span>
+<div class="one">Correlation at lag k <i>after stripping out</i> the effect of lags 1…k−1.</div>
+<div class="more"><b>Meaning.</b> What lag k adds once shorter lags have had their say — the mirror tool to the ACF.<br>
+<b>Formula.</b> φ<sub>kk</sub> = the last coefficient when y<sub>t</sub> is regressed on y<sub>t−1</sub>…y<sub>t−k</sub> (computed recursively by Durbin–Levinson).<br>
+<b>Typical values.</b> For AR(1) data: one spike ≈ φ at lag 1, then noise inside the bands.<br>
+<b>At the extremes.</b> Cuts off dead after lag p: pure AR(p). Tails off gradually: an MA part is present. Both ACF and PACF tailing off: mixed ARMA.<br>
+<b>Estimation problems.</b> Same ±1.96/√n bands and the same small-sample noise — with n = 100, anything past lag ~25 is numerology, not evidence.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">Q</span><span class="nm">Ljung–Box statistic</span>
+<div class="one">One number asking: is there ANY autocorrelation left, up to lag m?</div>
+<div class="more"><b>Meaning.</b> A portmanteau (catch-all) test. On residuals it is the exit exam of an ARMA model: did you capture all the dynamics?<br>
+<b>Formula.</b> Q = n(n+2)Σ<sub>k=1</sub><sup>m</sup> ρ̂<sub>k</sub>²/(n−k) ~ χ²(m−p−q) under H<sub>0</sub>: no autocorrelation.<br>
+<b>Typical values.</b> On well-fitted ARMA residuals: p-value &gt; 0.05. On raw daily r²: huge (that is the ARCH effect — week 7).<br>
+<b>At the extremes.</b> Q enormous → the model is too small. Q suspiciously near zero → you have probably overfitted and squeezed even the sampling noise out.<br>
+<b>Estimation problems.</b> Forgetting to dock the degrees of freedom for the p+q estimated parameters makes the test too lenient; the χ² approximation is shaky for m close to n.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">AIC·BIC</span><span class="nm">Information criteria</span>
+<div class="one">Fit-versus-parsimony scorecards — always pick the LOWEST.</div>
+<div class="more"><b>Meaning.</b> Both reward likelihood and fine extra parameters; they disagree on the fine. R² is useless here (it only ever rises).<br>
+<b>Formula.</b> AIC = −2lnL + 2k; &nbsp;BIC = −2lnL + k·ln(n), with k = number of estimated parameters.<br>
+<b>Typical values.</b> With n = 500, BIC charges ln(500) ≈ 6.2 per parameter — over three times AIC&rsquo;s 2. They agree on clear-cut cases and split on marginal ones.<br>
+<b>At the extremes.</b> AIC is not consistent: even as n → ∞ it keeps a positive probability of choosing too-large models. BIC is consistent but can underfit small samples.<br>
+<b>Estimation problems.</b> Only comparable on the SAME sample with the SAME differencing — an AIC in levels versus an AIC in differences is a meaningless comparison (different data!).</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">|φ|&lt;1</span><span class="nm">Stationarity / unit root</span>
+<div class="one">Do shocks die out (stationary) — or last forever (unit root)?</div>
+<div class="more"><b>Meaning.</b> Covariance stationarity: constant mean, variance and autocovariances. The precondition for the whole ARMA toolkit — and for the ACF to mean anything.<br>
+<b>Formula.</b> All roots of 1 − φ<sub>1</sub>z − … − φ<sub>p</sub>z<sup>p</sup> = 0 outside the unit circle; for AR(1) simply |φ| &lt; 1. Var(y) = σ²/(1−φ²).<br>
+<b>Typical values.</b> Price levels, exchange rates, GDP: I(1) — difference once. Returns, growth rates, spreads: I(0).<br>
+<b>At the extremes.</b> At φ = 1, variance grows like tσ², the ACF dies almost linearly, and t-statistics follow Dickey–Fuller distributions, not the normal. Beyond 1: explosive bubbles.<br>
+<b>Estimation problems.</b> Regressing one unit-root series on another gives <i>spurious</i> significance (Platform 4!); ADF tests have low power near φ = 1 — with 5 years of data you cannot tell 0.98 from 1.</div></div>
+
+</div>
+</section>
+
+<section class="card">
+<h2>🔬 Platforms — four ARMA workbenches</h2>
+<div class="tabbar" id="tabbar">
+  <button class="active" data-plat="plat1">1 · ARMA machine</button>
+  <button data-plat="plat2">2 · Box–Jenkins workbench</button>
+  <button data-plat="plat3">3 · Persistence &amp; memory</button>
+  <button data-plat="plat4">4 · Spurious regression</button>
+</div>
+<div class="plat active" id="plat1">
+<h3>The ARMA machine — drive the processes, read their fingerprints</h3>
 <div class="controls">
   <span class="ctl"><label>Model</label>
     <select id="selModel">
@@ -95,6 +199,161 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
 <tr><td>Random walk</td><td>starts ≈ 1, dies away roughly linearly</td><td>single spike ≈ 1 at lag 1</td></tr>
 </table>
 As φ&#8321; → 1 the AR(1) becomes ever more persistent; at φ&#8321; = 1 exactly it <i>is</i> the random walk — non-stationary, so the usual ACF theory no longer applies and the series must be differenced.</div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>AR(1) with φ₁ = 0.95: the ACF decays glacially — interest-rate spreads and dividend yields look exactly like this, one small step from a random walk. <button onclick="MANG.exp1(0)">Set it up</button></li>
+<li>Flip to φ₁ = −0.70: the series zig-zags and the ACF alternates sign every lag. Over-differenced data has this signature too. <button onclick="MANG.exp1(1)">Set it up</button></li>
+<li>MA(1) with θ₁ = 0.90: however big θ gets, the ACF cuts dead after lag 1 and ρ₁ never exceeds θ/(1+θ²) ≤ 0.5. <button onclick="MANG.exp1(2)">Set it up</button></li>
+<li>Random walk with n = 1000: the sample ACF starts at ≈ 1 and dies off almost linearly — the unit-root fingerprint you will hunt for in Platform 2, Step 1. <button onclick="MANG.exp1(3)">Set it up</button></li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat2">
+<h3>Box–Jenkins workbench — identify, estimate, diagnose</h3>
+<p style="font-size:.92rem;color:var(--muted)">A fresh mystery series (n = 300) comes from a hidden ARMA — possibly integrated once. Work the classic four-step pipeline, exactly as you would on a real dataset. Score-free and repeatable.<br>
+<i>Estimation note (honesty box):</i> the 16 candidate models are fitted by the <b>Hannan–Rissanen two-step OLS approximation</b> — a long AR(12) regression first estimates the unobserved shocks, then y is regressed on its own lags and on the lagged shock estimates. It is not full maximum likelihood, but on n = 300 it ranks models almost identically, every number is computed live, and you can see exactly what it does. AIC = T·ln(σ̂²) + 2k, BIC = T·ln(σ̂²) + k·ln(T), k = p + q + 1, all on the same T observations.</p>
+<div class="controls"><button id="bjNew">🎲 New mystery series</button></div>
+<div class="steps"><span class="stp on" id="bjS1">Step 1 · Stationarity</span><span class="stp" id="bjS2">Step 2 · ACF/PACF</span><span class="stp" id="bjS3">Step 3 · Choose (p,q)</span><span class="stp" id="bjS4">Step 4 · Residual check</span></div>
+<canvas id="bjSeries"></canvas>
+<div id="bjStep1">
+<div class="controls">
+  <span style="font-size:.92rem">Your verdict on the plotted series:</span>
+  <button class="alt" id="bjStat">Looks stationary — model it as is</button>
+  <button class="alt" id="bjDiff">Needs differencing first</button>
+</div>
+</div>
+<div class="feedback" id="bjF1"></div>
+<div id="bjStep2" style="display:none">
+  <div class="grid2"><canvas id="bjAcf"></canvas><canvas id="bjPacf"></canvas></div>
+  <div class="notice" id="bjHint"></div>
+  <div class="controls"><button id="bjGo3">I have read the correlograms — to Step 3 →</button></div>
+</div>
+<div id="bjStep3" style="display:none">
+  <p style="font-size:.92rem">Commit to your (p,q) <b>before</b> peeking at the criteria — that is the Box–Jenkins discipline:</p>
+  <div class="controls">
+    <span class="ctl"><label>p (AR order)</label><select id="bjP"><option>0</option><option>1</option><option>2</option><option>3</option></select></span>
+    <span class="ctl"><label>q (MA order)</label><select id="bjQ"><option>0</option><option>1</option><option>2</option><option>3</option></select></span>
+    <button id="bjFit">Fit all 16 models &amp; compare</button>
+    <button id="bjGo4" style="display:none">Step 4 → check my residuals</button>
+  </div>
+  <div id="bjTbl" style="max-height:340px;overflow-y:auto"></div>
+  <div class="feedback" id="bjF3"></div>
+</div>
+<div id="bjStep4" style="display:none">
+  <canvas id="bjResAcf"></canvas>
+  <div class="feedback" id="bjF4"></div>
+  <div class="controls"><button id="bjReveal" class="alt">🎭 Reveal the true DGP</button></div>
+  <div class="feedback" id="bjF5"></div>
+</div>
+<div class="notice"><b>What to notice.</b> <span id="bjNote">Every serious ARMA application walks these four steps in order. Stationarity FIRST (a unit root makes the ACF lie to you), identify from the correlograms, estimate and compare with information criteria, and never trust a model whose residuals still have structure.</span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>Generate mysteries until you meet an integrated one. Before differencing, its ACF screams &ldquo;AR with φ ≈ 1&rdquo;; after differencing a much smaller, honest model appears.</li>
+<li>In Step 3, deliberately pick (3,3). Its σ̂² is almost always the smallest of the 16 — and it almost never wins on BIC. That gap is the parsimony penalty earning its keep.</li>
+<li>Across several mysteries, watch when AIC and BIC disagree: BIC backs the smaller model essentially every time, and BIC&rsquo;s pick is right more often here (n = 300 is comfortable for BIC).</li>
+<li>Pick (0,0) on a clearly autocorrelated mystery and continue to Step 4 — watch the Ljung–Box p-value collapse to 0.000.</li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat3">
+<h3>Persistence &amp; memory lab — how long does a shock last?</h3>
+<p style="font-size:.92rem;color:var(--muted)">For an AR(1), a 1-unit shock still weighs φ<sup>h</sup> after h periods, so its half-life is ln(½)/ln|φ|. Drag φ all the way to 1.00 — the random walk — and watch memory become permanent. Then inject shocks into a live series and watch them melt (or not).</p>
+<div class="controls">
+  <span class="ctl"><label>φ (persistence)</label><input type="range" id="pmPhi" min="0" max="1" step="0.01" value="0.80"><span class="val" id="pmVPhi">0.80</span></span>
+  <button id="pmShock">⚡ Inject a +5σ shock</button>
+  <button id="pmReset" class="alt">↻ Fresh path</button>
+</div>
+<div class="statgrid" id="pmStats"></div>
+<div class="grid2">
+  <canvas id="pmIrf"></canvas>
+  <canvas id="pmPath"></canvas>
+</div>
+<div class="notice"><b>What to notice.</b> <span id="pmNote"></span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>φ = 0.50: half-life 1 period — in daily data a shock is ancient history within a week. <button onclick="MANG.exp3(0)">Set it up</button></li>
+<li>φ = 0.99: half-life ≈ 69 periods. In any window shorter than a year this is indistinguishable from non-stationary — why FX and rates desks obsess over &ldquo;is it 0.99 or 1?&rdquo;. <button onclick="MANG.exp3(1)">Set it up</button></li>
+<li>φ = 1.00: the random walk. The impulse response never decays and the injected shock permanently relocates the series — there is no mean to revert to. <button onclick="MANG.exp3(2)">Set it up</button></li>
+<li>At φ = 0.90, inject two shocks and watch each melt along the gold φ<sup>h</sup> path; then repeat at φ = 1.00 and watch them stack instead. <button onclick="MANG.exp3(3)">Set it up</button></li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat4">
+<h3>Unit roots &amp; the spurious regression disaster</h3>
+<p style="font-size:.92rem;color:var(--muted)">Granger &amp; Newbold (1974): regress one random walk on another, <b>completely independent</b> random walk, and the t-test screams &ldquo;significant relationship!&rdquo; far more often than the 5% it promises. This single Monte Carlo is why we difference prices (or test for cointegration) before regressing. Each run: 200 fresh regressions, every t-statistic computed by OLS.</p>
+<div class="controls">
+  <span class="ctl"><label>n (sample length)</label><input type="range" id="spN" min="50" max="400" step="25" value="200"><span class="val" id="spVN">200</span></span>
+  <span class="ctl"><label>Data entering the regression</label>
+    <select id="spMode"><option value="lvl">Levels — two independent random walks</option><option value="dif">First differences of the same walks</option></select></span>
+  <button id="spRun">▶ Run 200 regressions</button>
+</div>
+<div class="statgrid" id="spStats"></div>
+<div class="grid2">
+  <canvas id="spHist"></canvas>
+  <canvas id="spLast"></canvas>
+</div>
+<div class="notice"><b>What to notice.</b> <span id="spNote">Press ▶ to run. A correct 5% test should reject H₀: β = 0 in roughly 10 of the 200 regressions…</span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>Levels, n = 200: expect roughly 80% rejections and a healthy-looking average R² — for two series that have NOTHING to do with each other. <button onclick="MANG.exp4(0)">Set it up &amp; run</button></li>
+<li>Same walks, first-differenced: rejections collapse to ≈ 5% and R² to ≈ 0. Differencing restores honesty. <button onclick="MANG.exp4(1)">Set it up &amp; run</button></li>
+<li>Levels with n = 400: MORE data makes it WORSE — the spurious t-statistic grows like √n. You cannot out-sample a unit root. <button onclick="MANG.exp4(2)">Set it up &amp; run</button></li>
+<li>Think: &ldquo;Bitcoin and the number of Greggs outlets both trended up 2015–2021, R² = 0.9&rdquo;. Which platform-4 row is that headline?</li>
+</ol></div>
+</div>
+</section>
+
+<section class="card clinic">
+<h2>⚠️ Problems clinic</h2>
+<p style="font-size:.92rem;color:var(--muted)">Six classic ways ARMA modelling goes wrong on real financial data. Click a card for symptoms, detection and the fix — some have a live demo.</p>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Over-differencing</span>
+<div class="one">Differencing a series that was already stationary — &ldquo;just to be safe&rdquo;.</div>
+<div class="more"><b>What it is.</b> Taking Δy when y is already I(0). You have not made the data safer; you have injected a unit root into the MA side: Δy<sub>t</sub> = ε<sub>t</sub> − ε<sub>t−1</sub> has θ = −1, exactly on the non-invertibility boundary.<br>
+<b>How it bites.</b> A common rookie move is differencing <i>returns</i>. The resulting series is noisier (variance roughly doubles), forecasts are strictly worse, and the ML estimate of θ slams into −1 with convergence warnings.<br>
+<b>How to detect.</b> The ACF of the over-differenced series shows one big NEGATIVE spike ≈ −0.5 at lag 1; the variance went UP after differencing (for a true unit root it goes down); θ̂₁ ≈ −1.<br>
+<b>Remedy.</b> Difference only when an ADF test fails to reject the unit root; compare variances before/after; if θ̂₁ ≈ −1, step back to the undifferenced data.
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('od','dcOD')">▦ Demo: ACF of Δ(white noise)</button></div>
+<canvas id="dcOD" style="display:none"></canvas></div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">AIC overfitting vs BIC parsimony</span>
+<div class="one">AIC&rsquo;s light penalty keeps buying parameters you don&rsquo;t need.</div>
+<div class="more"><b>What it is.</b> AIC charges 2 per parameter, BIC charges ln(n). AIC is optimised for prediction error in large, honest worlds; in practice on noisy financial data it routinely picks ARMA(3,3) when the truth is ARMA(1,1) — you saw it happen in Platform 2.<br>
+<b>How it bites.</b> An overfitted model wins in-sample and loses out-of-sample — for a trading desk that is the difference between backtest profits and live losses. Extra ARMA terms also destabilise long-horizon forecasts.<br>
+<b>How to detect.</b> AIC and BIC champions differ; the bigger model&rsquo;s extra coefficients have huge standard errors; pseudo-out-of-sample RMSE (week 6) favours the smaller model.<br>
+<b>Remedy.</b> Prefer BIC at moderate n for forecasting; confirm with a hold-out sample; when in doubt, leave it out.</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">ARMA redundancy / common factors</span>
+<div class="one">AR and MA parts that cancel: (1−0.7L)y = (1−0.7L)ε is just white noise in fancy dress.</div>
+<div class="more"><b>What it is.</b> If the AR and MA polynomials share a (near-)common root, infinitely many parameter pairs describe the same data — the model is unidentified.<br>
+<b>How it bites.</b> Auto-fitted ARMA(2,2)s are notorious: the optimiser fails to converge or returns φ̂ and θ̂ that are large, opposite-signed and individually &ldquo;significant-looking&rdquo;, yet the model forecasts exactly like white noise. Fragile, embarrassing, common.<br>
+<b>How to detect.</b> Roots of the AR and MA polynomials nearly equal; enormous standard errors on offsetting coefficients; AIC/BIC barely improve over the (p−1, q−1) model.<br>
+<b>Remedy.</b> Cut both orders by one and refit. If the fit barely worsens, the factors were redundant — keep the smaller model.</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Structural breaks mimicking long memory</span>
+<div class="one">One mean-shift makes a short-memory series look like φ ≈ 1.</div>
+<div class="more"><b>What it is.</b> A level shift (2008, COVID, a policy regime change) inflates sample autocorrelations at ALL lags: the ACF decays painfully slowly even though within each regime memory is short.<br>
+<b>How it bites.</b> You estimate φ̂ = 0.97, conclude &ldquo;highly persistent&rdquo;, and your forecasts revert to a long-run mean that is an average of two regimes — a number the process will never visit again.<br>
+<b>How to detect.</b> PLOT THE SERIES (always first); Chow or CUSUM tests; estimate the ACF on subsamples — if pre- and post-2008 ACFs look completely different, suspect a break, not memory.<br>
+<b>Remedy.</b> Model the break (dummy variable or split samples) or estimate on a rolling window; do not difference a broken-mean series into oblivion.
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('brk','dcBRK')">▦ Demo: ACF of a series with one mean break</button></div>
+<canvas id="dcBRK" style="display:none"></canvas></div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Seasonality contaminating the ACF</span>
+<div class="one">Spikes at lags 12, 24 (monthly) or 4, 8 (quarterly) that ARMA(p,q) cannot soak up.</div>
+<div class="more"><b>What it is.</b> Periodic structure — dividend months, quarterly earnings, year-end window dressing, January effects — puts repeating spikes into the correlogram at seasonal lags.<br>
+<b>How it bites.</b> You fit ARMA(1,1), the Ljung–Box at lag 12 still rejects, so you add lags 2, 3, 4… chasing a pattern that lives at lag 12. The model bloats and still fails diagnostics.<br>
+<b>How to detect.</b> ACF spikes at exact multiples of the seasonal period; monthly dummies jointly significant when added.<br>
+<b>Remedy.</b> Seasonal differencing (Δ₁₂), SARMA terms, or seasonal dummy variables — treat the season explicitly instead of brute-forcing more ordinary lags.
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('sea','dcSEA')">▦ Demo: ACF of a monthly seasonal series</button></div>
+<canvas id="dcSEA" style="display:none"></canvas></div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Forecasting random walks (the EMH tie-in)</span>
+<div class="one">If prices are a random walk, the best forecast of tomorrow is… today.</div>
+<div class="more"><b>What it is.</b> Fitting ARMA to price LEVELS manufactures apparent predictability: φ̂ ≈ 0.99 with a tiny standard error looks like a money machine, but it is just the unit root.<br>
+<b>How it bites.</b> The &ldquo;model&rdquo; predicts tomorrow&rsquo;s price ≈ today&rsquo;s price — its impressive fit is 100% hindsight and 0% foresight. After transaction costs, trading it loses money. This is the efficient-markets hypothesis in econometric clothing: in informationally efficient markets, returns (not prices) should be near white noise.<br>
+<b>How to detect.</b> Compare forecast RMSE against the naive no-change forecast (it will not beat it — week 6&rsquo;s tournament proves this); ADF cannot reject the unit root; out-of-sample &ldquo;predictions&rdquo; are just lagged prices.<br>
+<b>Remedy.</b> Model returns, not prices. Treat any claimed price-level predictability as a red flag for spurious regression or look-ahead bias, not as alpha.</div></div>
 </section>
 
 <section class="card">
@@ -117,7 +376,7 @@ As φ&#8321; → 1 the AR(1) becomes ever more persistent; at φ&#8321; = 1 exac
 
 <section class="card">
 <h2>⌨️ Code challenges</h2>
-<p>Fill the blank in each snippet. Toggle between Python (statsmodels) and R — the same six skills in both languages. Score: <span style="color:var(--accent2)">x/6</span> shown top-right.</p>
+<p>Fill the blank in each snippet. Toggle between Python (statsmodels) and R — the same eight skills in both languages. Score: <span style="color:var(--accent2)">x/8</span> shown top-right.</p>
 <div id="quiz"></div>
 </section>
 </main>
@@ -469,10 +728,491 @@ window.MANG = (function(){
          why:'y.diff() gives Δyₜ = yₜ − yₜ₋₁, which removes the unit root. cumsum would integrate (make it worse!), shift just lags the series.'},
      r:{code:'# Prices look like a random walk: ACF dies off linearly from 1.\ndy <- ___(y)\nfit <- arima(dy, order = c(1, 0, 1))',
         opts:['diff','cumsum','lag','scale'],correct:0,
-        why:'diff(y) returns yₜ − yₜ₋₁. Differencing once turns a random walk into stationary white noise; ARMA modelling is then valid.'}}
+        why:'diff(y) returns yₜ − yₜ₋₁. Differencing once turns a random walk into stationary white noise; ARMA modelling is then valid.'}},
+    {title:'Testing for a unit root (ADF)',
+     py:{code:'from statsmodels.tsa.stattools import ___\nstat, pval, usedlag, nobs, crit, icbest = adfuller(price, regression="c")\n# H0: UNIT ROOT. p < 0.05 -> reject -> series is stationary',
+         opts:['adfuller','kpss','acorr_ljungbox','coint'],correct:0,
+         why:'adfuller runs the Augmented Dickey–Fuller test. Crucial: H0 IS the unit root, so a small p-value means stationary. KPSS flips the hypotheses — the classic exam trap.'},
+     r:{code:'library(tseries)\n___(price)\n# H0: UNIT ROOT. p < 0.05 -> reject -> series is stationary',
+        opts:['adf.test','unitroot.test','df.test','adfuller'],correct:0,
+        why:'tseries::adf.test is the standard ADF in R (urca::ur.df is the other common route). Remember: failing to reject does NOT prove a unit root — the test has low power near φ = 1.'}},
+    {title:'Automating the order search',
+     py:{code:'from pmdarima import ___\nmodel = auto_arima(y, max_p=3, max_q=3,\n                   information_criterion="bic", seasonal=False)\nprint(model.order)   # the chosen (p, d, q)',
+         opts:['auto_arima','ARIMA','auto_fit','order_select'],correct:0,
+         why:'pmdarima.auto_arima searches the (p,d,q) grid by information criterion — exactly what you did by hand in Platform 2. Automatic ≠ correct: ALWAYS run the residual diagnostics afterwards.'},
+     r:{code:'library(forecast)\nfit <- ___(y, ic = "bic", stationary = TRUE)\nsummary(fit)   # the chosen ARMA order and coefficients',
+        opts:['auto.arima','arima.auto','best.arima','ARMA'],correct:0,
+        why:'forecast::auto.arima does the grid search (with clever shortcuts). It is a great first pass, but it happily fits redundant ARMA(2,2)s — check the roots and the Ljung–Box yourself.'}}
   ];
   MANG.quiz('quiz',Q);
+})();
+
+/* ---------- v2 shared helpers ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  function logGamma(x){
+    var c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.001208650973866179,-0.000005395239384953];
+    var y=x,tmp=x+5.5;tmp-=(x+0.5)*Math.log(tmp);var ser=1.000000000190015;
+    for(var j=0;j<6;j++){y+=1;ser+=c[j]/y;}
+    return -tmp+Math.log(2.5066282746310005*ser/x);
+  }
+  function gammaP(a,x){
+    if(x<=0)return 0;
+    var i;
+    if(x<a+1){
+      var ap=a,sum=1/a,del=sum;
+      for(i=0;i<500;i++){ap++;del*=x/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-13)break;}
+      return sum*Math.exp(-x+a*Math.log(x)-logGamma(a));
+    }
+    var b=x+1-a,c=1e300,d=1/b,h=d;
+    for(i=1;i<500;i++){
+      var an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;
+      c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;var del2=d*c;h*=del2;
+      if(Math.abs(del2-1)<1e-13)break;
+    }
+    return 1-Math.exp(-x+a*Math.log(x)-logGamma(a))*h;
+  }
+  M.chi2cdf=function(x,k){return x<=0?0:gammaP(k/2,x/2);};
+  function solve(A,b){var n=b.length,i,j,k,Mx=[];
+    for(i=0;i<n;i++){Mx.push(A[i].slice());Mx[i].push(b[i]);}
+    for(i=0;i<n;i++){var p=i;for(j=i+1;j<n;j++)if(Math.abs(Mx[j][i])>Math.abs(Mx[p][i]))p=j;
+      var tmp=Mx[i];Mx[i]=Mx[p];Mx[p]=tmp;
+      for(j=i+1;j<n;j++){var f=Mx[j][i]/Mx[i][i];for(k=i;k<=n;k++)Mx[j][k]-=f*Mx[i][k];}}
+    var x=new Array(n);
+    for(i=n-1;i>=0;i--){var s=Mx[i][n];for(j=i+1;j<n;j++)s-=Mx[i][j]*x[j];x[i]=s/Mx[i][i];}
+    return x;}
+  M.ols=function(X,y){var k=X[0].length,A=[],b=[],i,j,t;
+    for(i=0;i<k;i++){A.push(new Array(k).fill(0));b.push(0);}
+    for(t=0;t<y.length;t++){for(i=0;i<k;i++){b[i]+=X[t][i]*y[t];for(j=0;j<k;j++)A[i][j]+=X[t][i]*X[t][j];}}
+    var beta=solve(A,b),sse=0;
+    for(t=0;t<y.length;t++){var f=0;for(i=0;i<k;i++)f+=beta[i]*X[t][i];sse+=(y[t]-f)*(y[t]-f);}
+    return {beta:beta,sse:sse,sigma2:sse/Math.max(1,y.length-k)};};
+  M.setCtl=function(map){Object.keys(map).forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.value=String(map[id]);el.dispatchEvent(new Event('input'));});};
+  M.chip=function(k,v){return '<span class="stat"><span class="v">'+v+'</span><br><span class="k">'+k+'</span></span>';};
+})();
+
+/* ---------- v2 platform 1 experiments ---------- */
+(function(){
+  'use strict';
+  window.MANG.exp1=function(k){
+    var M=window.MANG;
+    if(k===0)M.setCtl({selModel:'ar',sPhi:0.95,sN:300});
+    else if(k===1)M.setCtl({selModel:'ar',sPhi:-0.7,sN:300});
+    else if(k===2)M.setCtl({selModel:'ma',sTheta:0.9,sN:300});
+    else M.setCtl({selModel:'rw',sN:1000});
+  };
+})();
+
+/* ---------- v2 platform 2: Box-Jenkins workbench ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat2=function(){
+    var st=null;
+    function genTruth(){
+      var seed=(Math.random()*4294967296)>>>0,rng=M.mulberry32(seed),g=M.gauss(rng);
+      var menu=[[1,0],[2,0],[0,1],[1,1],[2,1]];
+      var pick=menu[Math.floor(rng()*menu.length)],p=pick[0],q=pick[1];
+      var phis=[],thetas=[],j;
+      if(p===1)phis=[(rng()<0.3?-1:1)*(0.4+0.4*rng())];
+      else if(p===2){var r1=1.4+1.6*rng(),r2=1.4+1.6*rng();phis=[1/r1+1/r2,-1/(r1*r2)];}
+      for(j=0;j<q;j++)thetas.push((rng()<0.4?-1:1)*(0.3+0.5*rng()));
+      var integrated=rng()<0.4;
+      var n=300,burn=150,N=n+burn,y=[],e=[],t;
+      for(t=0;t<N;t++){
+        var et=g(),v=et;
+        for(j=0;j<p;j++)v+=phis[j]*((t-1-j>=0)?y[t-1-j]:0);
+        for(j=0;j<q;j++)v+=thetas[j]*((t-1-j>=0)?e[t-1-j]:0);
+        y.push(v);e.push(et);
+      }
+      var z=y.slice(burn),shown=z;
+      if(integrated){shown=[];var c=0;for(t=0;t<z.length;t++){c+=z[t];shown.push(c);}}
+      return {p:p,q:q,phis:phis,thetas:thetas,integrated:integrated,stat:z,shown:shown};
+    }
+    function setSteps(k){
+      for(var i=1;i<=4;i++){
+        document.getElementById('bjS'+i).className='stp'+(i<k?' done':(i===k?' on':''));
+      }
+    }
+    function drawSeries(y,title){
+      var lo=Math.min.apply(null,y),hi=Math.max.apply(null,y),m=(hi-lo)*0.08||1;
+      var c=M.Chart(document.getElementById('bjSeries'),200);
+      c.range(0,y.length-1,lo-m,hi+m).clear();
+      c.axes(M.ticks(0,y.length-1,6),M.ticks(lo-m,hi+m,4),null,function(v){return M.fmt(v,1);});
+      c.hline(0,'#94a3b8',[4,4]);
+      var xs=[];for(var i=0;i<y.length;i++)xs.push(i);
+      c.line(xs,y,'#38bdf8',1.4);
+      c.text(title,c.pad.l+6,c.pad.t+4,'#e2e8f0');
+    }
+    function demean(y){var mm=M.mean(y);return y.map(function(v){return v-mm;});}
+    function hrAll(x){
+      var n=x.length,m=12,t0=m+3,t,j;
+      var X=[],Y=[];
+      for(t=m;t<n;t++){var row=[1];for(j=1;j<=m;j++)row.push(x[t-j]);X.push(row);Y.push(x[t]);}
+      var f=M.ols(X,Y);
+      var e=new Array(n).fill(0);
+      for(t=m;t<n;t++){var fit=f.beta[0];for(j=1;j<=m;j++)fit+=f.beta[j]*x[t-j];e[t]=x[t]-fit;}
+      var out=[];
+      for(var p=0;p<=3;p++)for(var q=0;q<=3;q++){
+        var X2=[],Y2=[];
+        for(t=t0;t<n;t++){var r2=[1];for(j=1;j<=p;j++)r2.push(x[t-j]);for(j=1;j<=q;j++)r2.push(e[t-j]);X2.push(r2);Y2.push(x[t]);}
+        var f2=M.ols(X2,Y2),N2=Y2.length,s2=f2.sse/N2,k=p+q+1;
+        out.push({p:p,q:q,beta:f2.beta,s2:s2,aic:N2*Math.log(s2)+2*k,bic:N2*Math.log(s2)+k*Math.log(N2)});
+      }
+      return {fits:out,e:e,t0:t0};
+    }
+    function residOf(x,fit,e,t0){
+      var res=[],t,j;
+      for(t=t0;t<x.length;t++){
+        var f=fit.beta[0],ix=1;
+        for(j=1;j<=fit.p;j++)f+=fit.beta[ix++]*x[t-j];
+        for(j=1;j<=fit.q;j++)f+=fit.beta[ix++]*e[t-j];
+        res.push(x[t]-f);
+      }
+      return res;
+    }
+    function ljungBox(res,K,pq){
+      var n=res.length,mm=M.mean(res),c0=0,i;
+      for(i=0;i<n;i++)c0+=(res[i]-mm)*(res[i]-mm);c0/=n;
+      var Q=0;
+      for(var k=1;k<=K;k++){
+        var ck=0;for(i=k;i<n;i++)ck+=(res[i]-mm)*(res[i-k]-mm);ck/=n;
+        var rho=ck/c0;Q+=rho*rho/(n-k);
+      }
+      Q*=n*(n+2);
+      var df=Math.max(1,K-pq);
+      return {Q:Q,df:df,p:1-M.chi2cdf(Q,df)};
+    }
+    var f1=document.getElementById('bjF1'),f3=document.getElementById('bjF3'),
+        f4=document.getElementById('bjF4'),f5=document.getElementById('bjF5'),
+        hint=document.getElementById('bjHint'),tbl=document.getElementById('bjTbl');
+    function newMystery(){
+      st={truth:genTruth(),hr:null,picked:null};
+      st.x=demean(st.truth.stat);
+      setSteps(1);
+      ['bjStep2','bjStep3','bjStep4'].forEach(function(id){document.getElementById(id).style.display='none';});
+      document.getElementById('bjStep1').style.display='block';
+      document.getElementById('bjGo4').style.display='none';
+      f1.className='feedback';f1.innerHTML='';f3.className='feedback';f3.innerHTML='';
+      f4.className='feedback';f4.innerHTML='';f5.className='feedback';f5.innerHTML='';
+      tbl.innerHTML='';
+      drawSeries(st.truth.shown,'Step 1 — the mystery series as delivered (n = 300). Stationary, or not?');
+    }
+    function verdict(saysDiff){
+      if(!st)return;
+      var correct=(saysDiff===st.truth.integrated);
+      f1.className='feedback '+(correct?'good':'bad');
+      var why=st.truth.integrated?
+        'This one IS integrated: it wanders with no fixed mean, its variance grows with the sample, and its ACF would die off almost linearly from 1. We difference once and model Δy.':
+        'This one is already stationary: it keeps crossing its mean and the spread does not grow over time. Differencing it would over-difference (see the Problems clinic).';
+      f1.innerHTML='<b>'+(correct?'✓ Right call.':'✗ Not quite.')+'</b> '+why+' We proceed with the correctly transformed series.';
+      setSteps(2);
+      document.getElementById('bjStep2').style.display='block';
+      var n=st.x.length;
+      var ac=M.acf(st.x,20),pc=M.pacf(ac,20);
+      M.drawCorrelogram(document.getElementById('bjAcf'),ac.slice(1),n,'Step 2 — sample ACF of the working series',null);
+      M.drawCorrelogram(document.getElementById('bjPacf'),pc,n,'Step 2 — sample PACF',null);
+      var band=1.96/Math.sqrt(n),sigA=0,sigP=0,i;
+      for(i=1;i<=6;i++){if(Math.abs(ac[i])>band)sigA++;if(Math.abs(pc[i-1])>band)sigP++;}
+      hint.innerHTML='<b>Reading guide.</b> Significant lags among the first 6: ACF '+sigA+', PACF '+sigP+'. '+
+        'ACF tails off + PACF cuts at p → AR(p). ACF cuts at q + PACF tails off → MA(q). Both tail off → mixed ARMA. '+
+        'Hold your nerve: with n = 300 about 1 lag in 20 pokes outside the bands by pure chance.';
+      drawSeries(st.truth.integrated?st.x:st.truth.shown,
+        st.truth.integrated?'Working series after differencing (demeaned Δy)':'Working series (no differencing needed)');
+    }
+    document.getElementById('bjStat').onclick=function(){verdict(false);};
+    document.getElementById('bjDiff').onclick=function(){verdict(true);};
+    document.getElementById('bjGo3').onclick=function(){
+      setSteps(3);
+      document.getElementById('bjStep3').style.display='block';
+    };
+    document.getElementById('bjFit').onclick=function(){
+      if(!st)return;
+      var up=+document.getElementById('bjP').value,uq=+document.getElementById('bjQ').value;
+      st.picked={p:up,q:uq};
+      if(!st.hr)st.hr=hrAll(st.x);
+      var fits=st.hr.fits.slice().sort(function(a,b){return a.aic-b.aic;});
+      var bestA=fits[0],bestB=fits.slice().sort(function(a,b){return a.bic-b.bic;})[0];
+      var html='<table><tr><th>rank (AIC)</th><th>(p, q)</th><th>σ̂²</th><th>AIC</th><th>BIC</th><th></th></tr>';
+      fits.forEach(function(f,i){
+        var mine=(f.p===up&&f.q===uq);
+        var tags=[];
+        if(f===bestA)tags.push('<span style="color:var(--accent2)">🥇 AIC</span>');
+        if(f.p===bestB.p&&f.q===bestB.q)tags.push('<span style="color:var(--good)">🥇 BIC</span>');
+        if(mine)tags.push('<b style="color:var(--accent)">← your pick</b>');
+        html+='<tr'+(mine?' style="outline:2px solid var(--accent)"':'')+'><td>'+(i+1)+'</td><td>('+f.p+', '+f.q+')</td><td>'+M.fmt(f.s2,4)+'</td><td>'+M.fmt(f.aic,1)+'</td><td>'+M.fmt(f.bic,1)+'</td><td>'+tags.join(' ')+'</td></tr>';
+      });
+      html+='</table>';
+      tbl.innerHTML=html;
+      var myRank=fits.findIndex(function(f){return f.p===up&&f.q===uq;})+1;
+      f3.className='feedback '+(myRank<=3?'good':'bad');
+      f3.innerHTML='<b>Your ('+up+', '+uq+') ranks #'+myRank+' of 16 by AIC.</b> AIC champion: ('+bestA.p+', '+bestA.q+'); BIC champion: ('+bestB.p+', '+bestB.q+').'+
+        (bestA.p===bestB.p&&bestA.q===bestB.q?' They agree — comfortable case.':' They disagree — AIC is buying extra parameters that BIC refuses to pay ln(n) for.')+
+        ' Now check whether YOUR model’s residuals are clean.';
+      document.getElementById('bjGo4').style.display='inline-block';
+    };
+    document.getElementById('bjGo4').onclick=function(){
+      if(!st||!st.picked||!st.hr)return;
+      setSteps(4);
+      document.getElementById('bjStep4').style.display='block';
+      var pick=st.hr.fits.filter(function(f){return f.p===st.picked.p&&f.q===st.picked.q;})[0];
+      var res=residOf(st.x,pick,st.hr.e,st.hr.t0);
+      M.drawCorrelogram(document.getElementById('bjResAcf'),M.acf(res,20).slice(1),res.length,
+        'Step 4 — ACF of the residuals from your ARMA('+pick.p+', '+pick.q+')',null);
+      var lb=ljungBox(res,10,pick.p+pick.q);
+      var pass=lb.p>0.05;
+      f4.className='feedback '+(pass?'good':'bad');
+      f4.innerHTML='<b>Ljung–Box Q(10) = '+M.fmt(lb.Q,2)+', df = '+lb.df+' (10 − p − q), p-value = '+M.fmt(lb.p,3)+'.</b> '+
+        (pass?'✓ No significant residual autocorrelation — your model has soaked up the dynamics. Box and Jenkins would shake your hand.':
+        '✗ The residuals still carry structure — the model is too small (or mis-shaped). Go back to Step 3 and try again; that loop IS the Box–Jenkins method.');
+    };
+    document.getElementById('bjReveal').onclick=function(){
+      if(!st)return;
+      var t=st.truth,parts=[];
+      t.phis.forEach(function(v,i){parts.push('φ'+(i+1)+' = '+M.fmt(v,2));});
+      t.thetas.forEach(function(v,i){parts.push('θ'+(i+1)+' = '+M.fmt(v,2));});
+      f5.className='feedback good';
+      f5.innerHTML='<b>🎭 Truth: ARMA('+t.p+', '+t.q+')'+(t.integrated?' integrated once — an ARIMA('+t.p+',1,'+t.q+') in levels':'')+'.</b> '+
+        (parts.length?parts.join(', ')+', ':'')+'σ = 1.'+
+        (st.picked&&st.picked.p===t.p&&st.picked.q===t.q?' Your pick matched the truth exactly — textbook.':' Remember: with n = 300, several neighbouring orders fit almost equally well. Matching the truth matters less than passing Step 4 with few parameters.');
+    };
+    document.getElementById('bjNew').onclick=newMystery;
+    newMystery();
+  };
+})();
+
+/* ---------- v2 platform 3: persistence & memory lab ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat3=function(){
+    var sPhi=document.getElementById('pmPhi'),vPhi=document.getElementById('pmVPhi'),
+        stats=document.getElementById('pmStats'),note=document.getElementById('pmNote');
+    var seed=424242,inj=[];
+    function makePath(phi){
+      var rng=M.mulberry32(seed),g=M.gauss(rng),n=240,y=[],prev=0;
+      for(var t=0;t<n;t++){
+        var v=phi*prev+g()+(inj.indexOf(t)>=0?5:0);
+        y.push(v);prev=v;
+      }
+      return y;
+    }
+    function draw(){
+      var phi=+sPhi.value;
+      vPhi.textContent=M.fmt(phi,2);
+      var hl=(phi>=1)?Infinity:(phi<=0?0:Math.log(0.5)/Math.log(phi));
+      var usd=(phi>=1)?Infinity:1/Math.sqrt(1-phi*phi);
+      stats.innerHTML=
+        M.chip('half-life ln(½)/ln φ',phi>=1?'∞ — permanent':(phi<=0?'< 1 period':M.fmt(hl,1)+' periods'))+
+        M.chip('unconditional sd σ/√(1−φ²)',phi>=1?'∞ (non-stationary)':M.fmt(usd,2))+
+        M.chip('shock left after 5 periods',M.fmt(100*Math.pow(phi,5),1)+'%')+
+        M.chip('after 20 periods',M.fmt(100*Math.pow(phi,20),1)+'%');
+      /* impulse response */
+      var c=M.Chart(document.getElementById('pmIrf'),200);
+      c.range(0,40,0,1.05).clear();
+      c.axes(M.ticks(0,40,6),[0,0.25,0.5,0.75,1],null,function(v){return M.fmt(v,2);});
+      c.hline(0.5,'#94a3b8',[4,4]);
+      var hs=[],irf=[];
+      for(var h=0;h<=40;h++){hs.push(h);irf.push(Math.pow(phi,h));}
+      c.line(hs,irf,'#38bdf8',2);
+      if(isFinite(hl)&&hl>0&&hl<=40){c.vline(hl,'#fbbf24',[4,4]);c.text('half-life '+M.fmt(hl,1),c.px(hl)+4,c.py(0.55),'#fbbf24');}
+      c.text('Impulse response of a 1-unit shock: φʰ',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      /* live path */
+      var y=makePath(phi);
+      var lo=Math.min.apply(null,y),hi=Math.max.apply(null,y),m=(hi-lo)*0.1||1;
+      var c2=M.Chart(document.getElementById('pmPath'),200);
+      c2.range(0,y.length-1,lo-m,hi+m).clear();
+      c2.axes(M.ticks(0,y.length-1,5),M.ticks(lo-m,hi+m,4),null,function(v){return M.fmt(v,0);});
+      c2.hline(0,'#94a3b8',[4,4]);
+      var xs=[];for(var i=0;i<y.length;i++)xs.push(i);
+      c2.line(xs,y,'#38bdf8',1.3);
+      inj.forEach(function(t0){
+        c2.vline(t0,'#f87171',[3,3]);
+        var dx=[],dy=[];
+        for(var k=0;k<=60&&t0+k<y.length;k++){dx.push(t0+k);dy.push(y[t0]*Math.pow(phi,k));}
+        c2.line(dx,dy,'#fbbf24',1.6);
+      });
+      c2.text('Live AR(1) path · red line = injected +5σ shock · gold = expected decay φʰ·y',c2.pad.l+6,c2.pad.t+4,'#e2e8f0');
+      /* note */
+      var txt;
+      if(phi>=1)txt='φ = 1.00: the random walk. The impulse response is flat at 1 forever — an injected shock permanently relocates the series, because there is no mean to revert to. This is why "buy the dip" is not a strategy if prices are a random walk: the dip is the new normal.';
+      else if(phi>=0.95)txt='φ = '+M.fmt(phi,2)+': half-life '+M.fmt(hl,1)+' periods. Over any short window this is visually indistinguishable from a random walk — which is exactly why unit-root tests near 1 have so little power, and why desks argue about 0.99 vs 1.00.';
+      else if(phi>=0.7)txt='φ = '+M.fmt(phi,2)+': solid persistence — shocks linger for '+M.fmt(hl,1)+' periods (half-life) but the gold decay curve always wins in the end. Volatility and interest-rate spreads live in this zone: mean reversion you can actually trade, if you can wait.';
+      else txt='φ = '+M.fmt(phi,2)+': short memory — half of any shock is gone within '+(phi<=0?'one period':M.fmt(hl,1)+' period(s))'.replace('))',')'))+'. Daily equity returns sit near φ = 0: yesterday tells you almost nothing about today, which is the efficient-markets benchmark.';
+      note.textContent=txt;
+    }
+    document.getElementById('pmShock').onclick=function(){
+      inj.push(40+Math.floor(Math.random()*160));
+      draw();
+    };
+    document.getElementById('pmReset').onclick=function(){
+      inj=[];seed=(Math.random()*4294967296)>>>0;draw();
+    };
+    sPhi.addEventListener('input',draw);
+    window.addEventListener('resize',function(){if(document.getElementById('plat3').classList.contains('active'))draw();});
+    M.exp3=function(k){
+      if(k===0)M.setCtl({pmPhi:0.5});
+      else if(k===1)M.setCtl({pmPhi:0.99});
+      else if(k===2){M.setCtl({pmPhi:1});document.getElementById('pmShock').click();}
+      else {M.setCtl({pmPhi:0.9});document.getElementById('pmShock').click();document.getElementById('pmShock').click();}
+    };
+    draw();
+  };
+})();
+
+/* ---------- v2 platform 4: spurious regression lab ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat4=function(){
+    var sN=document.getElementById('spN'),vN=document.getElementById('spVN'),
+        mode=document.getElementById('spMode'),stats=document.getElementById('spStats'),
+        note=document.getElementById('spNote'),runBtn=document.getElementById('spRun');
+    var runId=0;
+    sN.addEventListener('input',function(){vN.textContent=sN.value;});
+    vN.textContent=sN.value;
+    function oneRep(g,n,diff){
+      var x=[0],y=[0],i;
+      for(i=1;i<n;i++){x.push(x[i-1]+g());y.push(y[i-1]+g());}
+      if(diff){
+        var dx=[],dy=[];
+        for(i=1;i<n;i++){dx.push(x[i]-x[i-1]);dy.push(y[i]-y[i-1]);}
+        x=dx;y=dy;
+      }
+      var T=x.length,sx=0,sy=0;
+      for(i=0;i<T;i++){sx+=x[i];sy+=y[i];}
+      sx/=T;sy/=T;
+      var sxx=0,sxy=0,syy=0;
+      for(i=0;i<T;i++){sxx+=(x[i]-sx)*(x[i]-sx);sxy+=(x[i]-sx)*(y[i]-sy);syy+=(y[i]-sy)*(y[i]-sy);}
+      var b=sxy/sxx,a=sy-b*sx,sse=0;
+      for(i=0;i<T;i++){var e=y[i]-a-b*x[i];sse+=e*e;}
+      var se=Math.sqrt(sse/(T-2)/sxx);
+      return {t:b/se,r2:1-sse/syy,x:x,y:y};
+    }
+    function run(){
+      var my=++runId,n=+sN.value,diff=(mode.value==='dif');
+      var rng=M.mulberry32((Math.random()*4294967296)>>>0),g=M.gauss(rng);
+      var ts=[],r2s=[],last=null,done=0,NREP=200;
+      runBtn.disabled=true;runBtn.textContent='Running…';
+      function chunk(){
+        if(my!==runId)return;
+        var stop=Math.min(NREP,done+25);
+        for(;done<stop;done++){
+          last=oneRep(g,n,diff);
+          ts.push(last.t);r2s.push(last.r2);
+        }
+        runBtn.textContent='Running… '+done+'/'+NREP;
+        if(done<NREP){setTimeout(chunk,0);return;}
+        runBtn.disabled=false;runBtn.textContent='▶ Run 200 regressions';
+        finish(ts,r2s,last,n,diff);
+      }
+      chunk();
+    }
+    function finish(ts,r2s,last,n,diff){
+      var rej=0,i;
+      for(i=0;i<ts.length;i++)if(Math.abs(ts[i])>1.96)rej++;
+      var rejPct=100*rej/ts.length,mr2=M.mean(r2s);
+      var maxT=0;for(i=0;i<ts.length;i++)maxT=Math.max(maxT,Math.abs(ts[i]));
+      stats.innerHTML=
+        M.chip('|t| > 1.96 (should be ≈ 5%)',M.fmt(rejPct,1)+'%')+
+        M.chip('average R²',M.fmt(mr2,3))+
+        M.chip('largest |t| seen',M.fmt(maxT,1))+
+        M.chip('regressions run',String(ts.length));
+      /* histogram of t-stats */
+      var clip=ts.map(function(v){return Math.max(-30,Math.min(30,v));});
+      var lo=Math.min.apply(null,clip),hi=Math.max.apply(null,clip);
+      lo=Math.min(lo,-4);hi=Math.max(hi,4);
+      var nb=25,w=(hi-lo)/nb,bins=new Array(nb).fill(0);
+      clip.forEach(function(v){var b=Math.min(nb-1,Math.max(0,Math.floor((v-lo)/w)));bins[b]++;});
+      var bmax=Math.max.apply(null,bins);
+      var c=M.Chart(document.getElementById('spHist'),210);
+      c.range(lo,hi,0,bmax*1.15).clear();
+      c.axes(M.ticks(lo,hi,6),M.ticks(0,bmax*1.15,4),function(v){return M.fmt(v,0);},function(v){return M.fmt(v,0);});
+      var xs=[],ys=[];
+      for(i=0;i<nb;i++){xs.push(lo+(i+0.5)*w);ys.push(bins[i]);}
+      var bw=Math.max(2,(c.px(lo+w)-c.px(lo))*0.85);
+      c.bars(xs,ys,'#38bdf8',bw);
+      c.vline(-1.96,'#f87171',[5,4]);c.vline(1.96,'#f87171',[5,4]);
+      c.text('t-statistics from 200 regressions · red lines = ±1.96',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      /* example pair */
+      var ex=last,T=ex.x.length;
+      var l2=Math.min(Math.min.apply(null,ex.x),Math.min.apply(null,ex.y)),
+          h2=Math.max(Math.max.apply(null,ex.x),Math.max.apply(null,ex.y)),m2=(h2-l2)*0.08||1;
+      var c2=M.Chart(document.getElementById('spLast'),210);
+      c2.range(0,T-1,l2-m2,h2+m2).clear();
+      c2.axes(M.ticks(0,T-1,5),M.ticks(l2-m2,h2+m2,4),null,function(v){return M.fmt(v,0);});
+      var xi=[];for(i=0;i<T;i++)xi.push(i);
+      c2.line(xi,ex.y,'#38bdf8',1.3);
+      c2.line(xi,ex.x,'#fbbf24',1.3);
+      c2.text('Last pair drawn — truly independent '+(diff?'(differenced)':'random walks'),c2.pad.l+6,c2.pad.t+4,'#e2e8f0');
+      note.innerHTML=diff?
+        '<b>'+M.fmt(rejPct,1)+'% rejections</b> — close to the promised 5%, and average R² ≈ '+M.fmt(mr2,3)+'. Once differenced, the regression is honest: stationary errors, valid t-distribution, no phantom relationships. This is why returns, not prices, go into regressions.':
+        '<b>'+M.fmt(rejPct,1)+'% of regressions "found" a significant relationship between two series that are independent by construction</b> — versus the 5% a correct test would give. Average R² = '+M.fmt(mr2,3)+', largest |t| = '+M.fmt(maxT,1)+'. The residuals inherit the unit root, the usual t-distribution theory collapses, and the t-statistic diverges like √n. Granger &amp; Newbold (1974) called regressions like these <i>spurious</i> — and an R² larger than the Durbin–Watson statistic is their classic warning sign.';
+    }
+    runBtn.onclick=run;
+    M.exp4=function(k){
+      if(k===0){M.setCtl({spN:200});mode.value='lvl';}
+      else if(k===1){M.setCtl({spN:200});mode.value='dif';}
+      else {M.setCtl({spN:400});mode.value='lvl';}
+      run();
+    };
+    run();
+  };
+})();
+
+/* ---------- v2 clinic demos ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.clinicDemo=function(kind,cid){
+    var cv=document.getElementById(cid);
+    cv.style.display='block';
+    var rng=M.mulberry32((Math.random()*4294967296)>>>0),g=M.gauss(rng),i;
+    if(kind==='od'){
+      var n=400,wn=[];for(i=0;i<n;i++)wn.push(g());
+      var d=[];for(i=1;i<n;i++)d.push(wn[i]-wn[i-1]);
+      M.drawCorrelogram(cv,M.acf(d,20).slice(1),n-1,'ACF of Δ(white noise): the −0.5 spike at lag 1 = over-differencing',null,180);
+    }else if(kind==='brk'){
+      var n2=400,y=[];for(i=0;i<n2;i++)y.push((i<n2/2?0:3)+g());
+      M.drawCorrelogram(cv,M.acf(y,20).slice(1),n2,'ACF of iid noise + ONE mean break: fake "long memory"',null,180);
+    }else{
+      var n3=360,y3=[];for(i=0;i<n3;i++)y3.push(1.2*Math.sin(2*Math.PI*(i%12)/12)+g());
+      M.drawCorrelogram(cv,M.acf(y3,24).slice(1),n3,'ACF of a monthly seasonal series: spikes at lags 12 and 24',null,180);
+    }
+  };
+})();
+
+/* ---------- v2 tabs + accordions ---------- */
+(function(){
+  'use strict';
+  document.querySelectorAll('.pcard').forEach(function(card){
+    card.addEventListener('click',function(e){
+      var tag=e.target.tagName;
+      if(tag==='BUTTON'||tag==='CANVAS'||tag==='SELECT'||tag==='INPUT'||tag==='OPTION')return;
+      card.classList.toggle('open');
+      var ar=card.querySelector('.arrow');
+      if(ar)ar.textContent=card.classList.contains('open')?'▴ close':ar.textContent.replace('▴ close','▾ details');
+    });
+  });
+  var bar=document.getElementById('tabbar');
+  if(!bar)return;
+  var btns=Array.prototype.slice.call(bar.querySelectorAll('button'));
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      btns.forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      document.querySelectorAll('.plat').forEach(function(p){p.classList.remove('active');});
+      var id=b.getAttribute('data-plat');
+      document.getElementById(id).classList.add('active');
+      var init=window.MANG['init_'+id];
+      if(init&&!init._done){init._done=true;init();}
+    });
+  });
 })();
 </script>
 </body>
 </html>
+

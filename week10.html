@@ -23,6 +23,7 @@ h3{font-size:1.05rem;margin:14px 0 6px;color:var(--accent);}
 .ctl label{display:flex;justify-content:space-between;font-size:.88rem;color:var(--muted);}
 .ctl label b{color:var(--text);font-weight:600;}
 .ctl input[type=range]{width:100%;accent-color:var(--accent);}
+.ctl select{background:var(--panel2);color:var(--text);border:1px solid #334155;border-radius:6px;padding:4px 8px;font-family:var(--font);width:100%;}
 button{background:var(--accent);color:#0b1220;border:0;border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer;font-family:var(--font);font-size:.95rem;}
 button:hover{filter:brightness(1.1);}
 button.alt{background:var(--panel2);color:var(--text);border:1px solid #334155;}
@@ -52,6 +53,31 @@ footer a{color:var(--accent);text-decoration:none;margin:0 8px;}
 footer a:hover{text-decoration:underline;}
 .legend{font-size:.82rem;color:var(--muted);margin:2px 0 6px;}
 .legend i{display:inline-block;width:12px;height:3px;vertical-align:middle;margin:0 4px 0 10px;border-radius:2px;}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin:12px 0;}
+.pcard{background:var(--panel2);border:1px solid #334155;border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s;}
+.pcard:hover{border-color:var(--accent);}
+.pcard .sym{color:var(--accent);font-weight:700;}
+.pcard .nm{font-weight:600;}
+.pcard .one{color:var(--muted);font-size:.86rem;margin-top:2px;}
+.pcard .bd{display:none;font-size:.87rem;margin-top:8px;border-top:1px solid #334155;padding-top:8px;}
+.pcard.open{border-color:var(--accent);}
+.pcard.open .bd{display:block;}
+.pcard .bd b{color:var(--accent2);}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.tabbar button{background:var(--panel2);color:var(--text);border:1px solid #334155;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:400;}
+.tabbar button.active{background:var(--accent);color:#0f172a;font-weight:600;}
+.tabpane{display:none;}
+.tabpane.active{display:block;}
+.exps{border:1px dashed #475569;border-radius:10px;padding:10px 14px;margin:14px 0 4px;background:rgba(39,52,73,.35);}
+.exps h4{margin:0 0 4px;font-size:.95rem;color:var(--accent2);}
+.exps ol{margin:4px 0 2px;padding-left:20px;}
+.exps li{margin:7px 0;font-size:.9rem;}
+.exps button{font-size:.78rem;padding:3px 10px;margin-left:8px;background:var(--accent2);}
+.clinic{border:1px solid #334155;border-radius:10px;margin:10px 0;background:var(--panel2);overflow:hidden;}
+.clinic>button.chead{display:block;width:100%;text-align:left;background:transparent;color:var(--text);border:0;border-radius:0;padding:12px 14px;font-size:.97rem;font-weight:600;}
+.clinic .cbody{display:none;padding:0 14px 12px;font-size:.9rem;}
+.clinic.open .cbody{display:block;}
+.clinic .cbody b{color:var(--accent2);}
 @media(max-width:720px){.controls{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -63,11 +89,21 @@ footer a:hover{text-decoration:underline;}
 <main>
 <h1>⚖️ Panel Data — Hausman Court</h1>
 <div class="intro">
-Panel data follow the <b>same firms over time</b>: y<sub>it</sub> = α<sub>i</sub> + βx<sub>it</sub> + ε<sub>it</sub>. The firm effect α<sub>i</sub> captures everything fixed about firm i — management quality, industry, culture. If α<sub>i</sub> is <b>correlated with x</b>, pooled OLS (and random effects) are biased; fixed effects (the "within" estimator) survives by using only variation <i>inside</i> each firm. Below you can watch pooled OLS lie in real time, then take the judge's seat in Hausman Court.
+Panel data follow the <b>same firms over time</b>: y<sub>it</sub> = α<sub>i</sub> + βx<sub>it</sub> + ε<sub>it</sub>. The firm effect α<sub>i</sub> captures everything fixed about firm i — management quality, industry, culture. If α<sub>i</sub> is <b>correlated with x</b>, pooled OLS (and random effects) are biased; fixed effects (the "within" estimator) survives by using only variation <i>inside</i> each firm. Work through the parameter cards, <b>four interactive platforms</b> (watch pooled OLS lie, animate the within transformation, stress-test the Hausman test by Monte Carlo, and see why everyone clusters their standard errors), the problems clinic, then take the judge's seat in Hausman Court.
 </div>
 
-<section id="simsec">
-<h2>🔬 Simulation — why pooled OLS lies</h2>
+<section id="parsec">
+<h2>📚 Parameters &amp; concepts</h2>
+<p>Click a card to expand it. These are the quantities every panel regression in corporate finance lives or dies by.</p>
+<div class="pgrid" id="pcards"></div>
+</section>
+
+<section id="platsec">
+<h2>🔬 Platforms — the panel laboratory</h2>
+<div class="tabbar" id="ptabs"></div>
+
+<div class="tabpane active" id="pane1">
+<h3>Platform 1 — Why pooled OLS lies (FE/RE bias explorer)</h3>
 <p>6 firms × 15 years. True model: y<sub>it</sub> = α<sub>i</sub> + 0.5·x<sub>it</sub> + ε<sub>it</sub> (so the true within-slope is <b>β = 0.5</b>). The slider controls corr(α<sub>i</sub>, x̄<sub>i</sub>) — how strongly the firm effect is correlated with the regressor.</p>
 <div class="controls">
   <div class="ctl"><label><span>ρ — corr(α<sub>i</sub>, x̄<sub>i</sub>)</span><b id="v_rho">0.6</b></label><input type="range" id="rho" min="-0.9" max="0.9" step="0.1" value="0.6"></div>
@@ -83,6 +119,82 @@ Panel data follow the <b>same firms over time</b>: y<sub>it</sub> = α<sub>i</su
   <div class="stat">Hausman-style verdict<br><b id="r_haus">—</b><span id="r_hausp"></span></div>
 </div>
 <div class="notice" id="simnote"></div>
+<div class="exps" id="exp1"></div>
+</div>
+
+<div class="tabpane" id="pane2">
+<h3>Platform 2 — Within-transformation visualiser</h3>
+<p>What does "fixed effects" actually <i>do</i> to the data? It subtracts each firm's own means: (x<sub>it</sub> − x̄<sub>i</sub>, y<sub>it</sub> − ȳ<sub>i</sub>). Drag the progress slider (or press Animate) and watch every firm's cloud slide to a common centre — taking the firm effect α<sub>i</sub> with it. 6 firms × 12 years, true β = 0.5, corr(α<sub>i</sub>, x̄<sub>i</sub>) = 0.7.</p>
+<div class="controls">
+  <div class="ctl"><label><span>Highlight firm</span></label><select id="w_firm"><option value="-1">All firms</option><option value="0">Firm 1</option><option value="1">Firm 2</option><option value="2">Firm 3</option><option value="3">Firm 4</option><option value="4">Firm 5</option><option value="5">Firm 6</option></select></div>
+  <div class="ctl"><label><span>Demeaning progress</span><b id="v_w_prog">0%</b></label><input type="range" id="w_prog" min="0" max="100" step="1" value="0"></div>
+</div>
+<div class="gamebar">
+  <button id="w_anim">▶ Animate demeaning</button>
+  <button id="w_new" class="alt">↻ New firms</button>
+</div>
+<div class="legend"><i style="background:#f87171"></i>pooled OLS on raw data <i style="background:#34d399"></i>within (FE) fit <span style="margin-left:10px">× = firm means, arrows = the demeaning shift</span></div>
+<canvas id="w_cv" data-h="330"></canvas>
+<div class="readouts">
+  <div class="stat">Pooled β̂ (raw data)<br><b id="w_pool">—</b></div>
+  <div class="stat">Within β̂ (demeaned)<br><b id="w_fe">—</b><span>true β = 0.5</span></div>
+</div>
+<h3 style="margin-top:8px">LSDV equivalence — the per-firm intercepts α̂<sub>i</sub> = ȳ<sub>i</sub> − β̂<sub>FE</sub>x̄<sub>i</sub></h3>
+<div class="readouts" id="w_alphas"></div>
+<div class="notice" id="w_note"></div>
+<div class="exps" id="exp2"></div>
+</div>
+
+<div class="tabpane" id="pane3">
+<h3>Platform 3 — Hausman lab (Monte Carlo)</h3>
+<p>The Hausman test compares β̂<sub>FE</sub> and β̂<sub>RE</sub>: H = (β̂<sub>FE</sub>−β̂<sub>RE</sub>)²/(V̂<sub>FE</sub>−V̂<sub>RE</sub>) ~ χ²₁ under H₀: corr(α<sub>i</sub>, x) = 0. But how good is it really? Pick a true correlation and panel dimensions, run 300 simulated panels, and look at the distribution of H with your own eyes.</p>
+<div class="controls">
+  <div class="ctl"><label><span>corr(α<sub>i</sub>, x) — true correlation</span><b id="v_hz_rho">0.0</b></label><input type="range" id="hz_rho" min="-0.9" max="0.9" step="0.1" value="0"></div>
+  <div class="ctl"><label><span>N — number of firms</span><b id="v_hz_N">30</b></label><input type="range" id="hz_N" min="6" max="60" step="2" value="30"></div>
+  <div class="ctl"><label><span>T — years per firm</span><b id="v_hz_T">10</b></label><input type="range" id="hz_T" min="4" max="20" step="1" value="10"></div>
+</div>
+<div class="gamebar">
+  <button id="hz_run">▶ Run 300 Monte Carlo reps</button>
+  <span class="pill" id="hz_prog">idle</span>
+</div>
+<div class="legend"><i style="background:#38bdf8"></i>histogram of Hausman H across reps <i style="background:#fbbf24"></i>χ²₁ density (what H₀ predicts) <i style="background:#f87171"></i>5% critical value 3.84</div>
+<canvas id="hz_cv" data-h="250"></canvas>
+<div class="readouts">
+  <div class="stat">Rejection rate at 5%<br><b id="hz_rej">—</b><span>share of reps with H &gt; 3.84</span></div>
+  <div class="stat">Mean H<br><b id="hz_mean">—</b><span>χ²₁ mean = 1 under H₀</span></div>
+  <div class="stat">Mean β̂<sub>RE</sub> − β̂<sub>FE</sub><br><b id="hz_gap">—</b><span>RE bias the test must find</span></div>
+</div>
+<div class="notice" id="hz_note"><b>What to notice:</b> run the reps at corr = 0 first — the histogram should sit on the gold χ²₁ curve and reject about 5% of the time (correct size). Then raise the correlation and watch power appear.</div>
+<div class="exps" id="exp3"></div>
+</div>
+
+<div class="tabpane" id="pane4">
+<h3>Platform 4 — Cluster inference lab</h3>
+<p>Firm-level shocks persist: if a firm has a bad year, it tends to have a bad decade. That correlation makes naive OLS standard errors far too small. Here the DGP has within-firm error correlation ρ and G firms × 10 years; for each of 400 simulated panels we build a 95% confidence interval two ways and check whether it covers the true β = 0.5.</p>
+<div class="controls">
+  <div class="ctl"><label><span>ρ<sub>within</sub> — within-firm error correlation</span><b id="v_cl_rho">0.5</b></label><input type="range" id="cl_rho" min="0" max="0.9" step="0.05" value="0.5"></div>
+  <div class="ctl"><label><span>G — number of firms (clusters)</span><b id="v_cl_G">30</b></label><input type="range" id="cl_G" min="5" max="100" step="5" value="30"></div>
+</div>
+<div class="gamebar">
+  <button id="cl_run">▶ Run 400 Monte Carlo reps</button>
+  <span class="pill" id="cl_prog">idle</span>
+</div>
+<div class="legend"><i style="background:#f87171"></i>naive OLS SE coverage <i style="background:#38bdf8"></i>cluster-robust SE coverage <i style="background:#34d399"></i>the 95% you were promised</div>
+<canvas id="cl_cv" data-h="240"></canvas>
+<div class="readouts">
+  <div class="stat">Naive coverage<br><b id="cl_cnv">—</b><span>should be 95%</span></div>
+  <div class="stat">Clustered coverage<br><b id="cl_ccl">—</b><span>should be 95%</span></div>
+  <div class="stat">Avg SE ratio (clustered/naive)<br><b id="cl_ratio">—</b><span>the Moulton factor</span></div>
+</div>
+<div class="notice" id="cl_note"><b>What to notice:</b> run the default (ρ = 0.5, G = 30). The naive interval claims 95% confidence but delivers far less — your t-stats were lying. Clustering repairs it… as long as you have enough clusters.</div>
+<div class="exps" id="exp4"></div>
+</div>
+</section>
+
+<section id="clinsec">
+<h2>⚠️ Problems clinic</h2>
+<p>Six classic panel-data injuries seen in corporate-finance empirical work — symptoms, diagnosis, treatment.</p>
+<div id="clinic"></div>
 </section>
 
 <section id="gamesec">
@@ -112,7 +224,7 @@ Panel data follow the <b>same firms over time</b>: y<sub>it</sub> = α<sub>i</su
 
 <section id="codesec">
 <h2>⌨️ Code challenges</h2>
-<p>Fill the blank in each snippet (toggle Python/R). One attempt per question.</p>
+<p>Fill the blank in each snippet (toggle Python/R). One attempt per question. Eight questions this week.</p>
 <div id="quiz"></div>
 </section>
 </main>
@@ -120,7 +232,6 @@ Panel data follow the <b>same firms over time</b>: y<sub>it</sub> = α<sub>i</su
 MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah<br>
 <a href="week09.html">← Week 9: Markov Switching</a> · <a href="index.html">All topics</a> · <a href="week11.html">Week 11: Research Methods Lab →</a>
 </footer>
-
 <script>
 'use strict';
 window.MANG = (function(){
@@ -155,6 +266,83 @@ window.MANG = (function(){
     var p=d*t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
     return z>=0?1-p:p;
   }
+  function chi2pdf1(x){return (x<=0)?0:Math.exp(-x/2)/Math.sqrt(2*Math.PI*x);}
+  /*KERNEL:panel*/
+  function olsXY(x,y){ // intercept + slope (+ slope variance)
+    var n=x.length,sx=0,sy=0,sxx=0,sxy=0,i;
+    for(i=0;i<n;i++){sx+=x[i];sy+=y[i];sxx+=x[i]*x[i];sxy+=x[i]*y[i];}
+    var Sxx=sxx-sx*sx/n,Sxy=sxy-sx*sy/n;
+    var b=Sxy/Sxx,a=sy/n-b*sx/n;
+    var ssr=0;for(i=0;i<n;i++){var r=y[i]-a-b*x[i];ssr+=r*r;}
+    return {a:a,b:b,vb:(ssr/(n-2))/Sxx,Sxx:Sxx};
+  }
+  // generate a panel: y_it = alpha_i + 0.5 x_it + eps_it, corr(alpha_i, xbar_i) = rho
+  function panelGen(rng,N,T,rho){
+    var x=[],y=[],firm=[],i,t;
+    for(i=0;i<N;i++){
+      var u=gauss(rng),v=gauss(rng);
+      var ai=2.0*u;
+      var mi=2.0*(rho*u+Math.sqrt(1-rho*rho)*v);
+      for(t=0;t<T;t++){
+        var xit=mi+gauss(rng);
+        x.push(xit);y.push(ai+0.5*xit+0.7*gauss(rng));firm.push(i);
+      }
+    }
+    return {x:x,y:y,firm:firm,N:N,T:T};
+  }
+  // FE (within), RE (Swamy-Arora GLS) and the Hausman statistic
+  function panelEst(d){
+    var n=d.x.length,N=d.N,T=d.T,i;
+    var mx=[],my=[];
+    for(i=0;i<N;i++){mx.push(0);my.push(0);}
+    for(i=0;i<n;i++){mx[d.firm[i]]+=d.x[i]/T;my[d.firm[i]]+=d.y[i]/T;}
+    var sxx=0,sxy=0;
+    for(i=0;i<n;i++){var xt=d.x[i]-mx[d.firm[i]],yt=d.y[i]-my[d.firm[i]];sxx+=xt*xt;sxy+=xt*yt;}
+    var bFE=sxy/sxx,ssrW=0;
+    for(i=0;i<n;i++){var rw=(d.y[i]-my[d.firm[i]])-bFE*(d.x[i]-mx[d.firm[i]]);ssrW+=rw*rw;}
+    var s2e=ssrW/(n-N-1),vFE=s2e/sxx;
+    var bw=olsXY(mx,my),ssrB=0;
+    for(i=0;i<N;i++){var rb=my[i]-bw.a-bw.b*mx[i];ssrB+=rb*rb;}
+    var s2b=ssrB/(N-2);
+    var s2a=Math.max(0,s2b-s2e/T);
+    var theta=1-Math.sqrt(s2e/(s2e+T*s2a));
+    var xs=[],ys=[];
+    for(i=0;i<n;i++){xs.push(d.x[i]-theta*mx[d.firm[i]]);ys.push(d.y[i]-theta*my[d.firm[i]]);}
+    var re=olsXY(xs,ys);
+    // Hausman denominator: build V(RE) from the same sigma2_e (GLS errors have variance sigma_e^2);
+    // this keeps the test close to its nominal 5% size in small samples.
+    var vRE=s2e/re.Sxx;
+    var dv=vFE-vRE,H=0;
+    if(dv>1e-12)H=Math.pow(bFE-re.b,2)/dv;
+    return {bFE:bFE,vFE:vFE,bRE:re.b,vRE:re.vb,theta:theta,H:H,mx:mx,my:my,pool:olsXY(d.x,d.y)};
+  }
+  // one rep of the cluster-inference experiment: pooled OLS slope, naive SE, CR1 clustered SE
+  function clusterRep(rng,G,T,rho){
+    var n=G*T,x=[],y=[],cl=[],g,t,i;
+    for(g=0;g<G;g++){
+      var wg=gauss(rng),ag=gauss(rng);
+      for(t=0;t<T;t++){
+        var xit=Math.SQRT1_2*wg+Math.SQRT1_2*gauss(rng);     // within-firm corr of x = 0.5
+        var vit=Math.sqrt(rho)*ag+Math.sqrt(1-rho)*gauss(rng); // within-firm corr of errors = rho
+        x.push(xit);y.push(0.5*xit+vit);cl.push(g);
+      }
+    }
+    var mx=0,my=0;
+    for(i=0;i<n;i++){mx+=x[i]/n;my+=y[i]/n;}
+    var sxx=0,sxy=0;
+    for(i=0;i<n;i++){sxx+=(x[i]-mx)*(x[i]-mx);sxy+=(x[i]-mx)*(y[i]-my);}
+    var b=sxy/sxx,a=my-b*mx;
+    var ssr=0,e=[];
+    for(i=0;i<n;i++){var r=y[i]-a-b*x[i];e.push(r);ssr+=r*r;}
+    var seN=Math.sqrt((ssr/(n-2))/sxx);
+    var sums=[];for(g=0;g<G;g++)sums.push(0);
+    for(i=0;i<n;i++)sums[cl[i]]+=(x[i]-mx)*e[i];
+    var meat=0;for(g=0;g<G;g++)meat+=sums[g]*sums[g];
+    var cfac=(G/(G-1))*((n-1)/(n-2));
+    var seC=Math.sqrt(cfac*meat)/sxx;
+    return {b:b,seN:seN,seC:seC};
+  }
+  /*END:panel*/
   function quiz(rootId,QS){
     var root=document.getElementById(rootId);var lang='py';
     var done=QS.map(function(){return {answered:false,right:false};});
@@ -200,17 +388,138 @@ window.MANG = (function(){
     br.addEventListener('click',function(){lang='r';br.className='';bp.className='alt';fill();});
     fill();upd();
   }
-  return {mulberry32:mulberry32,gauss:gauss,setup:setup,axes:axes,line:line,fmt:fmt,grade:grade,saveBest:saveBest,getBest:getBest,normCdf:normCdf,quiz:quiz};
+  function cards(rootId,CS){
+    var root=document.getElementById(rootId);
+    CS.forEach(function(c){
+      var d=document.createElement('div');d.className='pcard';
+      var h='<span class="sym">'+c.sym+'</span> <span class="nm">'+c.name+'</span><div class="one">'+c.one+'</div><div class="bd">';
+      c.body.forEach(function(row){h+='<div style="margin:4px 0"><b>'+row[0]+'.</b> '+row[1]+'</div>';});
+      h+='</div>';
+      d.innerHTML=h;
+      d.addEventListener('click',function(){d.classList.toggle('open');});
+      root.appendChild(d);
+    });
+  }
+  function clinic(rootId,ITEMS){
+    var root=document.getElementById(rootId);
+    ITEMS.forEach(function(it){
+      var d=document.createElement('div');d.className='clinic';
+      var hb=document.createElement('button');hb.className='chead';hb.innerHTML='▸ '+it.title;
+      var bd=document.createElement('div');bd.className='cbody';
+      var h='';
+      it.body.forEach(function(row){h+='<div style="margin:5px 0"><b>'+row[0]+'.</b> '+row[1]+'</div>';});
+      bd.innerHTML=h;
+      if(it.demo){
+        var btn=document.createElement('button');btn.textContent='▶ '+it.demo.label;btn.style.marginTop='6px';
+        var cv=document.createElement('canvas');cv.setAttribute('data-h',String(it.demo.h||160));cv.style.display='none';
+        btn.addEventListener('click',function(){cv.style.display='block';it.demo.draw(cv);btn.disabled=true;});
+        bd.appendChild(btn);bd.appendChild(cv);
+      }
+      hb.addEventListener('click',function(){var open=d.classList.toggle('open');hb.innerHTML=(open?'▾ ':'▸ ')+it.title;});
+      d.appendChild(hb);d.appendChild(bd);root.appendChild(d);
+    });
+  }
+  function exps(rootId,items){
+    var root=document.getElementById(rootId);
+    var h=document.createElement('h4');h.textContent='🧪 Try this';root.appendChild(h);
+    var ol=document.createElement('ol');
+    items.forEach(function(it){
+      var li=document.createElement('li');
+      var sp=document.createElement('span');sp.innerHTML=it.text;li.appendChild(sp);
+      var b=document.createElement('button');b.textContent='Set it up';
+      b.addEventListener('click',it.set);
+      li.appendChild(b);ol.appendChild(li);
+    });
+    root.appendChild(ol);
+  }
+  var panes=[];
+  function tabs(barId){
+    var bar=document.getElementById(barId),P=panes,btns=[];
+    P.forEach(function(d,i){
+      var b=document.createElement('button');b.textContent=d.label;
+      b.addEventListener('click',function(){act(i);});
+      bar.appendChild(b);btns.push(b);
+    });
+    var cur=-1;
+    function act(i){
+      P.forEach(function(d,k){
+        document.getElementById(d.id).classList.toggle('active',k===i);
+        btns[k].classList.toggle('active',k===i);
+      });
+      cur=i;
+      var d=P[i];
+      if(!d._init){d._init=true;if(d.init)d.init();}
+      else if(d.show)d.show();
+    }
+    window.addEventListener('resize',function(){var d=P[cur];if(d&&d._init&&d.show)d.show();});
+    act(0);
+    return {act:act};
+  }
+  return {mulberry32:mulberry32,gauss:gauss,setup:setup,axes:axes,line:line,fmt:fmt,grade:grade,saveBest:saveBest,getBest:getBest,normCdf:normCdf,chi2pdf1:chi2pdf1,olsXY:olsXY,panelGen:panelGen,panelEst:panelEst,clusterRep:clusterRep,quiz:quiz,cards:cards,clinic:clinic,exps:exps,panes:panes,tabs:tabs};
 })();
 
-/* ---------- SECTION A: simulation ---------- */
+/* ---------- Parameters & concepts ---------- */
+(function(){
+  window.MANG.cards('pcards',[
+    {sym:'α<sub>i</sub>',name:'— the firm effect',one:'Everything permanent about firm i, observable or not, bundled into one intercept.',
+     body:[['Meaning','Management quality, culture, industry, location — all the time-invariant stuff you cannot measure sits in α<sub>i</sub>. The whole FE-vs-RE debate is about how to treat it.'],
+       ['Formula','y<sub>it</sub> = α<sub>i</sub> + βx<sub>it</sub> + ε<sub>it</sub>'],
+       ['Typical values','In firm panels the spread of α<sub>i</sub> often dwarfs the within-firm variation of y — most of the variance in corporate outcomes is "which firm you are".'],
+       ['At the extremes','All α<sub>i</sub> equal → pooled OLS is fine. α<sub>i</sub> wildly different but uncorrelated with x → RE is fine. α<sub>i</sub> correlated with x → only FE survives.'],
+       ['Estimation problems','With small T, the α̂<sub>i</sub> themselves are estimated badly (the incidental-parameters problem) — though β̂<sub>FE</sub> stays consistent in linear models.']]},
+    {sym:'β',name:'— the within slope',one:'The effect of x on y comparing each firm with itself over time.',
+     body:[['Meaning','FE answers: "when THIS firm raised x, what happened to ITS y?" — not "do high-x firms have high y?". Those are different questions with different answers.'],
+       ['Formula','β̂<sub>FE</sub> = Σ(x<sub>it</sub>−x̄<sub>i</sub>)(y<sub>it</sub>−ȳ<sub>i</sub>) / Σ(x<sub>it</sub>−x̄<sub>i</sub>)²'],
+       ['Typical values','Frequently much smaller than the pooled estimate — cross-firm correlation flatters pooled OLS (Platform 1 shows this live).'],
+       ['At the extremes','If x barely moves within firms (e.g. board size), the denominator → 0 and β̂<sub>FE</sub> becomes noise with huge SEs.'],
+       ['Estimation problems','Within variation is also where measurement error concentrates — FE can be MORE attenuated than OLS (see the clinic).']]},
+    {sym:'corr(α<sub>i</sub>, x)',name:'— the crucial quantity',one:'The single number the whole FE/RE choice hangs on.',
+     body:[['Meaning','If firms with big fixed effects also have big x (profitable firms invest more in R&amp;D…), pooled OLS and RE attribute the α-effect to x. That is omitted-variable bias with a panel accent.'],
+       ['Formula','Bias of pooled OLS ∝ corr(α<sub>i</sub>, x̄<sub>i</sub>)·σ<sub>α</sub>/σ<sub>x̄</sub> — grows with the correlation and the spread of firm effects.'],
+       ['Typical values','In corporate finance, rarely zero: leverage, R&amp;D, governance, pay — all correlate with unobserved firm quality. Assume nonzero until proven otherwise.'],
+       ['At the extremes','= 0: RE is consistent AND efficient — use it. |corr| large: RE inherits a large share of the pooled bias; only FE is defensible.'],
+       ['Estimation problems','Not directly estimable (α<sub>i</sub> is unobserved!) — the Hausman test infers it indirectly from the FE–RE gap, with limited power (Platform 3).']]},
+    {sym:'θ',name:'— RE quasi-demeaning weight',one:'How much of each firm\'s mean the random-effects GLS subtracts.',
+     body:[['Meaning','RE transforms the data to y<sub>it</sub> − θȳ<sub>i</sub>: a compromise between pooled OLS and FE chosen for efficiency.'],
+       ['Formula','θ = 1 − √( σ<sub>ε</sub>² / (σ<sub>ε</sub>² + Tσ<sub>α</sub>²) )'],
+       ['Typical values','With strong firm effects and decent T, θ is often 0.7–0.95 — RE is then numerically close to FE.'],
+       ['At the extremes','θ = 0 (no firm effects): RE = pooled OLS. θ → 1 (huge σ<sub>α</sub>² or large T): RE → FE. Everything between is a precision-weighted blend.'],
+       ['Estimation problems','θ needs estimates of both variance components; with tiny N the between-variance σ̂<sub>α</sub>² can come out negative and gets truncated at zero.']]},
+    {sym:'H',name:'— Hausman statistic',one:'Compares FE and RE: a big gap convicts RE of inconsistency.',
+     body:[['Meaning','Under H₀ (α<sub>i</sub> uncorrelated with x) both estimators are consistent, so they should agree up to noise. A large standardised gap is evidence against H₀.'],
+       ['Formula','H = (β̂<sub>FE</sub>−β̂<sub>RE</sub>)′[V̂<sub>FE</sub>−V̂<sub>RE</sub>]⁻¹(β̂<sub>FE</sub>−β̂<sub>RE</sub>) ~ χ²<sub>k</sub> under H₀.'],
+       ['Typical values','5% critical value with one regressor: 3.84. Empirical corporate-finance panels reject H₀ far more often than not.'],
+       ['At the extremes','H ≈ 0: no evidence against RE (which is NOT proof RE is right — see Platform 3 on power). H huge: FE, no appeal.'],
+       ['Estimation problems','V̂<sub>FE</sub>−V̂<sub>RE</sub> can be non-positive-definite in small samples (the test "fails"); and with small N the test has little power to detect real correlation.']]},
+    {sym:'SE<sub>cl</sub>',name:'— cluster-robust standard errors',one:'Standard errors that survive correlated shocks within each firm.',
+     body:[['Meaning','Firm-level shocks persist over time, so a firm\'s T observations are not T independent data points. Clustered SEs let errors correlate arbitrarily within each firm.'],
+       ['Formula','V̂<sub>cl</sub> = (X′X)⁻¹ [Σ<sub>g</sub> (Σ<sub>i∈g</sub> x<sub>i</sub>e<sub>i</sub>)(Σ<sub>i∈g</sub> x<sub>i</sub>e<sub>i</sub>)′] (X′X)⁻¹ × small-sample factor.'],
+       ['Typical values','In firm panels, clustered SEs are commonly 2–5× the naive ones — i.e. naive t-stats were 2–5× too big (Platform 4 measures this).'],
+       ['At the extremes','ρ<sub>within</sub> = 0: clustering changes little (small cost). Few clusters (G &lt; ~30): even clustered SEs are biased down — use t(G−1) critical values or wild bootstrap.'],
+       ['Estimation problems','Clustering on the wrong dimension (firm when shocks hit years) still understates uncertainty — see two-way clustering in the clinic.']]},
+    {sym:'N vs T',name:'— the panel\'s two dimensions',one:'How many firms vs how many years — they are not interchangeable.',
+     body:[['Meaning','Asymptotics, power and which problems bite all depend on the shape: corporate finance panels are usually "large N, small T" (thousands of firms, 10–20 years).'],
+       ['Formula','Total observations n = N×T, but the effective sample for between-variation is N, and for within-variation roughly N(T−1).'],
+       ['Typical values','Compustat-style: N ≈ 3,000, T ≈ 15. Country macro panels: N ≈ 30, T ≈ 50 — opposite shape, opposite worries.'],
+       ['At the extremes','T = 2: FE = first differences, one transition per firm. T large with lagged y: Nickell bias shrinks (∝ 1/T). N small: Hausman and clustered inference both get unreliable.'],
+       ['Estimation problems','Treating n = N×T as independent observations is exactly the mistake clustered SEs exist to fix.']]},
+    {sym:'λ<sub>t</sub>',name:'— time effects',one:'Shocks that hit every firm in the same year: recessions, rate hikes, COVID.',
+     body:[['Meaning','A full set of year dummies absorbs anything common to all firms in year t. "Two-way fixed effects" = firm effects + year effects.'],
+       ['Formula','y<sub>it</sub> = α<sub>i</sub> + λ<sub>t</sub> + βx<sub>it</sub> + ε<sub>it</sub>'],
+       ['Typical values','Standard practice in corporate finance: almost every published panel regression includes both firm and year effects.'],
+       ['At the extremes','Omitting λ<sub>t</sub> when there are common shocks → x picks up the business cycle; spurious significance. Including them when x itself is a macro variable → x is absorbed completely (collinear with the dummies).'],
+       ['Estimation problems','Year shocks also induce <i>cross-firm</i> error correlation in the same year — clustering by firm alone misses it; cluster two-way or by time as well.']]}
+  ]);
+})();
+
+/* ---------- Platform 1: FE/RE bias explorer ---------- */
 (function(){
   var M=window.MANG;
   var NFIRM=6,T=15,BETA=0.5,SX=2.0;
   var seed=77001;
   var COLS=['#38bdf8','#fbbf24','#34d399','#f87171','#a78bfa','#fb923c'];
   var draws=null;
-  function redraws(){ // fixed shocks per seed; rho applied deterministically afterwards
+  function redraws(){
     var rng=M.mulberry32(seed);
     var u=[],v=[],e=[],eps=[];
     for(var i=0;i<NFIRM;i++){
@@ -232,78 +541,37 @@ window.MANG = (function(){
         x.push(xit);y.push(ai+BETA*xit+draws.eps[i][t]);firm.push(i);
       }
     }
-    return {x:x,y:y,firm:firm,alpha:alpha};
-  }
-  function olsXY(x,y){ // intercept + slope
-    var n=x.length,sx=0,sy=0,sxx=0,sxy=0,i;
-    for(i=0;i<n;i++){sx+=x[i];sy+=y[i];sxx+=x[i]*x[i];sxy+=x[i]*y[i];}
-    var Sxx=sxx-sx*sx/n,Sxy=sxy-sx*sy/n;
-    var b=Sxy/Sxx,a=sy/n-b*sx/n;
-    var ssr=0;for(i=0;i<n;i++){var r=y[i]-a-b*x[i];ssr+=r*r;}
-    return {a:a,b:b,vb:(ssr/(n-2))/Sxx};
-  }
-  function estimates(d){
-    var n=d.x.length,i,t;
-    var pool=olsXY(d.x,d.y);
-    // firm means
-    var mx=[],my=[];
-    for(i=0;i<NFIRM;i++){mx.push(0);my.push(0);}
-    for(i=0;i<n;i++){mx[d.firm[i]]+=d.x[i]/T;my[d.firm[i]]+=d.y[i]/T;}
-    // FE (within)
-    var sxx=0,sxy=0;
-    for(i=0;i<n;i++){var xt=d.x[i]-mx[d.firm[i]],yt=d.y[i]-my[d.firm[i]];sxx+=xt*xt;sxy+=xt*yt;}
-    var bFE=sxy/sxx,ssrW=0;
-    for(i=0;i<n;i++){var rw=(d.y[i]-my[d.firm[i]])-bFE*(d.x[i]-mx[d.firm[i]]);ssrW+=rw*rw;}
-    var s2e=ssrW/(n-NFIRM-1),vFE=s2e/sxx;
-    // variance components -> theta for RE (Swamy-Arora flavour)
-    var bw=olsXY(mx,my); var ssrB=0;
-    for(i=0;i<NFIRM;i++){var rb=my[i]-bw.a-bw.b*mx[i];ssrB+=rb*rb;}
-    var s2b=ssrB/(NFIRM-2);
-    var s2a=Math.max(0,s2b-s2e/T);
-    var theta=1-Math.sqrt(s2e/(s2e+T*s2a));
-    // quasi-demeaned OLS
-    var xs=[],ys=[];
-    for(i=0;i<n;i++){xs.push(d.x[i]-theta*mx[d.firm[i]]);ys.push(d.y[i]-theta*my[d.firm[i]]);}
-    var re=olsXY(xs,ys);
-    // Hausman: H = (bFE-bRE)^2 / (V_FE - V_RE)
-    var dv=vFE-re.vb, H=null, p=null;
-    if(dv>1e-10){H=Math.pow(bFE-re.b,2)/dv;p=2*(1-M.normCdf(Math.sqrt(H)));} // chi2(1) tail
-    return {pool:pool,bFE:bFE,vFE:vFE,bRE:re.b,vRE:re.vb,theta:theta,H:H,p:p,mx:mx,my:my};
+    return {x:x,y:y,firm:firm,alpha:alpha,N:NFIRM,T:T};
   }
   function draw(){
     var rho=parseFloat(document.getElementById('rho').value);
     document.getElementById('v_rho').textContent=rho.toFixed(1);
-    var d=build(rho),est=estimates(d);
+    var d=build(rho),est=M.panelEst(d);
     var cv=document.getElementById('cv_panel'),c=M.setup(cv),ctx=c.ctx;
     var xlo=Math.min.apply(null,d.x),xhi=Math.max.apply(null,d.x);
     var ylo=Math.min.apply(null,d.y),yhi=Math.max.apply(null,d.y);
     var px=0.08*(xhi-xlo)+0.2,py=0.08*(yhi-ylo)+0.2;
     var A=M.axes(ctx,c.W,c.H,xlo-px,xhi+px,ylo-py,yhi+py,'x (e.g. firm leverage)','y (e.g. investment)');
-    // per-firm mini OLS lines
     var i,t;
     for(i=0;i<NFIRM;i++){
       var fx=[],fy=[];
       for(t=0;t<d.x.length;t++)if(d.firm[t]===i){fx.push(d.x[t]);fy.push(d.y[t]);}
-      var fo=olsXY(fx,fy);
+      var fo=M.olsXY(fx,fy);
       var x0=Math.min.apply(null,fx),x1=Math.max.apply(null,fx);
       ctx.globalAlpha=0.55;
       M.line(ctx,A,[x0,x1],[fo.a+fo.b*x0,fo.a+fo.b*x1],COLS[i],1.2);
       ctx.globalAlpha=1;
     }
-    // scatter
     for(t=0;t<d.x.length;t++){
       ctx.fillStyle=COLS[d.firm[t]];
       ctx.beginPath();ctx.arc(A.X(d.x[t]),A.Y(d.y[t]),3,0,2*Math.PI);ctx.fill();
     }
-    // pooled line (red, lies when rho != 0)
     var gx0=xlo-px,gx1=xhi+px;
     ctx.setLineDash([7,4]);
     M.line(ctx,A,[gx0,gx1],[est.pool.a+est.pool.b*gx0,est.pool.a+est.pool.b*gx1],'#f87171',2.4);
     ctx.setLineDash([]);
-    // FE line through grand means with within slope
     var gmx=0,gmy=0;for(t=0;t<d.x.length;t++){gmx+=d.x[t]/d.x.length;gmy+=d.y[t]/d.y.length;}
     M.line(ctx,A,[gx0,gx1],[gmy+est.bFE*(gx0-gmx),gmy+est.bFE*(gx1-gmx)],'#34d399',2.4);
-    // readouts
     var bias=est.pool.b-BETA;
     document.getElementById('r_pool').textContent=est.pool.b.toFixed(3);
     var pb=document.getElementById('r_poolbias');
@@ -312,12 +580,12 @@ window.MANG = (function(){
     document.getElementById('r_fe').textContent=est.bFE.toFixed(3);
     document.getElementById('r_re').textContent=est.bRE.toFixed(3);
     var hv=document.getElementById('r_haus'),hp=document.getElementById('r_hausp');
-    if(est.H===null){hv.textContent='gap ≈ 0';hp.textContent='V(FE) ≤ V(RE): nothing to test';}
+    if(est.H<=0){hv.textContent='gap ≈ 0';hp.textContent='V(FE) ≤ V(RE): nothing to test';}
     else{
-      hv.textContent='H = '+est.H.toFixed(1)+(est.p<0.05?' → FE':' → RE ok');
-      hp.textContent='p ≈ '+(est.p<0.001?'<0.001':est.p.toFixed(3))+' · |FE−RE| = '+Math.abs(est.bFE-est.bRE).toFixed(3);
+      var p=2*(1-M.normCdf(Math.sqrt(est.H)));
+      hv.textContent='H = '+est.H.toFixed(1)+(p<0.05?' → FE':' → RE ok');
+      hp.textContent='p ≈ '+(p<0.001?'<0.001':p.toFixed(3))+' · |FE−RE| = '+Math.abs(est.bFE-est.bRE).toFixed(3);
     }
-    // notice
     var note='<b>What to notice:</b> The green FE line keeps recovering β ≈ 0.5 whatever you do to ρ, because demeaning wipes out α<sub>i</sub> entirely. ';
     if(Math.abs(rho)<0.15){
       note+='With ρ ≈ 0 the firm effects are (nearly) uncorrelated with x: pooled OLS and RE are unbiased too, and <b>RE is the efficient choice</b> — it uses both within- and between-firm variation (RE is roughly a precision-weighted average of the two). The Hausman gap is small.';
@@ -326,13 +594,452 @@ window.MANG = (function(){
     }
     document.getElementById('simnote').innerHTML=note;
   }
-  document.getElementById('rho').addEventListener('input',draw);
-  document.getElementById('regen').addEventListener('click',function(){seed=(seed*1664525+1013904223)>>>0;redraws();draw();});
-  window.addEventListener('resize',draw);
-  redraws();draw();
+  function setRho(v){document.getElementById('rho').value=String(v);draw();}
+  function init(){
+    document.getElementById('rho').addEventListener('input',draw);
+    document.getElementById('regen').addEventListener('click',function(){seed=(seed*1664525+1013904223)>>>0;redraws();draw();});
+    M.exps('exp1',[
+      {text:'<b>The innocent case:</b> ρ = 0. All three estimators agree (up to noise) and RE has the tightest readout — when the firm effect is genuinely random, efficiency is free. This is the world the RE assumption describes.',
+       set:function(){setRho(0);}},
+      {text:'<b>The classic lie:</b> ρ = 0.9. The red pooled line tilts steeply through the between-firm pattern while every individual firm\'s thin line stays shallow. Pooled OLS answers a different question — and answers it badly.',
+       set:function(){setRho(0.9);}},
+      {text:'<b>Bias flips sign:</b> ρ = −0.9. Now high-α firms have LOW x and pooled OLS under-tilts (the bias readout goes negative). The direction of the lie depends on the sign of the correlation.',
+       set:function(){setRho(-0.9);}},
+      {text:'<b>Sampling noise vs bias:</b> set ρ = 0.6 and press ↻ Regenerate five times. β̂<sub>FE</sub> wobbles around 0.5 (noise); β̂<sub>pooled</sub> wobbles around something far from 0.5 (noise + bias). Bias does not average away.',
+       set:function(){setRho(0.6);document.getElementById('regen').click();}}
+    ]);
+    redraws();draw();
+  }
+  M.panes.push({id:'pane1',label:'1 · FE/RE bias explorer',init:init,show:draw});
 })();
 
-/* ---------- SECTION B: game ---------- */
+/* ---------- Platform 2: within-transformation visualiser ---------- */
+(function(){
+  var M=window.MANG;
+  var NF=6,T=12,COLS=['#38bdf8','#fbbf24','#34d399','#f87171','#a78bfa','#fb923c'];
+  var seed=515151,d=null,est=null,gmx=0,gmy=0,animId=null;
+  function gen(){
+    var rng=M.mulberry32(seed);
+    d=M.panelGen(rng,NF,T,0.7);
+    est=M.panelEst(d);
+    gmx=0;gmy=0;
+    for(var i=0;i<d.x.length;i++){gmx+=d.x[i]/d.x.length;gmy+=d.y[i]/d.y.length;}
+  }
+  function prog(){return parseFloat(document.getElementById('w_prog').value)/100;}
+  function draw(){
+    var g=prog(),sel=parseInt(document.getElementById('w_firm').value,10);
+    document.getElementById('v_w_prog').textContent=Math.round(g*100)+'%';
+    // bounds across both endpoints of the animation
+    var xlo=1e9,xhi=-1e9,ylo=1e9,yhi=-1e9,i;
+    for(i=0;i<d.x.length;i++){
+      var f=d.firm[i];
+      var x1=d.x[i],y1=d.y[i];
+      var x2=d.x[i]-est.mx[f]+gmx,y2=d.y[i]-est.my[f]+gmy;
+      xlo=Math.min(xlo,x1,x2);xhi=Math.max(xhi,x1,x2);
+      ylo=Math.min(ylo,y1,y2);yhi=Math.max(yhi,y1,y2);
+    }
+    var px=0.08*(xhi-xlo)+0.2,py=0.08*(yhi-ylo)+0.2;
+    var cv=document.getElementById('w_cv'),c=M.setup(cv),ctx=c.ctx;
+    var A=M.axes(ctx,c.W,c.H,xlo-px,xhi+px,ylo-py,yhi+py,'x (demeaning in progress…)','y');
+    // points (interpolated)
+    for(i=0;i<d.x.length;i++){
+      var fi=d.firm[i];
+      var xx=d.x[i]+g*(gmx-est.mx[fi]);
+      var yy=d.y[i]+g*(gmy-est.my[fi]);
+      ctx.globalAlpha=(sel>=0&&fi!==sel)?0.18:0.95;
+      ctx.fillStyle=COLS[fi];
+      ctx.beginPath();ctx.arc(A.X(xx),A.Y(yy),3,0,2*Math.PI);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    // firm-mean crosses + arrows toward grand mean
+    for(i=0;i<NF;i++){
+      if(sel>=0&&i!==sel)continue;
+      var cx=est.mx[i]+g*(gmx-est.mx[i]),cy=est.my[i]+g*(gmy-est.my[i]);
+      ctx.strokeStyle=COLS[i];ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(A.X(cx)-6,A.Y(cy));ctx.lineTo(A.X(cx)+6,A.Y(cy));ctx.stroke();
+      ctx.beginPath();ctx.moveTo(A.X(cx),A.Y(cy)-6);ctx.lineTo(A.X(cx),A.Y(cy)+6);ctx.stroke();
+      if(g<0.98){
+        ctx.globalAlpha=0.55;
+        ctx.strokeStyle=COLS[i];ctx.lineWidth=1;ctx.setLineDash([3,3]);
+        ctx.beginPath();ctx.moveTo(A.X(cx),A.Y(cy));ctx.lineTo(A.X(gmx),A.Y(gmy));ctx.stroke();ctx.setLineDash([]);
+        ctx.globalAlpha=1;
+      }
+    }
+    // grand mean marker
+    ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(A.X(gmx),A.Y(gmy),5,0,2*Math.PI);ctx.stroke();
+    // pooled line (fades as demeaning progresses)
+    var gx0=xlo-px,gx1=xhi+px;
+    ctx.globalAlpha=Math.max(0.18,1-g);
+    ctx.setLineDash([7,4]);
+    M.line(ctx,A,[gx0,gx1],[est.pool.a+est.pool.b*gx0,est.pool.a+est.pool.b*gx1],'#f87171',2.2);
+    ctx.setLineDash([]);
+    // within line (appears)
+    ctx.globalAlpha=0.25+0.75*g;
+    M.line(ctx,A,[gx0,gx1],[gmy+est.bFE*(gx0-gmx),gmy+est.bFE*(gx1-gmx)],'#34d399',2.4);
+    ctx.globalAlpha=1;
+    // readouts
+    document.getElementById('w_pool').textContent=est.pool.b.toFixed(3);
+    document.getElementById('w_fe').textContent=est.bFE.toFixed(3);
+    var ar=document.getElementById('w_alphas');ar.innerHTML='';
+    for(i=0;i<NF;i++){
+      var al=est.my[i]-est.bFE*est.mx[i];
+      var dv=document.createElement('div');dv.className='stat';
+      dv.innerHTML='α̂<sub>'+(i+1)+'</sub> (<span style="color:'+COLS[i]+'">firm '+(i+1)+'</span>)<br><b>'+al.toFixed(2)+'</b>';
+      ar.appendChild(dv);
+    }
+    var note='<b>What to notice:</b> ';
+    if(g<0.05)note+='Raw data: each firm\'s cloud sits at its own height (its α<sub>i</sub>), and because corr(α<sub>i</sub>, x̄<sub>i</sub>) = 0.7, the high clouds sit to the right. The red pooled line chases that cross-firm pattern: β̂<sub>pooled</sub> = '+est.pool.b.toFixed(2)+' vs true 0.5. Now drag the slider or press Animate.';
+    else if(g<0.95)note+='Demeaning in progress ('+Math.round(g*100)+'%): every firm\'s cloud is sliding along its own arrow towards the common centre, carrying its α<sub>i</sub> away. The between-firm differences — the source of the bias — are being deleted.';
+    else note+='Fully demeaned: all six clouds share one centre, the between-firm variation is gone, and the only thing left to fit is the within variation. The green line\'s slope is β̂<sub>FE</sub> = '+est.bFE.toFixed(3)+' ≈ 0.5. <b>LSDV equivalence:</b> regressing y on x plus 6 firm dummies gives numerically this same slope, with the dummy coefficients equal to the α̂<sub>i</sub> listed above (α̂<sub>i</sub> = ȳ<sub>i</sub> − β̂<sub>FE</sub>x̄<sub>i</sub>) — demeaning and dummies are the same estimator.';
+    document.getElementById('w_note').innerHTML=note;
+  }
+  function animate(){
+    if(animId)cancelAnimationFrame(animId);
+    var sl=document.getElementById('w_prog');
+    sl.value='0';
+    var t0=null;
+    function fr(ts){
+      if(t0===null)t0=ts;
+      var g=Math.min(1,(ts-t0)/1600);
+      sl.value=String(Math.round(g*100));
+      draw();
+      if(g<1)animId=requestAnimationFrame(fr);else animId=null;
+    }
+    animId=requestAnimationFrame(fr);
+  }
+  function init(){
+    gen();
+    document.getElementById('w_prog').addEventListener('input',draw);
+    document.getElementById('w_firm').addEventListener('change',draw);
+    document.getElementById('w_anim').addEventListener('click',animate);
+    document.getElementById('w_new').addEventListener('click',function(){seed=(seed*1664525+1013904223)>>>0;gen();draw();});
+    M.exps('exp2',[
+      {text:'<b>Watch the bias leave:</b> animate from 0% to 100% and keep your eye on the red pooled line fading and the green within line taking over. The slope changes from '+'(see readouts)'+' the pooled value to ≈0.5 — the entire difference was α<sub>i</sub>.',
+       set:function(){animate();}},
+      {text:'<b>Follow one firm:</b> highlight Firm 1 and drag the slider slowly. Its cloud keeps its internal shape (the within variation is untouched) — only its location moves. FE throws away location, keeps shape.',
+       set:function(){document.getElementById('w_firm').value='0';document.getElementById('w_prog').value='0';draw();animate();}},
+      {text:'<b>Read the α̂<sub>i</sub> chips:</b> at 100%, the chips show each firm\'s LSDV intercept. The spread between the largest and smallest is the "firm quality" gap that pooled OLS was misattributing to x.',
+       set:function(){document.getElementById('w_firm').value='-1';document.getElementById('w_prog').value='100';draw();}},
+      {text:'<b>New firms, same story:</b> press ↻ New firms a few times at 100%. The α̂<sub>i</sub> chips change every draw, but β̂<sub>FE</sub> stays near 0.5 — the within slope is the stable, structural object.',
+       set:function(){document.getElementById('w_new').click();document.getElementById('w_prog').value='100';draw();}}
+    ]);
+    draw();
+  }
+  M.panes.push({id:'pane2',label:'2 · Within-transformation visualiser',init:init,show:function(){if(d)draw();}});
+})();
+</script>
+<script>
+'use strict';
+/* ---------- Platform 3: Hausman lab (Monte Carlo) ---------- */
+(function(){
+  var M=window.MANG;
+  var REPS=300,CRIT=3.841;
+  var seed=606001,running=false,res=null;
+  function val(id){return parseFloat(document.getElementById(id).value);}
+  function labels(){
+    document.getElementById('v_hz_rho').textContent=val('hz_rho').toFixed(1);
+    document.getElementById('v_hz_N').textContent=String(val('hz_N'));
+    document.getElementById('v_hz_T').textContent=String(val('hz_T'));
+  }
+  function run(){
+    if(running)return;
+    running=true;
+    var rho=val('hz_rho'),N=Math.round(val('hz_N')),T=Math.round(val('hz_T'));
+    var rng=M.mulberry32(seed=(seed*1664525+1013904223)>>>0);
+    res={H:[],gap:0,rej:0,done:0,rho:rho,N:N,T:T};
+    document.getElementById('hz_run').disabled=true;
+    function chunk(){
+      var k=0;
+      while(k<25&&res.done<REPS){
+        var d=M.panelGen(rng,N,T,rho);
+        var e=M.panelEst(d);
+        res.H.push(e.H);
+        res.gap+=(e.bRE-e.bFE)/REPS;
+        if(e.H>CRIT)res.rej++;
+        res.done++;k++;
+      }
+      document.getElementById('hz_prog').textContent=res.done+'/'+REPS+' reps';
+      draw();
+      if(res.done<REPS)setTimeout(chunk,0);
+      else{
+        running=false;
+        document.getElementById('hz_run').disabled=false;
+        finishNote();
+      }
+    }
+    chunk();
+  }
+  function draw(){
+    var cv=document.getElementById('hz_cv'),c=M.setup(cv),ctx=c.ctx;
+    var XMAX=12,BW=0.5,nb=Math.round(XMAX/BW);
+    if(!res){M.axes(ctx,c.W,c.H,0,XMAX,0,0.6,'Hausman H','density');return;}
+    var bins=[],i;
+    for(i=0;i<nb;i++)bins.push(0);
+    res.H.forEach(function(h){var k=Math.min(nb-1,Math.floor(h/BW));bins[k]++;});
+    var dens=bins.map(function(b){return b/(res.done*BW);});
+    var top=Math.max(0.6,Math.max.apply(null,dens)*1.1);
+    var A=M.axes(ctx,c.W,c.H,0,XMAX,0,top,'Hausman H','density');
+    for(i=0;i<nb;i++){
+      var x0=A.X(i*BW),x1=A.X((i+1)*BW);
+      ctx.fillStyle='rgba(56,189,248,0.55)';
+      ctx.fillRect(x0,A.Y(dens[i]),(x1-x0)-1,A.Y(0)-A.Y(dens[i]));
+    }
+    // chi2(1) density
+    var xs=[],ys=[];
+    for(i=1;i<=240;i++){var x=i*XMAX/240;xs.push(x);ys.push(Math.min(top,M.chi2pdf1(x)));}
+    M.line(ctx,A,xs,ys,'#fbbf24',2);
+    // critical value
+    ctx.strokeStyle='#f87171';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(A.X(CRIT),A.pad.t);ctx.lineTo(A.X(CRIT),A.Y(0));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#f87171';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='left';
+    ctx.fillText('3.84',A.X(CRIT)+4,A.pad.t+12);
+    var meanH=res.H.reduce(function(a,b){return a+b;},0)/res.done;
+    document.getElementById('hz_rej').textContent=(100*res.rej/res.done).toFixed(1)+'%';
+    document.getElementById('hz_mean').textContent=meanH.toFixed(2);
+    document.getElementById('hz_gap').textContent=(res.gap*REPS/res.done).toFixed(3);
+  }
+  function finishNote(){
+    var rr=100*res.rej/res.done;
+    var note='<b>What to notice:</b> ';
+    if(Math.abs(res.rho)<0.05){
+      note+='With corr = 0 (H₀ true) the rejection rate came out at <b>'+rr.toFixed(1)+'%</b> — close to the nominal 5%, and the histogram tracks the χ²₁ curve. That is correct <i>size</i>: the test falsely convicts RE about 1 time in 20, by design.';
+    } else if(rr<50){
+      note+='corr = '+res.rho.toFixed(1)+' but the test only rejected <b>'+rr.toFixed(1)+'%</b> of the time — RE is genuinely inconsistent here (mean RE−FE gap '+document.getElementById('hz_gap').textContent+'), yet Hausman usually fails to notice. <b>Low power</b>: with N = '+res.N+', T = '+res.T+' there is too little information. Moral: "Hausman did not reject" is NOT evidence that RE is fine — absence of evidence is not evidence of absence. With small N, choosing RE because the test "passed" is wishful thinking.';
+    } else {
+      note+='corr = '+res.rho.toFixed(1)+': the histogram has marched right of the χ²₁ curve and the test rejects <b>'+rr.toFixed(1)+'%</b> of the time — that is <i>power</i>. It grows with |corr|, N and T because the FE–RE gap becomes large relative to its sampling noise.';
+    }
+    document.getElementById('hz_note').innerHTML=note;
+  }
+  function setup3(r,n,t){
+    document.getElementById('hz_rho').value=String(r);
+    document.getElementById('hz_N').value=String(n);
+    document.getElementById('hz_T').value=String(t);
+    labels();run();
+  }
+  function init(){
+    ['hz_rho','hz_N','hz_T'].forEach(function(id){document.getElementById(id).addEventListener('input',labels);});
+    document.getElementById('hz_run').addEventListener('click',run);
+    M.exps('exp3',[
+      {text:'<b>Size check:</b> corr = 0, N = 30, T = 10. The rejection rate should land near 5% and the histogram should hug the χ²₁ density — the test behaves exactly as advertised when H₀ is true.',
+       set:function(){setup3(0,30,10);}},
+      {text:'<b>Power on tap:</b> corr = 0.5, N = 30, T = 10. Now most reps reject — the FE–RE gap is large and reliably detected. This is the case where everyone agrees: use FE.',
+       set:function(){setup3(0.5,30,10);}},
+      {text:'<b>The dangerous middle:</b> corr = 0.3, N = 8, T = 5. RE is biased, but watch the rejection rate — often under 40%. A "passing" Hausman test here would lull you into reporting a biased RE estimate with a clear conscience.',
+       set:function(){setup3(0.3,8,5);}},
+      {text:'<b>Size does not drift with N:</b> corr = 0, N = 60, T = 10. Still ≈5% rejections — under H₀ the test does not get trigger-happier as data grows. (Power at fixed corr ≠ 0 does grow with N — rerun experiment 2 with N = 60.)',
+       set:function(){setup3(0,60,10);}}
+    ]);
+    labels();draw();
+  }
+  M.panes.push({id:'pane3',label:'3 · Hausman lab',init:init,show:draw});
+})();
+
+/* ---------- Platform 4: cluster inference lab ---------- */
+(function(){
+  var M=window.MANG;
+  var REPS=400,T=10,Z=1.96;
+  var seed=717001,running=false,res=null;
+  function val(id){return parseFloat(document.getElementById(id).value);}
+  function labels(){
+    document.getElementById('v_cl_rho').textContent=val('cl_rho').toFixed(2);
+    document.getElementById('v_cl_G').textContent=String(val('cl_G'));
+  }
+  function run(){
+    if(running)return;
+    running=true;
+    var rho=val('cl_rho'),G=Math.round(val('cl_G'));
+    var rng=M.mulberry32(seed=(seed*1664525+1013904223)>>>0);
+    res={covN:0,covC:0,ratio:0,done:0,rho:rho,G:G};
+    document.getElementById('cl_run').disabled=true;
+    function chunk(){
+      var k=0;
+      while(k<25&&res.done<REPS){
+        var r=M.clusterRep(rng,G,T,rho);
+        if(Math.abs(r.b-0.5)<=Z*r.seN)res.covN++;
+        if(Math.abs(r.b-0.5)<=Z*r.seC)res.covC++;
+        res.ratio+=r.seC/r.seN;
+        res.done++;k++;
+      }
+      document.getElementById('cl_prog').textContent=res.done+'/'+REPS+' reps';
+      draw();
+      if(res.done<REPS)setTimeout(chunk,0);
+      else{
+        running=false;
+        document.getElementById('cl_run').disabled=false;
+        finishNote();
+      }
+    }
+    chunk();
+  }
+  function draw(){
+    var cv=document.getElementById('cl_cv'),c=M.setup(cv),ctx=c.ctx;
+    var A=M.axes(ctx,c.W,c.H,0,3,0,100,'','empirical coverage of "95%" CI, %');
+    if(res&&res.done>0){
+      var cn=100*res.covN/res.done,cc=100*res.covC/res.done;
+      function bar(xc,v,col,lab){
+        var w=(A.X(1)-A.X(0))*0.55;
+        ctx.fillStyle=col;
+        ctx.fillRect(A.X(xc)-w/2,A.Y(v),w,A.Y(0)-A.Y(v));
+        ctx.fillStyle='#e2e8f0';ctx.font='12px Segoe UI, sans-serif';ctx.textAlign='center';
+        ctx.fillText(v.toFixed(1)+'%',A.X(xc),A.Y(v)-6);
+        ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';
+        ctx.fillText(lab,A.X(xc),A.Y(0)+15);
+      }
+      bar(1,cn,'rgba(248,113,113,0.8)','naive OLS SE');
+      bar(2,cc,'rgba(56,189,248,0.8)','clustered SE (CR1)');
+      document.getElementById('cl_cnv').textContent=cn.toFixed(1)+'%';
+      document.getElementById('cl_ccl').textContent=cc.toFixed(1)+'%';
+      document.getElementById('cl_ratio').textContent=(res.ratio/res.done).toFixed(2)+'×';
+    }
+    ctx.strokeStyle='#34d399';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(A.pad.l,A.Y(95));ctx.lineTo(c.W-A.pad.r,A.Y(95));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#34d399';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='left';
+    ctx.fillText('promised 95%',A.pad.l+4,A.Y(95)-5);
+  }
+  function finishNote(){
+    var cn=100*res.covN/res.done,cc=100*res.covC/res.done;
+    var moulton=Math.sqrt(1+(T-1)*0.5*res.rho);
+    var note='<b>What to notice:</b> ';
+    if(res.rho<0.03){
+      note+='With ρ = 0 the errors really are independent, so the naive CI covers ≈'+cn.toFixed(0)+'% and clustering changes almost nothing ('+cc.toFixed(0)+'%). Clustering when you do not need it costs very little — which is why the default in firm panels is to cluster anyway.';
+    } else if(res.G<=10){
+      note+='Few-clusters problem on display: even the <i>clustered</i> CI only covers '+cc.toFixed(1)+'% — with G = '+res.G+' clusters, the CR1 variance estimate is itself noisy and biased down, and ±1.96 critical values are too optimistic. Practitioners switch to t(G−1) critical values ('+(res.G<=5?'t(4) ≈ 2.78':'wider than 1.96')+') or the wild-cluster bootstrap. Clustering is necessary, not sufficient.';
+    } else {
+      note+='The naive interval covered only <b>'+cn.toFixed(1)+'%</b> — the theoretical Moulton inflation factor here is √(1+(T−1)·ρ<sub>x</sub>·ρ<sub>v</sub>) = √(1+9×0.5×'+res.rho.toFixed(2)+') ≈ '+moulton.toFixed(2)+'×, matching the average SE ratio readout. Every naive t-stat in this design is ≈'+moulton.toFixed(1)+'× too large. The clustered CI restores ≈'+cc.toFixed(1)+'% coverage because G = '+res.G+' clusters is enough for the CR1 estimator to settle down.';
+    }
+    document.getElementById('cl_note').innerHTML=note;
+  }
+  function setup4(r,g){
+    document.getElementById('cl_rho').value=String(r);
+    document.getElementById('cl_G').value=String(g);
+    labels();run();
+  }
+  function init(){
+    ['cl_rho','cl_G'].forEach(function(id){document.getElementById(id).addEventListener('input',labels);});
+    document.getElementById('cl_run').addEventListener('click',run);
+    M.exps('exp4',[
+      {text:'<b>The standard injury:</b> ρ = 0.5, G = 30. Naive coverage collapses to ≈75% — your "95%" interval misses the truth one time in four, and every naive t-stat is ≈80% too big. Clustered coverage sits near 93–95%.',
+       set:function(){setup4(0.5,30);}},
+      {text:'<b>No harm done:</b> ρ = 0, G = 30. Both bars hit ≈95%. The insurance of clustering is nearly free when it is not needed — so always buy it.',
+       set:function(){setup4(0,30);}},
+      {text:'<b>Few clusters, false comfort:</b> ρ = 0.5, G = 5. Now even the clustered bar sinks to ≈85% — with 5 clusters the cluster-variance estimate is built on 5 numbers. This is why "we cluster by the 4 regions" should make you wince.',
+       set:function(){setup4(0.5,5);}},
+      {text:'<b>Asymptotics arriving:</b> ρ = 0.5, G = 100. Clustered coverage tightens to ≈95% — cluster-robust theory works <i>in the number of clusters</i>, not the number of observations. 100 firms × 10 years is 100 effective data points for inference, not 1,000.',
+       set:function(){setup4(0.5,100);}}
+    ]);
+    labels();draw();
+  }
+  M.panes.push({id:'pane4',label:'4 · Cluster inference lab',init:init,show:draw});
+})();
+
+/* ---------- tabs wiring ---------- */
+(function(){window.MANG.tabs('ptabs');})();
+
+/* ---------- Problems clinic ---------- */
+(function(){
+  var M=window.MANG;
+  M.clinic('clinic',[
+    {title:'FE kills time-invariant regressors',
+     body:[['What it is','Demeaning subtracts each firm\'s mean — anything constant within a firm (industry, founding year, ownership type, gender of a manager who never changes) is identically zero after the transformation.'],
+       ['How it bites','Your research question is "does ownership type affect performance?" — you run FE because the Hausman test said so, and the variable of interest silently vanishes (or your software throws a collinearity error). The test cannot answer the question you were asked.'],
+       ['How to detect it','Check the within standard deviation of each regressor: if sd(x<sub>it</sub> − x̄<sub>i</sub>) ≈ 0, FE cannot identify its coefficient — the SE will be enormous or the variable dropped.'],
+       ['Remedy','Use RE with eyes open, or better a correlated-random-effects / Mundlak specification (add the group means x̄<sub>i</sub> as controls), or Hausman–Taylor instruments. And state the identifying assumption honestly.']]},
+    {title:'Measurement error — amplified by the within transformation',
+     body:[['What it is','Classical measurement error attenuates OLS slopes toward zero. Demeaning removes much of the true signal (the stable between-firm variation) but none of the noise — so the noise-to-signal ratio is usually WORSE after the within transformation.'],
+       ['How it bites','Book leverage measured with error: pooled OLS gives 0.45, FE gives 0.20, and a referee asks why "the effect disappears with fixed effects". It did not disappear — it was attenuated, because most of the surviving within variation is measurement noise.'],
+       ['How to detect it','A large drop in |β̂| from pooled to FE for variables that are persistent within firms is the classic signature (it can also mean the pooled estimate was bias — the demo shows the difference).'],
+       ['Remedy','Instrument with lags, use long differences instead of year-to-year demeaning (more signal per unit of noise), or find better-measured proxies.']],
+     demo:{label:'Demo: attenuation, pooled vs FE (simulated)',h:170,draw:function(cv){
+       var rng=M.mulberry32(818181),N=30,T=10;
+       var x=[],xs=[],y=[],firm=[],i,t;
+       for(i=0;i<N;i++){
+         var mi=2*M.gauss(rng);
+         for(t=0;t<T;t++){
+           var xstar=mi+0.5*M.gauss(rng);          // persistent true regressor
+           var xobs=xstar+0.5*M.gauss(rng);        // + measurement noise
+           xs.push(xstar);x.push(xobs);y.push(0.5*xstar+0.7*M.gauss(rng));firm.push(i);
+         }
+       }
+       var d={x:x,y:y,firm:firm,N:N,T:T};
+       var e=M.panelEst(d);
+       var c=M.setup(cv),ctx=c.ctx;
+       var A=M.axes(ctx,c.W,c.H,0,4,0,0.7,'','slope estimate');
+       function bar(xc,v,col,lab){
+         var w=(A.X(1)-A.X(0))*0.5;
+         ctx.fillStyle=col;ctx.fillRect(A.X(xc)-w/2,A.Y(Math.max(v,0)),w,Math.abs(A.Y(0)-A.Y(v)));
+         ctx.fillStyle='#e2e8f0';ctx.font='12px Segoe UI, sans-serif';ctx.textAlign='center';
+         ctx.fillText(v.toFixed(2),A.X(xc),A.Y(v)-6);
+         ctx.fillStyle='#94a3b8';ctx.font='10px Segoe UI, sans-serif';
+         ctx.fillText(lab,A.X(xc),A.Y(0)+14);
+       }
+       bar(1,0.5,'rgba(52,211,153,0.8)','true β');
+       bar(2,e.pool.b,'rgba(56,189,248,0.8)','pooled β̂');
+       bar(3,e.bFE,'rgba(248,113,113,0.8)','FE β̂');
+       ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='left';
+       ctx.fillText('Same noisy data, no firm-effect bias: FE is hit hardest because demeaning strips signal, not noise.',A.pad.l+4,A.pad.t+12);
+     }}},
+    {title:'Nickell bias — lagged y plus fixed effects',
+     body:[['What it is','In a dynamic panel y<sub>it</sub> = φy<sub>i,t−1</sub> + α<sub>i</sub> + ε<sub>it</sub>, demeaning makes the transformed regressor (y<sub>i,t−1</sub> − ȳ<sub>i</sub>) mechanically correlated with the transformed error — FE is inconsistent for fixed T, with bias ≈ −(1+φ)/T (Nickell 1981).'],
+       ['How it bites','Persistence of profitability, partial-adjustment leverage models, growth regressions — any FE regression with a lagged dependent variable and T ≈ 5–15 understates persistence substantially. With φ = 0.5 and T = 6 the bias is ≈ −0.25: half the persistence vanishes.'],
+       ['How to detect it','Compare FE with pooled OLS on the lagged term: pooled is biased UP (the α<sub>i</sub> load onto the lag), FE biased DOWN — the truth lies between. If the two bracket a wide range, Nickell is biting.'],
+       ['Remedy','Anderson–Hsiao / Arellano–Bond GMM (first-difference and instrument with deeper lags), or bias-corrected FE; or be content when T is genuinely large (bias ∝ 1/T).']],
+     demo:{label:'Demo: FE estimate of φ = 0.5 with T = 6 (300 panels)',h:170,draw:function(cv){
+       var R=300,N=40,T=6,phi=0.5,sum=0;
+       var rng=M.mulberry32(424243);
+       for(var rep=0;rep<R;rep++){
+         var ylag=[],ycur=[],firm=[];
+         for(var i=0;i<N;i++){
+           var ai=M.gauss(rng);
+           var y=ai/(1-phi)+M.gauss(rng)/Math.sqrt(1-phi*phi);
+           for(var t=0;t<T;t++){
+             var yn=phi*y+ai+M.gauss(rng);
+             ylag.push(y);ycur.push(yn);firm.push(i);y=yn;
+           }
+         }
+         // within estimator of phi
+         var mx=[],my=[],k;
+         for(k=0;k<N;k++){mx.push(0);my.push(0);}
+         for(k=0;k<ylag.length;k++){mx[firm[k]]+=ylag[k]/T;my[firm[k]]+=ycur[k]/T;}
+         var sxx=0,sxy=0;
+         for(k=0;k<ylag.length;k++){var xt=ylag[k]-mx[firm[k]],yt=ycur[k]-my[firm[k]];sxx+=xt*xt;sxy+=xt*yt;}
+         sum+=sxy/sxx;
+       }
+       var avg=sum/R;
+       var c=M.setup(cv),ctx=c.ctx;
+       var A=M.axes(ctx,c.W,c.H,0,3,0,0.7,'','estimate of φ');
+       function bar(xc,v,col,lab){
+         var w=(A.X(1)-A.X(0))*0.5;
+         ctx.fillStyle=col;ctx.fillRect(A.X(xc)-w/2,A.Y(Math.max(v,0)),w,Math.abs(A.Y(0)-A.Y(v)));
+         ctx.fillStyle='#e2e8f0';ctx.font='12px Segoe UI, sans-serif';ctx.textAlign='center';
+         ctx.fillText(v.toFixed(3),A.X(xc),A.Y(v)-6);
+         ctx.fillStyle='#94a3b8';ctx.font='10px Segoe UI, sans-serif';
+         ctx.fillText(lab,A.X(xc),A.Y(0)+14);
+       }
+       bar(1,phi,'rgba(52,211,153,0.8)','true φ');
+       bar(2,avg,'rgba(248,113,113,0.8)','mean FE φ̂');
+       ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='left';
+       ctx.fillText('Average FE estimate over 300 simulated panels: '+avg.toFixed(3)+'. Nickell approximation −(1+φ)/T = '+(-(1+phi)/T).toFixed(3)+' bias.',A.pad.l+4,A.pad.t+12);
+     }}},
+    {title:'Unbalanced panels & attrition — who is missing, and why?',
+     body:[['What it is','Real panels are ragged: firms IPO late, delist, merge, go bankrupt. Estimators handle unequal T<sub>i</sub> mechanically — the danger is WHY observations are missing.'],
+       ['How it bites','Study leverage and survival using surviving firms only: the bankrupt high-leverage firms exited the sample, so leverage looks safer than it is. Attrition correlated with the outcome biases everything — FE included, because FE only fixes <i>time-invariant</i> selection.'],
+       ['How to detect it','Compare entry/exit cohorts: do leavers differ in observables? Regress an exit indicator on x. Plot the number of firms per year — a steady bleed is a warning.'],
+       ['Remedy','Use the full universe including dead firms (in finance: survivorship-bias-free databases), model selection explicitly (Heckman-style), or bound the effect. At minimum, report attrition rates and a leavers-vs-stayers comparison.']]},
+    {title:'Year shocks hit everyone — cluster two-way, add λ<sub>t</sub>',
+     body:[['What it is','A recession or rate shock moves ALL firms in the same year: errors are correlated <i>across firms within time</i>, not just across time within firms. Clustering by firm alone ignores this entirely.'],
+       ['How it bites','Asset-pricing-flavoured panels (returns on characteristics) have huge common time shocks: firm-clustered t-stats of 8 melt to 2 once you cluster by time as well. Petersen (2009) made this famous — half the corporate finance literature had the wrong SEs.'],
+       ['How to detect it','Compare SEs clustered by firm, by year, and two-way. If clustering by year changes them substantially, time-level shocks matter. Also: residual cross-sectional correlation within years.'],
+       ['Remedy','Include time fixed effects λ<sub>t</sub> (absorbs the common level), then two-way cluster (firm AND year), or Fama–MacBeth for pure common-shock settings with many periods.']]},
+    {title:'The RE assumption is rarely credible in corporate finance',
+     body:[['What it is','RE requires corr(α<sub>i</sub>, x<sub>it</sub>) = 0 for ALL regressors: firm quality unrelated to leverage, investment, governance, pay… Economic theory usually predicts the opposite — choices respond to the very characteristics that make firms different.'],
+       ['How it bites','RE buys efficiency by betting the model. When the bet is wrong the estimate is inconsistent — and Platform 3 shows the Hausman test often lacks the power to warn you, especially in small samples.'],
+       ['How to detect it','Think, before testing: can you tell an economic story where unobserved firm quality moves your x? In corporate finance the answer is almost always yes. Then look at the FE–RE gap itself, not just the p-value.'],
+       ['Remedy','Default to FE with clustered SEs in firm panels (the literature\'s norm). Reserve RE for genuinely randomised or assigned x, time-invariant regressors of interest (with a Mundlak audit), or true random-sampling settings like multilevel survey data.']]}
+  ]);
+})();
+
+/* ---------- SECTION: game (Hausman Court) ---------- */
 (function(){
   var M=window.MANG;
   var KEY='mang2074_w10_best',ROUNDS=10;
@@ -456,7 +1163,7 @@ window.MANG = (function(){
   el('vd_ei').addEventListener('click',function(){verdict(2);});
 })();
 
-/* ---------- SECTION C: code challenges ---------- */
+/* ---------- SECTION: code challenges ---------- */
 (function(){
   var QS=[
     {q:'Estimate the <b>fixed-effects (within)</b> model on a firm-year panel.',
@@ -494,7 +1201,19 @@ window.MANG = (function(){
          opts:['C(firm)','C(year)','firm','x:firm'],ans:0},
      r:{code:['lsdv <- lm(y ~ x + ',', data = df)\n# slope on x identical to plm model="within"'],
         opts:['factor(firm)','firm','as.numeric(firm)','x*firm'],ans:0},
-     why:'Least Squares Dummy Variables: a full set of firm dummies absorbs αᵢ, giving numerically the same β̂ as the within estimator (Frisch–Waugh–Lovell in action).'}
+     why:'Least Squares Dummy Variables: a full set of firm dummies absorbs αᵢ, giving numerically the same β̂ as the within estimator (Frisch–Waugh–Lovell in action).'},
+    {q:'A recession hits every firm in 2020. Add <b>time effects</b> as well as firm effects (two-way FE).',
+     py:{code:['mod = PanelOLS(df[\'y\'], df[[\'x\']],\n               entity_effects=True, ',')\nres = mod.fit()'],
+         opts:['time_effects=True','twoway=True','year_effects=True','effects="both"'],ans:0},
+     r:{code:['mod2 <- plm(y ~ x, data = pdat, model = "within",\n            effect = ',')'],
+        opts:['"twoways"','"time"','"individual"','"both"'],ans:0},
+     why:'time_effects=True / effect="twoways" adds year dummies λₜ that absorb shocks common to all firms in a given year — recessions, rate changes, COVID.'},
+    {q:'Before all else: are the firm effects even <b>jointly significant</b> versus pooled OLS?',
+     py:{code:['from linearmodels.panel import ','\nprint(compare({"Pooled": pooled, "FE": fe, "RE": re}))\n# fe.f_pooled gives the F-test of the firm effects'],
+         opts:['compare','summary_col','stargazer','anova'],ans:0},
+     r:{code:['','(mod_fe, mod_pool)   # F test of firm effects'],
+        opts:['pFtest','phtest','plmtest','waldtest'],ans:0},
+     why:'linearmodels\' compare() tabulates the estimators side by side (and fe.f_pooled is the F-test); in R, pFtest tests FE vs pooled. (phtest is FE-vs-RE; plmtest is the Breusch–Pagan LM test for random effects.)'}
   ];
   window.MANG.quiz('quiz',QS);
 })();

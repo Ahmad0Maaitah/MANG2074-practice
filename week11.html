@@ -19,18 +19,28 @@ section{background:var(--panel);border-radius:14px;padding:20px;margin:18px 0;}
 h1{font-size:1.45rem;margin:6px 0 0;}
 h2{font-size:1.3rem;margin:0 0 10px;}
 h3{font-size:1.05rem;margin:14px 0 6px;color:var(--accent);}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:8px 20px;margin:12px 0;}
+.ctl label{display:flex;justify-content:space-between;font-size:.88rem;color:var(--muted);}
+.ctl label b{color:var(--text);font-weight:600;}
+.ctl input[type=range]{width:100%;accent-color:var(--accent);}
 button{background:var(--accent);color:#0b1220;border:0;border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer;font-family:var(--font);font-size:.95rem;}
 button:hover{filter:brightness(1.1);}
 button.alt{background:var(--panel2);color:var(--text);border:1px solid #334155;}
 button.choice{display:block;width:100%;text-align:left;margin:6px 0;background:var(--panel2);color:var(--text);border:1px solid #334155;}
 button.choice:hover{border-color:var(--accent);}
+button.tog{background:var(--panel2);color:var(--text);border:1px solid #334155;}
+button.tog.on{background:var(--accent2);color:#0b1220;border-color:var(--accent2);}
 button:disabled{opacity:.45;cursor:default;}
 canvas{width:100%;display:block;background:var(--panel);border:1px solid #334155;border-radius:8px;margin:10px 0;}
 .notice{background:var(--panel2);border-left:4px solid var(--accent2);border-radius:8px;padding:12px 14px;font-size:.93rem;margin-top:10px;}
+.readouts{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0;}
+.stat{background:var(--panel2);border-radius:8px;padding:8px 12px;font-size:.85rem;min-width:130px;color:var(--muted);}
+.stat b{display:block;font-size:1.05rem;color:var(--text);}
 .gamebar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0;}
 .pill{background:var(--panel2);border-radius:999px;padding:4px 14px;font-size:.9rem;}
 .chip{background:var(--panel2);border:1px solid #334155;border-radius:999px;padding:4px 14px;font-size:.85rem;color:var(--muted);}
 .chip.done{border-color:var(--good);color:var(--good);}
+.chip.sig{border-color:var(--bad);color:var(--bad);font-weight:600;}
 .feedback{border-radius:8px;padding:12px 14px;margin-top:10px;font-size:.95rem;display:none;}
 .feedback.good{background:rgba(52,211,153,.12);border:1px solid var(--good);display:block;}
 .feedback.bad{background:rgba(248,113,113,.12);border:1px solid var(--bad);display:block;}
@@ -48,6 +58,35 @@ footer{border-top:1px solid #334155;color:var(--muted);font-size:.85rem;text-ali
 footer a{color:var(--accent);text-decoration:none;margin:0 8px;}
 footer a:hover{text-decoration:underline;}
 .legend{font-size:.82rem;color:var(--muted);margin:2px 0 6px;}
+.legend i{display:inline-block;width:12px;height:3px;vertical-align:middle;margin:0 4px 0 10px;border-radius:2px;}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin:12px 0;}
+.pcard{background:var(--panel2);border:1px solid #334155;border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s;}
+.pcard:hover{border-color:var(--accent);}
+.pcard .sym{color:var(--accent);font-weight:700;}
+.pcard .nm{font-weight:600;}
+.pcard .one{color:var(--muted);font-size:.86rem;margin-top:2px;}
+.pcard .bd{display:none;font-size:.87rem;margin-top:8px;border-top:1px solid #334155;padding-top:8px;}
+.pcard.open{border-color:var(--accent);}
+.pcard.open .bd{display:block;}
+.pcard .bd b{color:var(--accent2);}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.tabbar button{background:var(--panel2);color:var(--text);border:1px solid #334155;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:400;}
+.tabbar button.active{background:var(--accent);color:#0f172a;font-weight:600;}
+.tabpane{display:none;}
+.tabpane.active{display:block;}
+.exps{border:1px dashed #475569;border-radius:10px;padding:10px 14px;margin:14px 0 4px;background:rgba(39,52,73,.35);}
+.exps h4{margin:0 0 4px;font-size:.95rem;color:var(--accent2);}
+.exps ol{margin:4px 0 2px;padding-left:20px;}
+.exps li{margin:7px 0;font-size:.9rem;}
+.exps button{font-size:.78rem;padding:3px 10px;margin-left:8px;background:var(--accent2);}
+.clinic{border:1px solid #334155;border-radius:10px;margin:10px 0;background:var(--panel2);overflow:hidden;}
+.clinic>button.chead{display:block;width:100%;text-align:left;background:transparent;color:var(--text);border:0;border-radius:0;padding:12px 14px;font-size:.97rem;font-weight:600;}
+.clinic .cbody{display:none;padding:0 14px 12px;font-size:.9rem;}
+.clinic.open .cbody{display:block;}
+.clinic .cbody b{color:var(--accent2);}
+.meter{height:16px;background:var(--panel2);border:1px solid #334155;border-radius:8px;overflow:hidden;margin:6px 0;}
+.meter>div{height:100%;background:linear-gradient(90deg,var(--bad),var(--accent2),var(--good));width:0;transition:width .3s;}
+@media(max-width:720px){.controls{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -58,11 +97,21 @@ footer a:hover{text-decoration:underline;}
 <main>
 <h1>🔬 Research Methods Lab — Research Sprint</h1>
 <div class="intro">
-The final week puts the whole module together: a real piece of empirical research is a <b>pipeline</b> — question → data → model class → diagnostics → interpretation. Below you can assemble a mini "paper" step by step for three classic research questions, then play <b>Research Sprint</b>: ten rapid-fire situations every empirical researcher meets, where you must pick the econometrically correct next move.
+The final week puts the whole module together: a real piece of empirical research is a <b>pipeline</b> — question → data → model class → diagnostics → interpretation — and the hard part is not running regressions, it is <i>not fooling yourself</i>. Below: concept cards for the methodology that examiners (and referees) actually test, <b>four interactive platforms</b> (build a mini paper, manufacture false discoveries by p-hacking, stress-test a "finding" for robustness, and translate statistics into economics), a clinic of research pathologies, the Research Sprint game, and eight code challenges spanning the whole module.
 </div>
 
-<section id="simsec">
-<h2>🔬 Simulation — mini research pipeline</h2>
+<section id="parsec">
+<h2>📚 Concepts &amp; principles</h2>
+<p>Click a card to expand it. These are the ideas your coursework — and any empirical career — gets judged on.</p>
+<div class="pgrid" id="pcards"></div>
+</section>
+
+<section id="platsec">
+<h2>🔬 Platforms — the research laboratory</h2>
+<div class="tabbar" id="ptabs"></div>
+
+<div class="tabpane active" id="pane1">
+<h3>Platform 1 — Mini research pipeline</h3>
 <p>Pick a research question. Then work through the four steps; the tracker shows your paper being assembled. Wrong turns are allowed — that is what research feels like.</p>
 <div class="gamebar" id="presets">
   <button class="alt" data-p="fdi">🌍 Does FDI raise growth?</button>
@@ -77,6 +126,75 @@ The final week puts the whole module together: a real piece of empirical researc
   <span class="chip" id="ch4">🧾 Findings</span>
 </div>
 <div id="steps"></div>
+<div class="exps" id="exp1"></div>
+</div>
+
+<div class="tabpane" id="pane2">
+<h3>Platform 2 — p-hacking demonstrator</h3>
+<p>Here is a dataset of <b>pure noise</b>: one outcome y and 20 candidate regressors X1…X20, all independent N(0,1), n = 100. Nothing causes anything. Run all 20 univariate regressions and watch "discoveries" appear anyway.</p>
+<div class="gamebar">
+  <button id="ph_new" class="alt">🎲 New noise dataset</button>
+  <button id="ph_run">▶ Run all 20 regressions</button>
+  <label style="font-size:.9rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="ph_bonf"> Show the Bonferroni line</label>
+</div>
+<div class="legend"><i style="background:#38bdf8"></i>|t| per regressor <i style="background:#f87171"></i>"significant" at 5% (|t| &gt; 1.96) <i style="background:#34d399"></i>Bonferroni-corrected threshold (α = 0.05/20)</div>
+<canvas id="ph_cv" data-h="260"></canvas>
+<div class="gamebar" id="ph_chips" style="gap:6px"></div>
+<div class="readouts">
+  <div class="stat">"Discoveries" this dataset<br><b id="ph_sig">—</b><span>|t| &gt; 1.96 on pure noise</span></div>
+  <div class="stat">Datasets run<br><b id="ph_ds">0</b></div>
+  <div class="stat">Datasets with ≥1 discovery<br><b id="ph_hit">0</b><span id="ph_hitpct"></span></div>
+  <div class="stat">Theory says<br><b id="ph_exp">—</b><span>P(≥1 false hit) = 1−0.95²⁰</span></div>
+</div>
+<div class="notice" id="ph_note"><b>What to notice:</b> press ▶ and count the red bars. Every one is a Type I error — there is nothing to discover in this data by construction.</div>
+<div class="exps" id="exp2"></div>
+</div>
+
+<div class="tabpane" id="pane3">
+<h3>Platform 3 — Robustness workbench</h3>
+<p>A baseline "finding", in the style of a thousand growth papers: <b>FDI inflows → GDP growth</b>, panel of 64 countries, β̂ = 0.040, SE = 0.0174, t = 2.30 — significant at 5%, ready to submit? Apply the standard robustness checks one at a time and watch the coefficient and t-statistic respond. Each check stacks with the others.</p>
+<div class="gamebar" id="rb_btns"></div>
+<div class="gamebar"><button id="rb_reset" class="alt">↺ Reset to baseline</button></div>
+<div class="readouts">
+  <div class="stat">Current β̂<br><b id="rb_coef">—</b></div>
+  <div class="stat">Current SE<br><b id="rb_se">—</b></div>
+  <div class="stat">Current t<br><b id="rb_t">—</b><span id="rb_sig"></span></div>
+</div>
+<div class="legend"><i style="background:#38bdf8"></i>β̂ with 95% CI at each stage (in the order you applied checks) <i style="background:#475569"></i>zero line</div>
+<canvas id="rb_cv" data-h="250"></canvas>
+<div><b>Verdict meter — how robust is this finding?</b></div>
+<div class="meter"><div id="rb_meter"></div></div>
+<div id="rb_verdict" style="font-size:.92rem;color:var(--muted)"></div>
+<div class="notice" id="rb_note"><b>What to notice:</b> the baseline clears the 5% bar. Now start applying checks — a real finding should survive most of them. Watch what happens to this one.</div>
+<div class="exps" id="exp3"></div>
+</div>
+
+<div class="tabpane" id="pane4">
+<h3>Platform 4 — Significance translator</h3>
+<p>Statistical significance and economic significance are different animals. Set a coefficient, its precision, the sample size and the scale of the regressor; the translator computes t and p AND says what the effect <i>means</i>. Context: y = quarterly GDP growth (sd fixed at 2.0pp), X = some predictor measured in its own units.</p>
+<div class="controls">
+  <div class="ctl"><label><span>β̂ — coefficient (pp of y per unit X)</span><b id="v_tr_b">0.30</b></label><input type="range" id="tr_b" min="0.01" max="0.60" step="0.01" value="0.30"></div>
+  <div class="ctl"><label><span>SE(β̂) at n = 100</span><b id="v_tr_se">0.13</b></label><input type="range" id="tr_se" min="0.02" max="0.40" step="0.01" value="0.13"></div>
+  <div class="ctl"><label><span>n — sample size</span><b id="v_tr_n">100</b></label><input type="range" id="tr_n" min="20" max="5000" step="20" value="100"></div>
+  <div class="ctl"><label><span>sd(X) — scale of the regressor</span><b id="v_tr_sx">1.0</b></label><input type="range" id="tr_sx" min="0.2" max="3" step="0.1" value="1.0"></div>
+</div>
+<div class="readouts">
+  <div class="stat">SE at this n<br><b id="tr_sen">—</b><span>= SE₁₀₀·√(100/n)</span></div>
+  <div class="stat">t-statistic<br><b id="tr_t">—</b></div>
+  <div class="stat">p-value (2-sided)<br><b id="tr_p">—</b></div>
+  <div class="stat">Effect of a 1-sd move in X<br><b id="tr_econ">—</b><span id="tr_std"></span></div>
+</div>
+<div class="feedback info" id="tr_sent"></div>
+<div class="legend">The 2×2 verdict space: vertical line t = 1.96, horizontal line = economic-significance threshold (1-sd X moves y by 0.2 sd) <i style="background:#fbbf24"></i>your current spec</div>
+<canvas id="tr_cv" data-h="280"></canvas>
+<div class="exps" id="exp4"></div>
+</div>
+</section>
+
+<section id="clinsec">
+<h2>⚠️ Problems clinic</h2>
+<p>Six research pathologies that quietly invalidate empirical findings — in finance dissertations, in this module's coursework, and in published journals.</p>
+<div id="clinic"></div>
 </section>
 
 <section id="gamesec">
@@ -101,7 +219,7 @@ The final week puts the whole module together: a real piece of empirical researc
 
 <section id="codesec">
 <h2>⌨️ Code challenges — best of the module</h2>
-<p>One key line from each earlier topic. Fill the blank (toggle Python/R). One attempt per question.</p>
+<p>One key line from each major topic of the module. Fill the blank (toggle Python/R). One attempt per question. Eight questions.</p>
 <div id="quiz"></div>
 </section>
 </main>
@@ -109,7 +227,6 @@ The final week puts the whole module together: a real piece of empirical researc
 MANG2074 Financial Econometrics 1 · University of Southampton · Practice materials by Ahmad Maaitah<br>
 <a href="week10.html">← Week 10: Panel Data</a> · <a href="index.html">Back to all topics →</a>
 </footer>
-
 <script>
 'use strict';
 window.MANG = (function(){
@@ -138,6 +255,40 @@ window.MANG = (function(){
     return ['Fail','Fail — see you at the resit board. Replay! 😅'];}
   function saveBest(key,score){var prev=parseInt(localStorage.getItem(key)||'-1',10);if(score>prev){try{localStorage.setItem(key,String(score));}catch(e){}return true;}return false;}
   function getBest(key){var v=localStorage.getItem(key);return v===null?null:parseInt(v,10);}
+  function normCdf(z){ // Abramowitz & Stegun 26.2.17
+    var t=1/(1+0.2316419*Math.abs(z));
+    var d=Math.exp(-z*z/2)/Math.sqrt(2*Math.PI);
+    var p=d*t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+    return z>=0?1-p:p;
+  }
+  function zCrit(alpha2){ // two-sided alpha -> |z| threshold, by bisection
+    var lo=0,hi=8,target=alpha2/2;
+    for(var i=0;i<60;i++){
+      var mid=(lo+hi)/2;
+      if(1-normCdf(mid)>target)lo=mid;else hi=mid;
+    }
+    return (lo+hi)/2;
+  }
+  /*KERNEL:phack*/
+  // 20 univariate regressions of pure-noise y on pure-noise X1..X20 (n obs each): the t-stats.
+  function tstats20(rng,n){
+    var y=[],i,j;
+    for(i=0;i<n;i++)y.push(gauss(rng));
+    var my=0;for(i=0;i<n;i++)my+=y[i]/n;
+    var ts=[];
+    for(j=0;j<20;j++){
+      var x=[],mx=0;
+      for(i=0;i<n;i++){var v=gauss(rng);x.push(v);mx+=v/n;}
+      var sxx=0,sxy=0;
+      for(i=0;i<n;i++){sxx+=(x[i]-mx)*(x[i]-mx);sxy+=(x[i]-mx)*(y[i]-my);}
+      var b=sxy/sxx,a=my-b*mx,ssr=0;
+      for(i=0;i<n;i++){var r=y[i]-a-b*x[i];ssr+=r*r;}
+      var se=Math.sqrt((ssr/(n-2))/sxx);
+      ts.push(b/se);
+    }
+    return ts;
+  }
+  /*END:phack*/
   function quiz(rootId,QS){
     var root=document.getElementById(rootId);var lang='py';
     var done=QS.map(function(){return {answered:false,right:false};});
@@ -183,10 +334,131 @@ window.MANG = (function(){
     br.addEventListener('click',function(){lang='r';br.className='';bp.className='alt';fill();});
     fill();upd();
   }
-  return {mulberry32:mulberry32,gauss:gauss,setup:setup,axes:axes,line:line,fmt:fmt,grade:grade,saveBest:saveBest,getBest:getBest,quiz:quiz};
+  function cards(rootId,CS){
+    var root=document.getElementById(rootId);
+    CS.forEach(function(c){
+      var d=document.createElement('div');d.className='pcard';
+      var h='<span class="sym">'+c.sym+'</span> <span class="nm">'+c.name+'</span><div class="one">'+c.one+'</div><div class="bd">';
+      c.body.forEach(function(row){h+='<div style="margin:4px 0"><b>'+row[0]+'.</b> '+row[1]+'</div>';});
+      h+='</div>';
+      d.innerHTML=h;
+      d.addEventListener('click',function(){d.classList.toggle('open');});
+      root.appendChild(d);
+    });
+  }
+  function clinic(rootId,ITEMS){
+    var root=document.getElementById(rootId);
+    ITEMS.forEach(function(it){
+      var d=document.createElement('div');d.className='clinic';
+      var hb=document.createElement('button');hb.className='chead';hb.innerHTML='▸ '+it.title;
+      var bd=document.createElement('div');bd.className='cbody';
+      var h='';
+      it.body.forEach(function(row){h+='<div style="margin:5px 0"><b>'+row[0]+'.</b> '+row[1]+'</div>';});
+      bd.innerHTML=h;
+      if(it.demo){
+        var btn=document.createElement('button');btn.textContent='▶ '+it.demo.label;btn.style.marginTop='6px';
+        var cv=document.createElement('canvas');cv.setAttribute('data-h',String(it.demo.h||160));cv.style.display='none';
+        btn.addEventListener('click',function(){cv.style.display='block';it.demo.draw(cv);btn.disabled=true;});
+        bd.appendChild(btn);bd.appendChild(cv);
+      }
+      hb.addEventListener('click',function(){var open=d.classList.toggle('open');hb.innerHTML=(open?'▾ ':'▸ ')+it.title;});
+      d.appendChild(hb);d.appendChild(bd);root.appendChild(d);
+    });
+  }
+  function exps(rootId,items){
+    var root=document.getElementById(rootId);
+    var h=document.createElement('h4');h.textContent='🧪 Try this';root.appendChild(h);
+    var ol=document.createElement('ol');
+    items.forEach(function(it){
+      var li=document.createElement('li');
+      var sp=document.createElement('span');sp.innerHTML=it.text;li.appendChild(sp);
+      var b=document.createElement('button');b.textContent='Set it up';
+      b.addEventListener('click',it.set);
+      li.appendChild(b);ol.appendChild(li);
+    });
+    root.appendChild(ol);
+  }
+  var panes=[];
+  function tabs(barId){
+    var bar=document.getElementById(barId),P=panes,btns=[];
+    P.forEach(function(d,i){
+      var b=document.createElement('button');b.textContent=d.label;
+      b.addEventListener('click',function(){act(i);});
+      bar.appendChild(b);btns.push(b);
+    });
+    var cur=-1;
+    function act(i){
+      P.forEach(function(d,k){
+        document.getElementById(d.id).classList.toggle('active',k===i);
+        btns[k].classList.toggle('active',k===i);
+      });
+      cur=i;
+      var d=P[i];
+      if(!d._init){d._init=true;if(d.init)d.init();}
+      else if(d.show)d.show();
+    }
+    window.addEventListener('resize',function(){var d=P[cur];if(d&&d._init&&d.show)d.show();});
+    act(0);
+    return {act:act};
+  }
+  return {mulberry32:mulberry32,gauss:gauss,setup:setup,axes:axes,line:line,fmt:fmt,grade:grade,saveBest:saveBest,getBest:getBest,normCdf:normCdf,zCrit:zCrit,tstats20:tstats20,quiz:quiz,cards:cards,clinic:clinic,exps:exps,panes:panes,tabs:tabs};
 })();
 
-/* ---------- SECTION A: mini research pipeline ---------- */
+/* ---------- Concepts & principles cards ---------- */
+(function(){
+  window.MANG.cards('pcards',[
+    {sym:'❓ RQ',name:'— the research question',one:'A falsifiable, decision-relevant question comes before any data or model.',
+     body:[['Meaning','"Does FDI raise growth within countries?" is a research question. "I will analyse FDI and growth" is a plan to wander. The question dictates the data shape, the model class and the test.'],
+       ['Rule of thumb','You should be able to state (i) the parameter that answers it, (ii) what value of that parameter would falsify your story, (iii) who would act differently if they knew the answer.'],
+       ['In practice','Most weak dissertations fail here, not at the econometrics: the model is fine but answers no question anyone asked.'],
+       ['At the extremes','Too broad → unanswerable ("what drives markets?"). Too narrow → unpublishable trivia. The craft is the middle.'],
+       ['What goes wrong','Choosing the question AFTER seeing the results — HARKing (see the clinic) — turns the whole inferential apparatus into theatre.']]},
+    {sym:'🎯 ID',name:'— identification vs correlation',one:'The data give you correlations; your design must earn the causal reading.',
+     body:[['Meaning','β̂ measures association. Reading it as "the effect of x on y" requires an identification argument: why is x not driven by y (reverse causality), or both by something else (confounding)?'],
+       ['Rule of thumb','Ask: "what is the experiment my regression is pretending to be?" Fixed effects, IVs, difference-in-differences and event windows are all attempts to approximate one.'],
+       ['In practice','Week 10\'s FE estimator is an identification device: it removes the time-invariant confounders. It does nothing about time-varying ones or reverse causality.'],
+       ['At the extremes','Perfect identification with a boring question beats clever questions with no identification — referees, supervisors and risk committees all agree on this.'],
+       ['What goes wrong','Causal language smuggled into correlational results: "FDI raises growth by 0.18pp". Write "is associated with" until your design earns more.']]},
+    {sym:'AIC/BIC',name:'— model selection criteria',one:'Fit always improves with complexity; criteria charge a price for parameters.',
+     body:[['Meaning','AIC = −2lnL + 2k; BIC = −2lnL + k·ln(n). Both reward likelihood, both penalise parameter count k; BIC penalises harder for n &gt; 7.'],
+       ['Rule of thumb','Minimise the criterion over a SMALL, pre-declared candidate set (e.g. ARMA p,q ≤ 2). BIC for choosing a parsimonious "true" model; AIC when forecasting is the goal.'],
+       ['In practice','Week 5: R² and the log-likelihood are useless for order selection — they never decrease as you add lags. Criteria exist precisely to stop that.'],
+       ['At the extremes','Searching hundreds of specifications and reporting the best criterion is just multiple testing wearing a tie — the "selected" model\'s in-sample fit is biased upward.'],
+       ['What goes wrong','Comparing criteria across different transformations of y (levels vs logs vs differences) — the likelihoods are not comparable; this mistake is everywhere.']]},
+    {sym:'✔×5',name:'— robustness checks',one:'One significant regression is an anecdote; a result that survives torture is a finding.',
+     body:[['Meaning','Re-estimate under defensible variations: different SEs (clustered), samples (drop influential units, winsorise), specifications (time effects), and measurements (alternative proxies). The conclusion — not the third decimal — should survive.'],
+       ['Rule of thumb','Decide the checks BEFORE seeing how they affect the result, and report all of them, including the unflattering ones. A robustness table where every cell agrees suspiciously well has usually been curated.'],
+       ['In practice','Platform 3 lets you feel this: watch a t = 2.3 "finding" respond to five standard checks.'],
+       ['At the extremes','Zero checks → anecdote. Fifty checks chosen ex post → a garden of forking paths. Five or six well-chosen ones is the journal norm.'],
+       ['What goes wrong','"Robustness shopping": running many variants and showing the five that keep significance. That is p-hacking at the specification level.']]},
+    {sym:'p×20',name:'— p-hacking & multiple testing',one:'Test 20 noise variables at 5% and "discovery" is the most likely outcome.',
+     body:[['Meaning','Each test has a 5% false-positive rate. Over m independent tests, P(at least one false positive) = 1 − 0.95<sup>m</sup>: for m = 20 that is 64.2%. Search hard enough and noise will reward you.'],
+       ['Rule of thumb','Count EVERY test you ran — including the ones you abandoned. Corrections: Bonferroni (α/m), or in finance, raise the t-hurdle to ≈3 for new factors (Harvey, Liu &amp; Zhu 2016).'],
+       ['In practice','The "factor zoo": hundreds of published return predictors, most of which fail out of sample — the literature collectively p-hacked itself. Platform 2 lets you manufacture discoveries from pure noise.'],
+       ['At the extremes','m = 1 pre-registered test: the p-value means what it says. m unknown and large: the p-value means nothing.'],
+       ['What goes wrong','The denominator is invisible: your reader sees 1 regression, not the 40 you ran. That asymmetry is why pre-registration and full reporting exist.']]},
+    {sym:'OOS',name:'— out-of-sample validation',one:'In-sample fit flatters; the held-out sample tells the truth.',
+     body:[['Meaning','Estimate on a training window, evaluate on data the model has never seen. For forecasts: compare RMSE against a naive benchmark (Week 6). For trading rules: walk-forward, no peeking.'],
+       ['Rule of thumb','If your model cannot beat "no change" or the historical mean out of sample, its in-sample R² was memorised noise.'],
+       ['In practice','Markov-switching look-ahead (Week 9) and smoothed-probability backtests are the classic finance versions of OOS sins.'],
+       ['At the extremes','Repeatedly tweaking the model after seeing OOS results converts the test set into a training set — you can only spend a hold-out once.'],
+       ['What goes wrong','"OOS" periods chosen after looking at the data (conveniently excluding 2008…), or signals built with full-sample standardisation — subtle leaks are everywhere.']]},
+    {sym:'£ vs σ',name:'— economic vs statistical significance',one:'t answers "is it zero?"; economics asks "is it big enough to matter?"',
+     body:[['Meaning','With n large, microscopic effects become statistically significant. Translate: how much does y move for a 1-sd move in x, in units someone cares about (basis points, £, percentage points)?'],
+       ['Rule of thumb','Always report both: the t-stat AND the standardised effect. A sentence like "1 sd more X is associated with 0.03 sd more y (t = 4.2)" lets the reader see it is significant and tiny.'],
+       ['In practice','Platform 4 is a translator: it computes t, p and the plain-English magnitude simultaneously, and shows which of the four verdict quadrants you are in.'],
+       ['At the extremes','n = 5,000,000 (high-frequency data): everything is significant, nothing is necessarily important. n = 25: real effects look insignificant — wide CIs are "we cannot tell", not "no effect".'],
+       ['What goes wrong','Treating p &lt; 0.05 as the finish line. Examiners specifically look for students who interpret magnitudes; so do hiring committees.']]},
+    {sym:'🔁',name:'— replication',one:'A result that only exists on your laptop does not exist.',
+     body:[['Meaning','Same data + same code → same numbers (reproducibility); new data or new period → same conclusion (replication). Both are part of the finding.'],
+       ['Rule of thumb','Script everything (no clicking in spreadsheets), set random seeds, version the data, and write the README you would need in six months. Your coursework marker IS a replicator.'],
+       ['In practice','Many celebrated finance anomalies shrink by half or vanish post-publication (McLean &amp; Pontiff 2016) — partly arbitrage, partly because the original was data-mined.'],
+       ['At the extremes','"Results available on request" is the historical euphemism for "results not available". Modern journals require code and data archives.'],
+       ['What goes wrong','Untracked manual steps: the deleted outlier, the hand-edited CSV, the seed that was never set. Each one makes your headline number unrepeatable — including by you.']]}
+  ]);
+})();
+
+/* ---------- Platform 1: mini research pipeline ---------- */
 (function(){
   var M=window.MANG;
   var COLS=['#38bdf8','#fbbf24','#34d399','#f87171','#a78bfa'];
@@ -307,7 +579,7 @@ window.MANG = (function(){
         why:'With φ = 0.92, each month a deviation shrinks to 92% of itself — i.e. 8% is corrected, half-life ≈ 8 months. The ADF test already rejected the random walk (option 2); option 3 reads φ backwards; option 4 confuses persistence of deviations with a price trend.'}
     }
   };
-  var stepsEl=document.getElementById('steps');
+  var stepsEl=null;
   function chip(i,on){var c=document.getElementById('ch'+i);if(on)c.classList.add('done');else c.classList.remove('done');}
   function build(key){
     var p=P[key];
@@ -383,16 +655,412 @@ window.MANG = (function(){
     b1.addEventListener('click',function(){chip(1,true);s2.style.display='block';b1.disabled=true;s2.scrollIntoView({behavior:'smooth',block:'nearest'});});
     b3c.addEventListener('click',function(){s4.style.display='block';b3c.disabled=true;s4.scrollIntoView({behavior:'smooth',block:'nearest'});});
   }
-  document.querySelectorAll('#presets button').forEach(function(b){
-    b.addEventListener('click',function(){
-      document.querySelectorAll('#presets button').forEach(function(x){x.className='alt';});
-      b.className='';
-      build(b.getAttribute('data-p'));
+  function pick(key){
+    document.querySelectorAll('#presets button').forEach(function(x){x.className='alt';});
+    document.querySelector('#presets button[data-p="'+key+'"]').className='';
+    build(key);
+  }
+  function init(){
+    stepsEl=document.getElementById('steps');
+    document.querySelectorAll('#presets button').forEach(function(b){
+      b.addEventListener('click',function(){pick(b.getAttribute('data-p'));});
     });
-  });
+    M.exps('exp1',[
+      {text:'<b>Take the wrong turn on purpose:</b> open the FDI question and choose <i>pooled OLS</i> at Step 2. Read why it fails — it is precisely the Week 10 lesson, and precisely the mistake referees look for first in growth regressions.',
+       set:function(){pick('fdi');}},
+      {text:'<b>Interpretation traps:</b> open the GBP question, get to Step 4 and read all four options before answering. Option 2 ("97% predictable") is the single most common student misreading of GARCH persistence.',
+       set:function(){pick('gbp');}},
+      {text:'<b>Do the half-life arithmetic:</b> in the house-price question, verify the claim yourself: ln 0.5 / ln 0.92 = '+(Math.log(0.5)/Math.log(0.92)).toFixed(1)+' months. Being able to convert φ into a half-life is a one-line exam win.',
+       set:function(){pick('hp');}},
+      {text:'<b>Spot the invariant:</b> run all three pipelines and notice the chips never change: question → data → method → diagnostics → findings. Different methods, same skeleton — that is the structure of your coursework write-up.',
+       set:function(){pick('fdi');}}
+    ]);
+  }
+  M.panes.push({id:'pane1',label:'1 · Research pipeline',init:init});
 })();
 
-/* ---------- SECTION B: Research Sprint ---------- */
+/* ---------- Platform 2: p-hacking demonstrator ---------- */
+(function(){
+  var M=window.MANG;
+  var N=100;
+  var seed=20262026,ts=null,datasets=0,hits=0;
+  var PEXP=1-Math.pow(0.95,20);
+  function newData(){
+    seed=(seed*1664525+1013904223)>>>0;
+    ts=null;
+    draw();
+    document.getElementById('ph_sig').textContent='—';
+    document.getElementById('ph_chips').innerHTML='';
+    document.getElementById('ph_note').innerHTML='<b>What to notice:</b> fresh noise drawn. Press ▶ Run all 20 regressions — remember, y is unrelated to every X by construction.';
+  }
+  function runAll(){
+    var rng=M.mulberry32(seed);
+    ts=M.tstats20(rng,N);
+    datasets++;
+    var sig=ts.filter(function(t){return Math.abs(t)>1.96;});
+    if(sig.length>0)hits++;
+    document.getElementById('ph_sig').textContent=String(sig.length);
+    document.getElementById('ph_ds').textContent=String(datasets);
+    document.getElementById('ph_hit').textContent=String(hits);
+    document.getElementById('ph_hitpct').textContent='= '+(100*hits/datasets).toFixed(0)+'% of datasets';
+    var chips=document.getElementById('ph_chips');chips.innerHTML='';
+    ts.forEach(function(t,j){
+      var c=document.createElement('span');
+      c.className='chip'+(Math.abs(t)>1.96?' sig':'');
+      c.textContent='X'+(j+1)+': t = '+t.toFixed(2);
+      chips.appendChild(c);
+    });
+    draw();
+    var names=ts.map(function(t,j){return {t:t,j:j};}).filter(function(o){return Math.abs(o.t)>1.96;})
+      .map(function(o){return 'X'+(o.j+1)+' (t = '+o.t.toFixed(2)+')';});
+    var note='<b>What to notice:</b> ';
+    if(names.length===0){
+      note+='no discoveries this time — that happens in about '+(100*(1-PEXP)).toFixed(0)+'% of datasets. Run a few more and the false positives will arrive; over '+datasets+' dataset(s) so far, '+hits+' produced at least one.';
+    } else {
+      note+='this pure-noise dataset just "discovered" '+names.join(', ')+'. A motivated researcher writes the introduction around '+names[0].split(' ')[0]+', never mentions the other 19 regressions, and the referee sees a clean p &lt; 0.05. With 20 tries the chance of at least one hit is 1 − 0.95²⁰ = '+(100*PEXP).toFixed(1)+'% — <b>a "discovery" is the expected outcome of searching noise</b>. This is the mechanism behind the <i>factor zoo</i>: hundreds of published return "factors", a large share of which are exactly this. It is why Harvey, Liu &amp; Zhu (2016) argue new factors should clear t ≈ 3, not 1.96.';
+    }
+    document.getElementById('ph_note').innerHTML=note;
+  }
+  function draw(){
+    var cv=document.getElementById('ph_cv'),c=M.setup(cv),ctx=c.ctx;
+    var A=M.axes(ctx,c.W,c.H,0.5,20.5,0,4,'regressor X1 … X20','|t|');
+    // 5% line
+    ctx.strokeStyle='#f87171';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(A.pad.l,A.Y(1.96));ctx.lineTo(c.W-A.pad.r,A.Y(1.96));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#f87171';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='left';
+    ctx.fillText('|t| = 1.96 (5%)',A.pad.l+4,A.Y(1.96)-4);
+    if(document.getElementById('ph_bonf').checked){
+      var zb=M.zCrit(0.05/20);
+      ctx.strokeStyle='#34d399';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+      ctx.beginPath();ctx.moveTo(A.pad.l,A.Y(zb));ctx.lineTo(c.W-A.pad.r,A.Y(zb));ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='#34d399';ctx.textAlign='left';
+      ctx.fillText('Bonferroni |t| = '+zb.toFixed(2)+' (α = 0.05/20)',A.pad.l+4,A.Y(zb)-4);
+    }
+    if(ts){
+      for(var j=0;j<20;j++){
+        var t=Math.min(4,Math.abs(ts[j]));
+        var x=A.X(j+1),w=(A.X(2)-A.X(1))*0.55;
+        ctx.fillStyle=(Math.abs(ts[j])>1.96)?'rgba(248,113,113,0.9)':'rgba(56,189,248,0.6)';
+        ctx.fillRect(x-w/2,A.Y(t),w,A.Y(0)-A.Y(t));
+      }
+    } else {
+      ctx.fillStyle='#94a3b8';ctx.font='12px Segoe UI, sans-serif';ctx.textAlign='center';
+      ctx.fillText('Press ▶ Run all 20 regressions',(A.pad.l+c.W-A.pad.r)/2,(A.pad.t+c.H-A.pad.b)/2);
+    }
+  }
+  function init(){
+    document.getElementById('ph_exp').textContent=(100*PEXP).toFixed(1)+'%';
+    document.getElementById('ph_new').addEventListener('click',newData);
+    document.getElementById('ph_run').addEventListener('click',function(){newRunGuard();});
+    document.getElementById('ph_bonf').addEventListener('change',draw);
+    M.exps('exp2',[
+      {text:'<b>Manufacture a discovery:</b> run 5–10 fresh datasets and watch the "datasets with ≥1 discovery" counter converge towards the theoretical '+(100*PEXP).toFixed(0)+'%. Each red bar would be a publishable abstract.',
+       set:function(){newData();runAll();}},
+      {text:'<b>Apply the correction:</b> tick the Bonferroni line (|t| ≈ '+M.zCrit(0.05/20).toFixed(2)+'). Rerun several datasets — discoveries almost disappear, because the family-wise error rate is now held at 5% across all 20 tests.',
+       set:function(){document.getElementById('ph_bonf').checked=true;newData();runAll();}},
+      {text:'<b>Feel the factor zoo:</b> imagine 300 candidate return predictors instead of 20: expected false positives at 5% = 300 × 0.05 = 15 "anomalies" per fishing trip. Now reread any paper announcing its 301st factor with t = 2.1.',
+       set:function(){newData();runAll();}},
+      {text:'<b>The invisible denominator:</b> run datasets until you get ≥2 discoveries, then ask: if you only showed a reader the winning regression, what could they possibly do to detect the other 19? (Nothing. That is the problem.)',
+       set:function(){newData();runAll();}}
+    ]);
+    draw();
+  }
+  function newRunGuard(){
+    if(ts!==null)newData(); // ran already on this seed: draw a fresh dataset first
+    runAll();
+  }
+  M.panes.push({id:'pane2',label:'2 · p-hacking demonstrator',init:init,show:draw});
+})();
+</script>
+<script>
+'use strict';
+/* ---------- Platform 3: robustness workbench ---------- */
+(function(){
+  var M=window.MANG;
+  var B0=0.040,SE0=0.0174;
+  // each check: multiplicative effect on the coefficient (m) and on the SE (s), with a small
+  // seeded jitter so the numbers are computed, not memorised
+  var CHECKS=null,applied=[],btns=[];
+  function buildChecks(){
+    var rng=M.mulberry32(20261111);
+    function jit(v){return v*(1+0.05*M.gauss(rng));}
+    CHECKS=[
+      {label:'Cluster SEs by country',m:jit(1.00),s:jit(1.55),why:'same β̂, honest SE — country shocks persist over years'},
+      {label:'Drop the most influential country',m:jit(0.78),s:jit(1.06),why:'one fast-growing high-FDI country was carrying part of the slope'},
+      {label:'Add time (year) effects',m:jit(0.64),s:jit(1.16),why:'global boom years had high FDI AND high growth everywhere'},
+      {label:'Alternative proxy (FDI stock)',m:jit(1.14),s:jit(1.08),why:'a different measurement of the same concept'},
+      {label:'Winsorise outliers at 1%/99%',m:jit(0.86),s:jit(0.95),why:'a few extreme FDI years were levering the fit'}
+    ];
+  }
+  function current(){
+    var b=B0,s=SE0;
+    applied.forEach(function(k){b*=CHECKS[k].m;s*=CHECKS[k].s;});
+    return {b:b,s:s,t:b/s};
+  }
+  function path(){
+    // baseline + each applied check in click order
+    var out=[{label:'baseline',b:B0,s:SE0}];
+    var b=B0,s=SE0;
+    applied.forEach(function(k){
+      b*=CHECKS[k].m;s*=CHECKS[k].s;
+      out.push({label:CHECKS[k].label,b:b,s:s});
+    });
+    return out;
+  }
+  function draw(){
+    var p=path(),cur=current();
+    document.getElementById('rb_coef').textContent=cur.b.toFixed(4);
+    document.getElementById('rb_se').textContent=cur.s.toFixed(4);
+    document.getElementById('rb_t').textContent=cur.t.toFixed(2);
+    var sg=document.getElementById('rb_sig');
+    var sig=Math.abs(cur.t)>1.96;
+    sg.textContent=sig?'still significant at 5%':'NOT significant at 5%';
+    sg.style.color=sig?'var(--good)':'var(--bad)';
+    // chart
+    var cv=document.getElementById('rb_cv'),c=M.setup(cv),ctx=c.ctx;
+    var lo=0,hi=0;
+    p.forEach(function(st){lo=Math.min(lo,st.b-1.96*st.s);hi=Math.max(hi,st.b+1.96*st.s);});
+    var padv=0.12*(hi-lo)+0.002;
+    var A=M.axes(ctx,c.W,c.H,0.5,Math.max(p.length,2)+0.5,lo-padv,hi+padv,'specification (in the order you applied checks)','β̂ and 95% CI');
+    ctx.strokeStyle='#475569';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(A.pad.l,A.Y(0));ctx.lineTo(c.W-A.pad.r,A.Y(0));ctx.stroke();ctx.setLineDash([]);
+    p.forEach(function(st,i){
+      var x=A.X(i+1);
+      var sigi=Math.abs(st.b/st.s)>1.96;
+      ctx.strokeStyle=sigi?'#38bdf8':'#f87171';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(x,A.Y(st.b-1.96*st.s));ctx.lineTo(x,A.Y(st.b+1.96*st.s));ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x-5,A.Y(st.b-1.96*st.s));ctx.lineTo(x+5,A.Y(st.b-1.96*st.s));ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x-5,A.Y(st.b+1.96*st.s));ctx.lineTo(x+5,A.Y(st.b+1.96*st.s));ctx.stroke();
+      ctx.fillStyle=sigi?'#38bdf8':'#f87171';
+      ctx.beginPath();ctx.arc(x,A.Y(st.b),4.5,0,2*Math.PI);ctx.fill();
+      ctx.fillStyle='#94a3b8';ctx.font='10px Segoe UI, sans-serif';ctx.textAlign='center';
+      var lab=(i===0)?'baseline':('+ check '+i);
+      ctx.fillText(lab,x,c.H-A.pad.b+15);
+    });
+    // verdict meter: share of plotted specs that stay significant
+    var nsig=p.filter(function(st){return Math.abs(st.b/st.s)>1.96;}).length;
+    var share=nsig/p.length;
+    document.getElementById('rb_meter').style.width=(100*share).toFixed(0)+'%';
+    var vtxt;
+    if(applied.length===0)vtxt='Verdict: only the baseline so far ('+nsig+'/'+p.length+' specs significant). Apply some checks before believing anything.';
+    else if(share>=0.99)vtxt='Verdict: '+nsig+'/'+p.length+' specifications significant — surviving everything so far. Keep going; a robust finding survives ALL standard checks.';
+    else if(share>=0.6)vtxt='Verdict: '+nsig+'/'+p.length+' specifications significant — wobbly. The conclusion depends on defensible choices the reader did not make. Report every spec and let them see it.';
+    else vtxt='Verdict: only '+nsig+'/'+p.length+' specifications significant — this "finding" is an artefact of one specification. One significant regression was never a finding; it was an audition.';
+    document.getElementById('rb_verdict').textContent=vtxt;
+    // note
+    var note='<b>What to notice:</b> current β̂ = '+cur.b.toFixed(4)+', SE = '+cur.s.toFixed(4)+', t = '+cur.t.toFixed(2)+'. ';
+    if(applied.length>0){
+      var last=CHECKS[applied[applied.length-1]];
+      note+='Last check applied: <i>'+last.label+'</i> — '+last.why+'. ';
+    }
+    note+=(sig?'The effect still clears the 5% bar — for now.':'The effect no longer clears the 5% bar. Notice that no single check was unreasonable; the baseline simply was not robust.');
+    document.getElementById('rb_note').innerHTML=note;
+    btns.forEach(function(b,k){b.classList.toggle('on',applied.indexOf(k)>=0);});
+  }
+  function toggle(k){
+    var i=applied.indexOf(k);
+    if(i>=0)applied.splice(i,1);else applied.push(k);
+    draw();
+  }
+  function reset(){applied=[];draw();}
+  function setChecks(list){applied=list.slice();draw();}
+  function init(){
+    buildChecks();
+    var bar=document.getElementById('rb_btns');
+    CHECKS.forEach(function(ch,k){
+      var b=document.createElement('button');b.className='tog';b.textContent=ch.label;
+      b.addEventListener('click',function(){toggle(k);});
+      bar.appendChild(b);btns.push(b);
+    });
+    document.getElementById('rb_reset').addEventListener('click',reset);
+    M.exps('exp3',[
+      {text:'<b>The first thing a referee does:</b> apply <i>Cluster SEs by country</i> alone. The coefficient does not move at all — but t drops below 1.96. Half of all fragile findings die at this exact step (Week 10, Platform 4 explains why).',
+       set:function(){setChecks([0]);}},
+      {text:'<b>Full torture test:</b> apply all five checks. Follow the dot-and-whisker path: each step is individually defensible, and jointly they take t from 2.30 to far below 2. What would you now write in the abstract?',
+       set:function(){setChecks([0,1,2,3,4]);}},
+      {text:'<b>Cherry-picking in reverse:</b> apply only <i>Alternative proxy</i> — the coefficient gets BIGGER. A robustness check that flatters the result is still information; reporting only the flattering ones is specification-level p-hacking (Platform 2\'s lesson).',
+       set:function(){setChecks([3]);}},
+      {text:'<b>The killer control:</b> apply only <i>Add time effects</i>. The coefficient drops by a third — global boom years were doing the work. When one check moves the estimate this much, that check is telling you about identification, not robustness.',
+       set:function(){setChecks([2]);}}
+    ]);
+    draw();
+  }
+  M.panes.push({id:'pane3',label:'3 · Robustness workbench',init:init,show:function(){if(CHECKS)draw();}});
+})();
+
+/* ---------- Platform 4: significance translator ---------- */
+(function(){
+  var M=window.MANG;
+  var SDY=2.0,ECON=0.2;
+  function val(id){return parseFloat(document.getElementById(id).value);}
+  function draw(){
+    var b=val('tr_b'),se100=val('tr_se'),n=val('tr_n'),sx=val('tr_sx');
+    document.getElementById('v_tr_b').textContent=b.toFixed(2);
+    document.getElementById('v_tr_se').textContent=se100.toFixed(2);
+    document.getElementById('v_tr_n').textContent=String(n);
+    document.getElementById('v_tr_sx').textContent=sx.toFixed(1);
+    var sen=se100*Math.sqrt(100/n);
+    var t=b/sen;
+    var p=2*(1-M.normCdf(Math.abs(t)));
+    var econ=b*sx;           // pp of y per 1-sd move in X
+    var std=econ/SDY;        // in sd's of y
+    document.getElementById('tr_sen').textContent=sen.toFixed(4);
+    document.getElementById('tr_t').textContent=t.toFixed(2);
+    document.getElementById('tr_p').textContent=(p<0.001)?'< 0.001':p.toFixed(3);
+    document.getElementById('tr_econ').textContent=econ.toFixed(2)+' pp';
+    document.getElementById('tr_std').textContent='= '+std.toFixed(2)+' sd of y';
+    var statSig=p<0.05,econSig=Math.abs(std)>=ECON;
+    var size=(Math.abs(std)<0.05)?'economically trivial':(Math.abs(std)<ECON)?'economically modest':(Math.abs(std)<0.5)?'economically meaningful':'economically large';
+    var sent='<b>Plain English:</b> a 1-standard-deviation increase in X ('+sx.toFixed(1)+' units) moves quarterly growth by <b>'+econ.toFixed(2)+'pp</b>, i.e. '+std.toFixed(2)+' standard deviations of y. '+
+      'With n = '+n+', t = '+t.toFixed(2)+' (p '+(p<0.001?'&lt; 0.001':'= '+p.toFixed(3))+') — <b>'+(statSig?'statistically significant':'not statistically significant')+' at 5%, and '+size+'</b>. ';
+    if(statSig&&!econSig)sent+='Verdict: a precisely estimated triviality — big samples make tiny effects "significant". Do not write a policy section about this.';
+    else if(!statSig&&econSig)sent+='Verdict: tantalising but underpowered — the point estimate matters economically, but the data cannot distinguish it from zero. The honest conclusion is "collect more data", not "no effect".';
+    else if(statSig&&econSig)sent+='Verdict: the real deal — significant and substantial. NOW start the robustness checks (Platform 3).';
+    else sent+='Verdict: noise — neither statistically nor economically distinguishable from nothing.';
+    document.getElementById('tr_sent').innerHTML=sent;
+    // 2x2 chart
+    var cv=document.getElementById('tr_cv'),c=M.setup(cv),ctx=c.ctx;
+    var A=M.axes(ctx,c.W,c.H,0,6,0,1.0,'|t|  (statistical significance →)','|effect| in sd of y');
+    // quadrant shading
+    ctx.fillStyle='rgba(52,211,153,0.07)';
+    ctx.fillRect(A.X(1.96),A.pad.t,A.X(6)-A.X(1.96),A.Y(ECON)-A.pad.t);
+    ctx.fillStyle='rgba(248,113,113,0.06)';
+    ctx.fillRect(A.pad.l,A.Y(ECON),A.X(1.96)-A.pad.l,A.Y(0)-A.Y(ECON));
+    ctx.strokeStyle='#475569';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(A.X(1.96),A.pad.t);ctx.lineTo(A.X(1.96),A.Y(0));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(A.pad.l,A.Y(ECON));ctx.lineTo(c.W-A.pad.r,A.Y(ECON));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';
+    ctx.textAlign='left';
+    ctx.fillText('🗑 noise',A.pad.l+8,A.Y(0)-8);
+    ctx.fillText('🤔 tantalising but underpowered',A.pad.l+8,A.pad.t+16);
+    ctx.textAlign='right';
+    ctx.fillText('🔬 precisely estimated triviality',c.W-A.pad.r-8,A.Y(0)-8);
+    ctx.fillText('🏆 the real deal',c.W-A.pad.r-8,A.pad.t+16);
+    var pxv=Math.min(6,Math.abs(t)),pyv=Math.min(1.0,Math.abs(std));
+    ctx.fillStyle='#fbbf24';
+    ctx.beginPath();ctx.arc(A.X(pxv),A.Y(pyv),7,0,2*Math.PI);ctx.fill();
+    ctx.strokeStyle='#0b1220';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(A.X(pxv),A.Y(pyv),7,0,2*Math.PI);ctx.stroke();
+  }
+  function setAll(b,se,n,sx){
+    document.getElementById('tr_b').value=String(b);
+    document.getElementById('tr_se').value=String(se);
+    document.getElementById('tr_n').value=String(n);
+    document.getElementById('tr_sx').value=String(sx);
+    draw();
+  }
+  function init(){
+    ['tr_b','tr_se','tr_n','tr_sx'].forEach(function(id){document.getElementById(id).addEventListener('input',draw);});
+    M.exps('exp4',[
+      {text:'<b>The big-data trap:</b> β̂ = 0.02, SE₁₀₀ = 0.13, n = 5000, sd(X) = 1. The p-value shines (n is huge) but a 1-sd move in X shifts growth by 0.02pp = 0.01 sd of y — nothing. Statistical significance is a statement about precision, not importance.',
+       set:function(){setAll(0.02,0.13,5000,1);}},
+      {text:'<b>Underpowered but interesting:</b> β̂ = 0.50, SE₁₀₀ = 0.20, n = 40, sd(X) = 1. Economically large (0.25 sd of y) but t &lt; 1.96. The wrong conclusion is "no effect"; the right one is "the CI is too wide to tell — get more data".',
+       set:function(){setAll(0.5,0.2,40,1);}},
+      {text:'<b>Scale changes economics, not statistics:</b> fix β̂ = 0.30, n = 100 and drag sd(X) from 0.2 to 3. The t-stat and p-value never move, but the economic verdict swings from trivial to large — magnitude lives in the units, not the stars.',
+       set:function(){setAll(0.3,0.13,100,3);}},
+      {text:'<b>The real deal:</b> β̂ = 0.45, SE₁₀₀ = 0.15, n = 400, sd(X) = 1.5. Top-right quadrant: significant AND substantial. This is what a result worth a policy paragraph looks like — and the moment to start Platform 3\'s checks.',
+       set:function(){setAll(0.45,0.15,400,1.5);}}
+    ]);
+    draw();
+  }
+  M.panes.push({id:'pane4',label:'4 · Significance translator',init:init,show:draw});
+})();
+
+/* ---------- tabs wiring ---------- */
+(function(){window.MANG.tabs('ptabs');})();
+
+/* ---------- Problems clinic ---------- */
+(function(){
+  var M=window.MANG;
+  M.clinic('clinic',[
+    {title:'HARKing — Hypothesising After the Results are Known',
+     body:[['What it is','Running the analysis first, then writing the "hypothesis" the results happen to support, presented as if it were predicted in advance.'],
+       ['How it bites','Combined with 20 candidate regressors (Platform 2), HARKing guarantees a coherent-looking paper built on noise: the story is reverse-engineered from a false positive, so it will not replicate. In finance: a backtested strategy "motivated" by a theory invented after seeing the backtest.'],
+       ['How to detect it','Suspiciously perfect fit between hypothesis and result; no failed predictions reported anywhere; theory sections that read like captions for the tables.'],
+       ['Remedy','State hypotheses (and the full list of tests) before estimation — pre-registration in academic work, a written research plan in your coursework. Exploratory analysis is fine and valuable; just label it exploratory.']]},
+    {title:'Survivorship bias — the dead funds tell no tales',
+     body:[['What it is','Datasets that contain only entities that survived to the end: funds that were not liquidated, firms that were not delisted, strategies that were not abandoned.'],
+       ['How it bites','Average mutual-fund performance computed on live funds overstates the truth, because the worst performers were killed and removed. The same bias inflates backtests built on today\'s index constituents ("the S&amp;P 500 of 2026 did great over 2010–2026" — of course it did, membership was the prize).'],
+       ['How to detect it','Ask the database: are dead entities included? Does the fund/firm count fall back through time? If the historical universe equals today\'s universe, you have a survivor sample.'],
+       ['Remedy','Use survivorship-bias-free databases (in finance: ones that retain dead funds/delisted firms), reconstruct point-in-time universes, and report attrition.']],
+     demo:{label:'Demo: 200 zero-skill funds, losers liquidated',h:180,draw:function(cv){
+       var rng=M.mulberry32(987654),F=200,T=60;
+       var allMean=0,survMean=0,nSurv=0;
+       for(var f=0;f<F;f++){
+         var cum=0,alive=true,sum=0;
+         for(var t=0;t<T;t++){
+           var r=0.4+4*M.gauss(rng); // % per month, zero true alpha vs 0.4 benchmark drift
+           sum+=r;cum+=r;
+           if(cum<-20)alive=false;   // fund liquidated, history removed from the database
+         }
+         var mean=sum/T;
+         allMean+=mean/F;
+         if(alive){survMean+=mean;nSurv++;}
+       }
+       survMean/=nSurv;
+       var c=M.setup(cv),ctx=c.ctx;
+       var A=M.axes(ctx,c.W,c.H,0,3,0,Math.max(1,survMean*1.5),'','mean return, % per month');
+       function bar(xc,v,col,lab){
+         var w=(A.X(1)-A.X(0))*0.5;
+         ctx.fillStyle=col;ctx.fillRect(A.X(xc)-w/2,A.Y(Math.max(v,0)),w,Math.abs(A.Y(0)-A.Y(v)));
+         ctx.fillStyle='#e2e8f0';ctx.font='12px Segoe UI, sans-serif';ctx.textAlign='center';
+         ctx.fillText(v.toFixed(2)+'%',A.X(xc),A.Y(v)-6);
+         ctx.fillStyle='#94a3b8';ctx.font='10px Segoe UI, sans-serif';
+         ctx.fillText(lab,A.X(xc),A.Y(0)+14);
+       }
+       bar(1,allMean,'rgba(56,189,248,0.8)','all 200 funds (truth)');
+       bar(2,survMean,'rgba(251,191,36,0.85)','survivors only ('+nSurv+' funds)');
+       ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='left';
+       ctx.fillText('No fund has any skill. The survivor database "shows" outperformance of '+(survMean-allMean).toFixed(2)+'% per month.',A.pad.l+4,A.pad.t+12);
+     }}},
+    {title:'Selection bias — who is in the sample, and why?',
+     body:[['What it is','The sample is selected by a mechanism related to the outcome: firms that chose to IPO, countries that report data, workers who chose training, students who answered the survey.'],
+       ['How it bites','"Does cross-listing raise firm value?" estimated on firms that chose to cross-list compares self-selected winners with everyone else — the choice itself is informative. The regression measures selection + treatment, hopelessly entangled.'],
+       ['How to detect it','Describe the selection mechanism in one sentence. If the outcome (or anything correlated with it) appears in that sentence, you have a problem. Compare observables of the selected vs excluded.'],
+       ['Remedy','Model the selection (Heckman two-step), find quasi-random variation in selection (IV, natural experiments), use difference-in-differences around the choice, or honestly reframe the claim as descriptive.']]},
+    {title:'Data snooping across the cohort — everyone tests the same dataset',
+     body:[['What it is','Multiple testing at the level of a whole research community (or classroom): 100 students each run "one" test on the SAME dataset. Collectively, that is 100 tests — and the dataset will hand out ~5 false discoveries at the 5% level even if every individual behaves perfectly.'],
+       ['How it bites','In this module: everyone gets the same returns data; the five students who found something "significant" get excited; their individual p-values look fine and are collectively meaningless. In finance: decades of researchers mining the same CRSP/Compustat history is how the factor zoo (300+ published anomalies) happened.'],
+       ['How to detect it','Ask: how many researchers have searched this dataset before me? If the answer is "the whole field, for forty years", a t of 2.1 is an expected accident, not a discovery.'],
+       ['Remedy','Higher hurdles for heavily-mined data (t ≈ 3+, Harvey-Liu-Zhu), fresh out-of-sample data (new periods, new markets), and replication before celebration.']]},
+    {title:'Reverse causality — especially in macro-finance panels',
+     body:[['What it is','y causes x as well as (or instead of) x causing y. The regression cannot tell the direction; it just reports the association.'],
+       ['How it bites','"Financial development causes growth" — or do growing economies build banking sectors? "FDI raises growth" — or do investors send FDI to countries they expect to grow? In panels the feedback is usually contemporaneous, and fixed effects do nothing about it: FE removes time-invariant confounders, not simultaneity.'],
+       ['How to detect it','Plausibility audit: tell the reverse story out loud — if it sounds as good as yours, the regression alone cannot pick the winner. Timing evidence (does x lead y?) helps but anticipation can fake even that.'],
+       ['Remedy','Instrumental variables (something that moves x but not y directly), natural experiments, granular timing (event studies), or explicit dynamic models. Failing those: write "is associated with" and mean it.']]},
+    {title:'Publication bias — the literature shows you the survivors of p < 0.05',
+     body:[['What it is','Significant results get published; insignificant ones go in the drawer. The published record is a censored sample of all results ever produced.'],
+       ['How it bites','Meta-read any finance literature: average published effects overstate true effects, sometimes wildly — McLean &amp; Pontiff find anomaly returns drop by roughly half post-publication. Your literature review inherits the bias: "twenty papers find an effect" may describe twenty draws from the same noisy process, published selectively.'],
+       ['How to detect it','Funnel plots (effect vs precision): a censored literature is asymmetric, with a missing cloud of small/insignificant estimates. Suspicious bunching of t-stats just above 1.96 is the other fingerprint.'],
+       ['Remedy','As a reader: weight precise studies, look for registered reports and replications. As an author: report your insignificant results — they are information, and increasingly publishable.']],
+     demo:{label:'Demo: funnel plot of 100 studies of a true zero effect',h:200,draw:function(cv){
+       var rng=M.mulberry32(135791),S=100;
+       var pts=[],pubMean=0,nPub=0,allMean=0;
+       for(var s=0;s<S;s++){
+         var se=0.05+0.25*rng();
+         var est=se*M.gauss(rng); // true effect = 0
+         var pub=Math.abs(est/se)>1.96;
+         pts.push([est,1/se,pub]);
+         allMean+=est/S;
+         if(pub){pubMean+=est;nPub++;}
+       }
+       if(nPub>0)pubMean/=nPub;
+       var c=M.setup(cv),ctx=c.ctx;
+       var A=M.axes(ctx,c.W,c.H,-0.8,0.8,0,22,'estimated effect','precision (1/SE)');
+       ctx.strokeStyle='#475569';ctx.setLineDash([4,4]);
+       ctx.beginPath();ctx.moveTo(A.X(0),A.pad.t);ctx.lineTo(A.X(0),A.Y(0));ctx.stroke();ctx.setLineDash([]);
+       pts.forEach(function(p){
+         ctx.fillStyle=p[2]?'#fbbf24':'rgba(148,163,184,0.45)';
+         ctx.beginPath();ctx.arc(A.X(p[0]),A.Y(p[1]),p[2]?4:3,0,2*Math.PI);ctx.fill();
+       });
+       ctx.fillStyle='#94a3b8';ctx.font='11px Segoe UI, sans-serif';ctx.textAlign='left';
+       ctx.fillText('True effect = 0. Gold = "publishable" (|t|>1.96): '+nPub+' studies, mean |effect| biased away from zero.',A.pad.l+6,A.pad.t+12);
+       ctx.fillText('Grey studies (the drawer) are what makes the literature look the way it does.',A.pad.l+6,A.pad.t+26);
+     }}}
+  ]);
+})();
+
+/* ---------- SECTION: game (Research Sprint) ---------- */
 (function(){
   var M=window.MANG;
   var KEY='mang2074_w11_best',ROUNDS=10,SOFT=15000;
@@ -474,7 +1142,6 @@ window.MANG = (function(){
     el('g_round').textContent=state.round;
     el('g_scen').textContent='📌 '+sc.txt;
     var box=el('g_opts');box.innerHTML='';
-    // shuffle displayed options
     var ord=sc.opts.map(function(_,i){return i;});
     for(var i=ord.length-1;i>0;i--){var k=Math.floor(state.rng()*(i+1));var t=ord[i];ord[i]=ord[k];ord[k]=t;}
     ord.forEach(function(oi){
@@ -515,7 +1182,7 @@ window.MANG = (function(){
   el('g_next').addEventListener('click',nextRound);
 })();
 
-/* ---------- SECTION C: code challenges ---------- */
+/* ---------- SECTION: code challenges ---------- */
 (function(){
   var QS=[
     {q:'<b>Week 1:</b> compute continuously-compounded (log) returns from a price series.',
@@ -536,12 +1203,24 @@ window.MANG = (function(){
      r:{code:['# inside: for (p in 0:2) for (q in 0:2)\ncrit <- ','(arima(ret, order = c(p, 0, q)))'],
         opts:['BIC','summary','residuals','coef'],ans:0},
      why:'Pick the (p,q) with the LOWEST BIC. R² and the log-likelihood always improve as you add terms — they cannot choose a parsimonious model; BIC penalises the extra parameters.'},
+    {q:'<b>Week 6:</b> hold out the last 60 observations and forecast them — evaluation happens out of sample.',
+     py:{code:['train, test = ret[:-60], ret[-60:]\nfit = ARIMA(train, order=(1, 0, 0)).fit()\nfc = fit.forecast(',')\nrmse = np.sqrt(((fc - test) ** 2).mean())'],
+         opts:['steps=len(test)','steps=1','steps=len(train)','steps=0'],ans:0},
+     r:{code:['train <- head(ret, -60); test <- tail(ret, 60)\nfit <- arima(train, order = c(1, 0, 0))\nfc <- predict(fit, n.ahead = ',')$pred\nrmse <- sqrt(mean((fc - test)^2))'],
+        opts:['length(test)','1','length(train)','0'],ans:0},
+     why:'Forecast exactly the held-out horizon and score it against data the model never saw — then compare the RMSE with a naive benchmark before claiming anything.'},
     {q:'<b>Week 7:</b> specify a GARCH(1,1) for daily returns.',
-     py:{code:['from arch import arch_model\nam = arch_model(ret, vol=',', p=1, q=1)\nres = am.fit(disp="off")'],
+     py:{code:['from arch import arch_model\nam = arch_model(ret, vol=', ', p=1, q=1)\nres = am.fit(disp="off")'],
          opts:["'GARCH'","'OLS'","'ARMA'","'EWMA'"],ans:0},
      r:{code:['library(rugarch)\nspec <- ugarchspec(variance.model = list(model = "sGARCH",\n                   garchOrder = ','))'],
         opts:['c(1, 1)','c(0, 0)','1','list(1, 1)'],ans:0},
      why:'vol="GARCH" with p=1, q=1 (arch) and garchOrder=c(1,1) (rugarch) give σ²ₜ = ω + αε²ₜ₋₁ + βσ²ₜ₋₁ — the workhorse volatility model.'},
+    {q:'<b>Week 8:</b> the 1% one-day normal VaR from an estimated mean and volatility.',
+     py:{code:['from scipy.stats import norm\nVaR_1pct = mu + sigma * ',''],
+         opts:['norm.ppf(0.01)','norm.ppf(0.05)','norm.cdf(0.01)','norm.pdf(0.01)'],ans:0},
+     r:{code:['VaR_1pct <- mu + sigma * qnorm(',')'],
+        opts:['0.01','0.05','0.99','1.96'],ans:0},
+     why:'The 1% VaR is the 1st percentile of the return distribution: mu + σ·z₀.₀₁ = mu − 2.326σ under normality. ppf/qnorm are the quantile functions; cdf/pdf are not.'},
     {q:'<b>Week 9:</b> fit a 2-regime Markov-switching model where the variance switches too.',
      py:{code:['mod = sm.tsa.MarkovRegression(ret, k_regimes=2, ',')\nres = mod.fit()'],
          opts:['switching_variance=True','switching_variance=False','k_states=2','vol="switch"'],ans:0},

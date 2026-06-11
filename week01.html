@@ -58,6 +58,31 @@ pre.code select{background:#1e293b;color:var(--accent2);border:1px solid #475569
 .cc-res.no{color:var(--bad)}
 .langtog{display:flex;gap:8px;margin-bottom:14px;align-items:center}
 .langtog button.on{outline:2px solid var(--accent2)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.pcard{background:var(--panel2);border-radius:10px;padding:12px 16px;cursor:pointer;border:1px solid #334155}
+.pcard:hover{border-color:var(--accent)}
+.pcard .sym{font-weight:700;color:var(--accent2);font-size:1.05rem}
+.pcard .one{color:var(--muted);font-size:.9rem}
+.pcard .body{display:none;font-size:.9rem;margin-top:8px;border-top:1px solid #334155;padding-top:8px}
+.pcard.open .body{display:block}
+.pcard .body p{margin:6px 0}
+.lbl{color:var(--accent);font-weight:600}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tabbar button{background:var(--panel2);color:var(--text);border:1px solid #334155;padding:8px 14px;border-radius:8px;cursor:pointer;font:600 .9rem var(--font)}
+.tabbar button.active{background:var(--accent);color:#0f172a;font-weight:600}
+.platform{display:none}
+.platform.active{display:block}
+.xp{background:var(--panel2);border-radius:10px;padding:12px 16px;margin-top:14px;font-size:.93rem}
+.xp ol{margin:6px 0 0;padding-left:20px}
+.xp li{margin:8px 0}
+button.setit{padding:3px 10px;font-size:.8rem;margin-left:8px;background:var(--accent2)}
+.clinic{border:1px solid #334155;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.clinic>.head{padding:10px 16px;cursor:pointer;background:var(--panel2);font-weight:600;font-size:.97rem}
+.clinic>.head:hover{color:var(--accent)}
+.clinic>.body{display:none;padding:12px 16px;font-size:.93rem}
+.clinic.open>.body{display:block}
+.clinic .body p{margin:6px 0}
+canvas.mini{height:150px}
 footer{max-width:1000px;margin:0 auto;padding:18px 16px 34px;color:var(--muted);font-size:.9rem;text-align:center}
 footer .nav{display:flex;justify-content:space-between;margin-bottom:10px}
 footer a{color:var(--accent);text-decoration:none}
@@ -73,24 +98,98 @@ footer a:hover{text-decoration:underline}
 <main>
 <div class="intro">
   This week you turn prices into returns and ask the classic question: <em>are financial returns normally distributed?</em>
-  Play with drift, volatility and fat tails in the simulator, then test your eye in the game — can you spot non-normal returns
-  from a histogram and a time-series plot alone? Finish with the code you'd actually type in Python or R.
+  Learn the six numbers that describe a return series in the parameter cards, run four lab platforms (price→returns,
+  density &amp; QQ plots, a Monte-Carlo Jarque–Bera bench, and four real-market profiles), browse the problems clinic,
+  then test your eye in the game and finish with the code you'd actually type in Python or R.
 </div>
 
-<!-- ============ SECTION A: SIMULATION ============ -->
-<section id="sim">
-<h2>🔬 Simulation — Price → Returns lab</h2>
+<!-- ============ PARAMETERS & CONCEPTS ============ -->
+<section id="params">
+<h2>📚 Parameters &amp; concepts</h2>
+<p style="color:var(--muted);font-size:.93rem;margin-top:0">Click a card to expand. These six numbers are the entire vocabulary of this week — a risk desk quotes them daily.</p>
+<div class="pgrid">
+
+<div class="pcard"><div class="sym">μ — drift</div><div class="one">The slow average pull on prices — mean return per day.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the expected return per period. Over a year of daily data the price drifts by roughly 252·μ.</p>
+<p><span class="lbl">Formula:</span> r<sub>t</sub> = μ + σ·z<sub>t</sub>; μ̂ = r̄ with SE(μ̂) = σ/√n.</p>
+<p><span class="lbl">Typical values:</span> equities ≈ +0.02 to +0.05%/day (≈5–12%/yr); FX majors and cash ≈ 0; a daily Sharpe |μ/σ| above ~0.1 should make you suspicious of the data.</p>
+<p><span class="lbl">At the extremes:</span> μ = 0 → prices are a fair game (martingale); μ &lt; 0 → persistent bleed (leveraged-ETF decay, futures roll costs); μ large relative to σ basically never happens at daily frequency.</p>
+<p><span class="lbl">Estimation problems:</span> noise dominates — with σ = 1%/day you need <em>decades</em> before μ̂ is statistically distinguishable from zero. Drift is the hardest number in finance to estimate.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">σ — volatility</div><div class="one">The typical size of a daily move; risk's first name.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the standard deviation of returns — how big a "normal" day is.</p>
+<p><span class="lbl">Formula:</span> σ̂² = Σ(r<sub>t</sub> − r̄)²/(n−1); annualised σ<sub>ann</sub> = σ<sub>daily</sub>·√252 (if returns are iid!).</p>
+<p><span class="lbl">Typical values:</span> calm large-cap equities 1–2%/day, FX majors 0.5–0.8%, crypto 4–8%, index in a crisis 5%+. Annualised: equities ~15–30%, crypto ~80–150%.</p>
+<p><span class="lbl">At the extremes:</span> σ → 0 — pegged FX or a bond at maturity; doubling σ quadruples variance; in real markets σ is itself time-varying (volatility clustering) — that's Week 7's GARCH.</p>
+<p><span class="lbl">Estimation problems:</span> σ̂ is precise under iid, but clustering makes the usual SE wrong; a single bad tick or stock split error inflates it badly.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">S — skewness</div><div class="one">Asymmetry: are crashes bigger than rallies?</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the tilt of the distribution. Negative S = the big moves are mostly down — typical for equity indices.</p>
+<p><span class="lbl">Formula:</span> S = E[(r−μ)³]/σ³; feeds Jarque–Bera through S².</p>
+<p><span class="lbl">Typical values:</span> daily index returns S ≈ −0.5 to 0; single stocks near 0; option-selling strategies strongly negative ("picking up pennies in front of a steamroller").</p>
+<p><span class="lbl">At the extremes:</span> S = 0 symmetric; S &lt; −1 crash-prone; strongly positive = lottery-like payoffs (penny stocks, crypto pumps).</p>
+<p><span class="lbl">Estimation problems:</span> cubed deviations mean ONE outlier can dominate the whole estimate; converges very slowly — SE(Ŝ) ≈ √(6/n) under normality.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">K — excess kurtosis</div><div class="one">Fat tails: extreme days happen far more often than the normal allows.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> tail weight beyond the Gaussian benchmark. K &gt; 0 = "leptokurtic" — quiet most days, occasionally wild.</p>
+<p><span class="lbl">Formula:</span> K = E[(r−μ)⁴]/σ⁴ − 3; feeds JB through K²/4.</p>
+<p><span class="lbl">Typical values:</span> daily equity returns K ≈ 3–10; weekly smaller, monthly smaller still ("aggregational Gaussianity"); crypto and crisis periods much higher.</p>
+<p><span class="lbl">At the extremes:</span> K = 0 → normal; for a Student-t, K = 6/(ν−4), which is <em>infinite</em> for ν ≤ 4. A 1987-style −20σ day is "impossible" under normality but merely rare with fat tails.</p>
+<p><span class="lbl">Estimation problems:</span> fourth powers converge even more slowly than third — SE(K̂) ≈ √(24/n) under normality, and the sample estimate is badly biased downward in small samples.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">ν — t degrees of freedom</div><div class="one">The tail-thickness dial of the Student-t: smaller ν = fatter tails.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the one-parameter knob controlling how heavy the tails of a t-distribution are.</p>
+<p><span class="lbl">Formula:</span> Var = ν/(ν−2) (so we standardise by √((ν−2)/ν)); excess kurtosis = 6/(ν−4) for ν &gt; 4.</p>
+<p><span class="lbl">Typical values:</span> ν ≈ 3–6 fits daily equity returns remarkably well; ν ≈ 4 for crypto; ν ≥ 30 is essentially Gaussian.</p>
+<p><span class="lbl">At the extremes:</span> ν ≤ 2 → variance doesn't exist; ν ≤ 4 → kurtosis infinite; ν → ∞ → exactly normal.</p>
+<p><span class="lbl">Estimation problems:</span> ML estimates of ν have wide confidence intervals — identification comes only from the rare tail observations, and unmodelled GARCH masquerades as low ν.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">n — sample size</div><div class="one">How much data you have — and whose regime it came from.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the number of return observations. Everything asymptotic (JB, CLT, SEs) leans on n.</p>
+<p><span class="lbl">Formula:</span> JB = n/6·(S² + K²/4) ~ χ²(2); SEs shrink at rate 1/√n.</p>
+<p><span class="lbl">Typical values:</span> 1 year daily ≈ 252; 5 years ≈ 1260; 10 years monthly = 120 (tiny!); intraday data — thousands per day.</p>
+<p><span class="lbl">At the extremes:</span> small n → JB unreliable and powerless (see the testing bench); huge n → JB rejects <em>everything</em>, because no real series is exactly normal — statistical vs economic significance.</p>
+<p><span class="lbl">Estimation problems:</span> stretching n back decades mixes regimes — 1990s data may say little about today's market structure. More data is only better if the DGP hasn't changed.</p>
+</div></div>
+
+</div>
+</section>
+
+<!-- ============ PLATFORMS ============ -->
+<section id="platforms">
+<h2>🔬 Platforms — the returns laboratory</h2>
+<div class="tabbar">
+  <button data-p="p1">1 · Price → Returns</button>
+  <button data-p="p2">2 · Distribution lab</button>
+  <button data-p="p3">3 · JB testing bench</button>
+  <button data-p="p4">4 · Market profiles</button>
+</div>
+
+<!-- ---- Platform 1 ---- -->
+<div class="platform" id="p1">
+<h3>Price → Returns lab</h3>
 <p>Simulated daily log-returns: <code>r<sub>t</sub> = μ + σ·z<sub>t</sub></code>, where z is either standard normal or a standardised Student-t. Prices follow P<sub>t</sub> = P<sub>t−1</sub>·e<sup>r<sub>t</sub>/100</sup>.</p>
 <div class="controls">
   <div class="ctl"><label><b>μ</b> drift (%/day): <span class="val" id="muV">0.03</span></label>
     <input type="range" id="mu" min="-0.1" max="0.1" step="0.005" value="0.03"></div>
   <div class="ctl"><label><b>σ</b> volatility (%/day): <span class="val" id="sigV">1.0</span></label>
-    <input type="range" id="sig" min="0.2" max="3" step="0.05" value="1"></div>
+    <input type="range" id="sig" min="0.2" max="6" step="0.05" value="1"></div>
   <div class="ctl"><label><b>Distribution</b> of z<sub>t</sub></label>
     <select class="ui" id="dist"><option value="normal">Normal (thin tails)</option><option value="t">Student-t (fat tails)</option></select></div>
   <div class="ctl"><label><b>ν</b> t degrees of freedom: <span class="val" id="dfV">5</span></label>
     <input type="range" id="df" min="3" max="30" step="1" value="5"></div>
-  <div class="ctl"><label><b>N</b> observations: <span class="val" id="nV">1000</span></label>
+  <div class="ctl"><label><b>n</b> observations: <span class="val" id="nV">1000</span></label>
     <input type="range" id="nobs" min="250" max="5000" step="250" value="1000"></div>
   <div class="ctl" style="display:flex;align-items:center"><button id="regen" style="width:100%">🎲 Regenerate</button></div>
 </div>
@@ -108,6 +207,154 @@ footer a:hover{text-decoration:underline}
   <div class="stat"><div class="k">5% verdict</div><div class="v" id="stVer">–</div></div>
 </div>
 <div class="notice" id="simNotice"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>Crypto mode: σ = 5%/day, Student-t with ν = 3, n = 1250. Watch K and JB explode — and the price path occasionally halve in a week. <button class="setit" data-x="0">Set it up</button></li>
+<li>One trading year of truly normal returns (n = 250). Hit 🎲 Regenerate ten times: JB should cross 5.99 only about once in twenty draws — that is the test's 5% size. <button class="setit" data-x="1">Set it up</button></li>
+<li>ν = 30 with n = 1000: a t(30) is nearly Gaussian — JB usually cannot tell the difference. Then drag ν down to 5 and watch the verdict flip. <button class="setit" data-x="2">Set it up</button></li>
+<li>Drift illusion: μ = 0.05, σ = 3, n = 250. The drift adds ~12% over the year but σ√252 ≈ 48% swamps it — why stock-pickers can't be judged on one year. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 2 ---- -->
+<div class="platform" id="p2">
+<h3>Distribution lab — densities &amp; QQ plots</h3>
+<p>Pick a true distribution for standardised returns. Left: its theoretical density (blue) against the standard normal (gold), with your sample's histogram behind. Right: the QQ-plot of the sample against normal quantiles — the sharpest tail-detector in the toolkit.</p>
+<div class="controls">
+  <div class="ctl"><label><b>Distribution</b></label>
+    <select class="ui" id="dist2">
+      <option value="normal">Normal</option>
+      <option value="t" selected>Student-t (fat tails)</option>
+      <option value="skew">Skew-normal (asymmetric)</option>
+    </select></div>
+  <div class="ctl"><label><b>ν</b> t degrees of freedom: <span class="val" id="df2V">5</span></label>
+    <input type="range" id="df2" min="3" max="30" step="1" value="5"></div>
+  <div class="ctl"><label><b>α</b> skew parameter: <span class="val" id="sk2V">-3.0</span></label>
+    <input type="range" id="sk2" min="-6" max="6" step="0.5" value="-3"></div>
+  <div class="ctl"><label><b>n</b> sample size: <span class="val" id="n2V">1000</span></label>
+    <input type="range" id="n2" min="100" max="5000" step="100" value="1000"></div>
+  <div class="ctl" style="display:flex;align-items:center"><button id="regen2" style="width:100%">🎲 New sample</button></div>
+</div>
+<div class="charts2">
+  <canvas id="densC2" style="height:230px"></canvas>
+  <canvas id="qqC2" style="height:230px"></canvas>
+</div>
+<div class="stats">
+  <div class="stat"><div class="k">sample skewness S</div><div class="v" id="p2Sk">–</div></div>
+  <div class="stat"><div class="k">sample excess kurtosis K</div><div class="v" id="p2Ku">–</div></div>
+  <div class="stat"><div class="k">Jarque–Bera</div><div class="v" id="p2Jb">–</div></div>
+  <div class="stat"><div class="k">5% verdict</div><div class="v" id="p2Ver">–</div></div>
+</div>
+<div class="notice" id="ntc2"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>t(3) with n = 2000: the QQ plot bends into an S — BOTH tails peel away from the 45° line. That S-shape is the signature of daily equity returns. <button class="setit" data-x="0">Set it up</button></li>
+<li>Skew-normal with α = −4: now only the LEFT tail dives below the line — crash asymmetry. Note S ≈ −0.8 but K stays modest. <button class="setit" data-x="1">Set it up</button></li>
+<li>t(30): the blue density sits on top of the gold one and the QQ plot hugs the line — JB usually can't reject. Tail risk hides in plain sight. <button class="setit" data-x="2">Set it up</button></li>
+<li>t(5) but only n = 150: the QQ plot goes ragged — with small samples even genuine fat tails are hard to call. (Quantify this on the next tab.) <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 3 ---- -->
+<div class="platform" id="p3">
+<h3>JB testing bench — Monte Carlo size &amp; power</h3>
+<p>How reliable is Jarque–Bera? Choose the TRUE distribution and a sample size, then run 500 Monte-Carlo replications: each draws a fresh sample, computes JB = n/6·(S² + K²/4), and rejects if JB &gt; 5.99. The bar shows the <b>rejection rate</b>: under normality it should be ≈5% (the test's <em>size</em>); under a t it is the test's <em>power</em>.</p>
+<div class="controls">
+  <div class="ctl"><label><b>True distribution</b></label>
+    <select class="ui" id="dist3">
+      <option value="normal">Normal (H₀ true → measures SIZE)</option>
+      <option value="t">Student-t (H₀ false → measures POWER)</option>
+    </select></div>
+  <div class="ctl"><label><b>ν</b> t degrees of freedom: <span class="val" id="df3V">5</span></label>
+    <input type="range" id="df3" min="3" max="30" step="1" value="5"></div>
+  <div class="ctl"><label><b>n</b> per sample: <span class="val" id="n3V">250</span></label>
+    <input type="range" id="n3" min="25" max="2000" step="25" value="250"></div>
+  <div class="ctl" style="display:flex;align-items:center;gap:8px">
+    <button id="run3" style="flex:1">▶ Run 500 reps</button>
+    <button id="clear3" class="alt" style="flex:1">Clear bars</button></div>
+</div>
+<div class="hud"><span class="pill">Progress <b id="prog3">idle</b></span><span class="pill">Runs stored <b id="cnt3">0</b>/8</span></div>
+<canvas id="rejC3" style="height:260px"></canvas>
+<div class="notice" id="ntc3"><b>What to notice:</b> run a few experiments — each finished run adds a bar. The gold dashed line is the nominal 5% level.</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>Normal, n = 100: the rejection rate should land near 5% — that's the size. Run it twice; Monte-Carlo error of ±2pp is normal with 500 reps. <button class="setit" data-x="0">Set it up</button></li>
+<li>t(5), n = 50: genuine fat tails, but power is feeble — most samples pass as "normal". One year of weekly data can't convict. <button class="setit" data-x="1">Set it up</button></li>
+<li>t(5), n = 500: now power should be near 100%. Two years of daily data is a different story. <button class="setit" data-x="2">Set it up</button></li>
+<li>t(25), n = 2000: an almost-normal alternative — even huge samples struggle. Power depends on BOTH n and how far the truth is from H₀. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 4 ---- -->
+<div class="platform" id="p4">
+<h3>Market profiles — same maths, four asset classes</h3>
+<p>Each button simulates 1000 days that mimic a real asset class: different volatility σ, tail parameter ν and GARCH persistence (α + β). Generate several and compare their stats side by side in the table — this is exactly the "describe your data" table of every empirical finance paper.</p>
+<div class="controls">
+  <div class="ctl" style="display:flex;align-items:center"><button class="prof" data-k="eq" style="width:100%">📊 Calm large-cap equity</button></div>
+  <div class="ctl" style="display:flex;align-items:center"><button class="prof" data-k="fx" style="width:100%">💱 FX major pair</button></div>
+  <div class="ctl" style="display:flex;align-items:center"><button class="prof" data-k="cr" style="width:100%">🪙 Crypto</button></div>
+  <div class="ctl" style="display:flex;align-items:center"><button class="prof" data-k="bd" style="width:100%">🏦 Bond yield changes</button></div>
+</div>
+<div class="charts2">
+  <canvas id="mpSer" style="height:200px"></canvas>
+  <canvas id="mpHist" style="height:200px"></canvas>
+</div>
+<div id="mpTable"></div>
+<div class="notice" id="ntc4"><b>What to notice:</b> click a profile to generate its series.</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>Generate all four, then rank the K column. Crypto (ν = 4, high persistence) should usually win the fat-tail contest. <button class="setit" data-x="0">Set them all up</button></li>
+<li>Compare daily σ̂ with annualised vol: equity uses √252 but crypto trades 365 days a year — the table uses √365 for it. A 5%/day crypto coin is ~95% annualised vol. <button class="setit" data-x="1">Generate crypto</button></li>
+<li>Regenerate equity five times: even "calm" equity virtually always fails JB — fat tails are the rule, not the exception. <button class="setit" data-x="2">Generate equity</button></li>
+<li>Bond yield CHANGES are measured in basis points, not % — always check units before comparing σ across assets. <button class="setit" data-x="3">Generate bonds</button></li>
+</ol></div>
+</div>
+</section>
+
+<!-- ============ PROBLEMS CLINIC ============ -->
+<section id="clinicSec">
+<h2>⚠️ Problems clinic</h2>
+<p style="color:var(--muted);font-size:.93rem;margin-top:0">Five classic ways this week's tools go wrong in practice. Click to open each case.</p>
+
+<div class="clinic"><div class="head">▸ 1 · Small-sample JB: an unreliable witness</div><div class="body">
+<p><span class="lbl">What it is:</span> JB's χ²(2) distribution is only an <em>asymptotic</em> approximation. In small samples the true distribution of JB is far from χ²(2): the actual rejection rate at the "5%" critical value drifts away from 5%, and power against real alternatives is weak.</p>
+<p><span class="lbl">How it bites:</span> a student tests one year of <em>monthly</em> fund returns (n = 12!) and reports "JB does not reject — returns are normal, so Gaussian VaR is fine". The test never had a chance: SE(Ŝ) ≈ √(6/12) ≈ 0.71 and SE(K̂) ≈ √(24/12) ≈ 1.41 — enormous.</p>
+<p><span class="lbl">How to detect:</span> simple — look at n. Below n ≈ 100, treat JB p-values as decoration. Run the demo below to see the actual size at n = 30.</p>
+<p><span class="lbl">Remedy:</span> get more data (use daily, not monthly), use Monte-Carlo/bootstrap critical values, and never base a distributional claim on a single test in a small sample.</p>
+<button class="alt" id="c1btn">▶ Demo: actual rejection rate, normal data, n = 30 (300 reps)</button>
+<canvas id="c1cv" class="mini" style="display:none"></canvas>
+<div id="c1out" style="font-size:.9rem;color:var(--muted)"></div>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 2 · Simple vs log returns: fine until the market isn't</div><div class="body">
+<p><span class="lbl">What it is:</span> r<sup>log</sup> = ln(1+R) ≈ R only for small moves. Log returns add over <em>time</em>; simple returns add over a <em>portfolio</em>. Mixing them up is harmless at ±1% and catastrophic at ±50%.</p>
+<p><span class="lbl">How it bites:</span> a coin drops 50% then gains 50%: sum of simple returns = 0%, but you've lost 25%. In logs: −69.3% + 40.5% = −28.8% = ln(0.75). A backtest that compounds simple returns as if they were logs overstates crypto performance massively.</p>
+<p><span class="lbl">How to detect:</span> any |return| above ~15–20% in the sample means the gap is material. Check: does Σr<sup>log</sup> equal ln(P<sub>T</sub>/P<sub>0</sub>)? It must, exactly.</p>
+<p><span class="lbl">Remedy:</span> use log returns for time-series modelling and aggregation over time; convert to simple (R = e<sup>r</sup>−1) for portfolio weights and P&amp;L statements.</p>
+<button class="alt" id="c2btn">▶ Demo: ln(1+R) vs R — watch them part company</button>
+<canvas id="c2cv" class="mini" style="display:none"></canvas>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 3 · Volatility clustering: returns are not iid</div><div class="body">
+<p><span class="lbl">What it is:</span> real returns are (nearly) serially <em>uncorrelated</em>, but their <em>squares</em> are strongly autocorrelated — quiet weeks cluster, turbulent weeks cluster. The iid assumption behind √n standard errors, √252 scaling and the JB null is false.</p>
+<p><span class="lbl">How it bites:</span> a VaR model calibrated in a calm spell understates risk just before the storm; "20-day vol" jumps 4× in a crisis. The marginal distribution looks fat-tailed even when each day's shock is conditionally normal.</p>
+<p><span class="lbl">How to detect:</span> plot the ACF of squared (or absolute) returns — significant spikes for many lags; Ljung–Box test on r²; Engle's ARCH-LM test (Week 7).</p>
+<p><span class="lbl">Remedy:</span> model the variance: ARCH/GARCH (Week 7), or at minimum use heteroscedasticity-robust inference and rolling-window volatility.</p>
+<button class="alt" id="c3btn">▶ Demo: ACF of r² — iid (gold) vs GARCH (blue)</button>
+<canvas id="c3cv" class="mini" style="display:none"></canvas>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 4 · Survivorship bias &amp; outliers: poisoned moments</div><div class="body">
+<p><span class="lbl">What it is:</span> datasets that quietly drop dead companies (or one fat-fingered data error) distort every moment you compute. μ̂ inflates (only winners survive), while S and K — built from cubed and fourth-powered deviations — can be dominated by a single observation.</p>
+<p><span class="lbl">How it bites:</span> backtesting on <em>today's</em> S&amp;P 500 constituents overstates historical returns by 1–4%/yr; one bad tick of −20% turns a tame series into a "fat-tailed" one and flips the JB verdict.</p>
+<p><span class="lbl">How to detect:</span> rank |returns| and inspect the top few by hand (real event or data error?); recompute S, K with the single largest observation removed — if the answer changes materially, you have an outlier problem. For survivorship: compare against a point-in-time constituent list.</p>
+<p><span class="lbl">Remedy:</span> vet extreme observations against news; use point-in-time databases (CRSP with delistings); winsorise only with disclosure — an honest fat tail is information, not noise.</p>
+<button class="alt" id="c4btn">▶ Demo: add ONE −20% day to 250 calm days</button>
+<div id="c4out" style="font-size:.9rem;color:var(--muted)"></div>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 5 · Annualising with ×√252: terms and conditions apply</div><div class="body">
+<p><span class="lbl">What it is:</span> σ<sub>ann</sub> = σ<sub>daily</sub>·√252 assumes returns are iid. The rule is frequency-specific (√12 for monthly, √52 for weekly, √365 for crypto) and breaks when returns are autocorrelated or volatility clusters.</p>
+<p><span class="lbl">How it bites:</span> positively autocorrelated returns (illiquid assets, smoothed fund NAVs) make √252 <em>understate</em> true annual risk — hedge funds love this. And scaling a fat-tailed daily 1% VaR by √h is plain wrong: tail quantiles don't scale like standard deviations.</p>
+<p><span class="lbl">How to detect:</span> variance-ratio test — compare Var(20-day return) with 20×Var(daily return); equality holds only under iid. Check the return ACF at lag 1.</p>
+<p><span class="lbl">Remedy:</span> compute risk at the horizon you care about directly from data at that horizon, or model the dynamics (GARCH) and aggregate properly.</p>
+</div></div>
 </section>
 
 <!-- ============ SECTION B: GAME ============ -->
@@ -138,7 +385,7 @@ footer a:hover{text-decoration:underline}
 <div class="langtog">
   <button id="ccPy" class="on">Python</button>
   <button id="ccR" class="alt">R</button>
-  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/6</span>
+  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/8</span>
 </div>
 <div id="cc-list"></div>
 </section>
@@ -274,18 +521,114 @@ window.MANG = (function () {
     for (let i = 0; i < df; i++) { const z = gauss(rng); chi += z * z; }
     return gauss(rng) / Math.sqrt(chi / df) * Math.sqrt((df - 2) / df);
   }
-  return { mulberry32: mulberry32, gauss: gauss, tDraw: tDraw, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, drawHist: drawHist, stats: stats, fmt: fmt };
+  /* --- distribution maths for the new platforms --- */
+  function logGamma(x) {
+    const g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    let y = x, tmp = x + 5.5;
+    tmp -= (x + 0.5) * Math.log(tmp);
+    let ser = 1.000000000190015;
+    for (let j = 0; j < 6; j++) { y += 1; ser += g[j] / y; }
+    return -tmp + Math.log(2.5066282746310005 * ser / x);
+  }
+  function normPdf(z) { return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI); }
+  function normCDF(x) { // Abramowitz–Stegun 26.2.17
+    const t = 1 / (1 + 0.2316419 * Math.abs(x));
+    const d = normPdf(x);
+    const p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+    return x >= 0 ? 1 - p : p;
+  }
+  function invNorm(p) { // Acklam's algorithm
+    if (p <= 0) return -Infinity;
+    if (p >= 1) return Infinity;
+    const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.3577518672690, -30.66479806614716, 2.506628277459239];
+    const b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
+    const c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+    const d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+    const pl = 0.02425;
+    let q, r;
+    if (p < pl) {
+      q = Math.sqrt(-2 * Math.log(p));
+      return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+    }
+    if (p > 1 - pl) {
+      q = Math.sqrt(-2 * Math.log(1 - p));
+      return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+    }
+    q = p - 0.5; r = q * q;
+    return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+  }
+  function tPdfStd(z, nu) { // pdf of the UNIT-VARIANCE standardised t
+    const c = Math.sqrt(nu / (nu - 2));
+    const x = z * c;
+    const lg = logGamma((nu + 1) / 2) - logGamma(nu / 2) - 0.5 * Math.log(nu * Math.PI);
+    return Math.exp(lg) * Math.pow(1 + x * x / nu, -(nu + 1) / 2) * c;
+  }
+  function skewDraw(rng, alpha) { // standardised skew-normal draw (mean 0, var 1)
+    const d = alpha / Math.sqrt(1 + alpha * alpha);
+    const z0 = gauss(rng), z1 = gauss(rng);
+    const x = d * Math.abs(z0) + Math.sqrt(1 - d * d) * z1;
+    const m = d * Math.sqrt(2 / Math.PI), s = Math.sqrt(1 - 2 * d * d / Math.PI);
+    return (x - m) / s;
+  }
+  function skewPdfStd(z, alpha) { // pdf of the standardised skew-normal
+    const d = alpha / Math.sqrt(1 + alpha * alpha);
+    const m = d * Math.sqrt(2 / Math.PI), s = Math.sqrt(1 - 2 * d * d / Math.PI);
+    const x = m + s * z;
+    return s * 2 * normPdf(x) * normCDF(alpha * x);
+  }
+  /* --- platform tab plumbing --- */
+  const platforms = {};
+  function registerPlatform(id, obj) { platforms[id] = { obj: obj, inited: false }; }
+  function openPlatform(id) {
+    document.querySelectorAll('.tabbar button[data-p]').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-p') === id);
+    });
+    document.querySelectorAll('.platform').forEach(function (p) {
+      p.classList.toggle('active', p.id === id);
+    });
+    const rec = platforms[id];
+    if (rec) {
+      if (!rec.inited) { rec.inited = true; rec.obj.init(); }
+      else if (rec.obj.redraw) { rec.obj.redraw(); }
+    }
+  }
+  function isActive(id) {
+    const el = document.getElementById(id);
+    return el && el.classList.contains('active');
+  }
+  return { mulberry32: mulberry32, gauss: gauss, tDraw: tDraw, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, drawHist: drawHist, stats: stats, fmt: fmt, logGamma: logGamma, normPdf: normPdf, normCDF: normCDF, invNorm: invNorm, tPdfStd: tPdfStd, skewDraw: skewDraw, skewPdfStd: skewPdfStd, registerPlatform: registerPlatform, openPlatform: openPlatform, isActive: isActive };
+})();
+
+/* ===== Accordions + tab clicks ===== */
+(function () {
+  'use strict';
+  document.querySelectorAll('.pcard').forEach(function (c) {
+    c.addEventListener('click', function () { c.classList.toggle('open'); });
+  });
+  document.querySelectorAll('.clinic > .head').forEach(function (h) {
+    h.addEventListener('click', function () { h.parentElement.classList.toggle('open'); });
+  });
+  document.querySelectorAll('.tabbar button[data-p]').forEach(function (b) {
+    b.addEventListener('click', function () { window.MANG.openPlatform(b.getAttribute('data-p')); });
+  });
 })();
 </script>
 
 <script>
-/* ===== SECTION A: Price → Returns lab ===== */
+/* ===== Platform 1: Price → Returns lab ===== */
 (function () {
   'use strict';
   const M = window.MANG;
   const $ = id => document.getElementById(id);
   let seed = 20741;
   let rets = [], prices = [];
+
+  function labels() {
+    $('muV').textContent = parseFloat($('mu').value).toFixed(3);
+    $('sigV').textContent = parseFloat($('sig').value).toFixed(2);
+    $('dfV').textContent = $('df').value;
+    $('nV').textContent = $('nobs').value;
+  }
 
   function generate() {
     const mu = parseFloat($('mu').value);
@@ -307,24 +650,20 @@ window.MANG = (function () {
   function redraw() {
     const n = rets.length;
     if (!n) return;
-    // price chart
     let pc = M.fitCanvas($('priceC'));
     let lo = Infinity, hi = -Infinity;
     for (const p of prices) { if (p < lo) lo = p; if (p > hi) hi = p; }
     const fp = M.frame(pc.ctx, pc.W, pc.H, 0, n, lo * 0.98, hi * 1.02, { title: 'Simulated price path  P(t), P(0)=100   (x = day)' });
     const xs = prices.map((_, i) => i);
     M.drawLine(pc.ctx, fp, xs, prices, '#38bdf8', 2);
-    // returns chart
     const rc = M.fitCanvas($('retC'));
     let mx = 0; for (const r of rets) if (Math.abs(r) > mx) mx = Math.abs(r);
     const fr = M.frame(rc.ctx, rc.W, rc.H, 0, n, -mx * 1.1, mx * 1.1, { title: 'Daily returns r(t) %' });
     rc.ctx.strokeStyle = '#475569';
     rc.ctx.beginPath(); rc.ctx.moveTo(fr.X(0), fr.Y(0)); rc.ctx.lineTo(fr.X(n), fr.Y(0)); rc.ctx.stroke();
     M.drawLine(rc.ctx, fr, rets.map((_, i) => i), rets, '#38bdf8', 1);
-    // histogram
     const hc = M.fitCanvas($('histC'));
     M.drawHist(hc.ctx, hc.W, hc.H, rets, 45, { normal: true, title: 'Histogram of returns + fitted normal curve (gold)' });
-    // stats
     const st = M.stats(rets);
     $('stMean').textContent = st.mean.toFixed(3);
     $('stSd').textContent = st.sd.toFixed(3);
@@ -335,7 +674,6 @@ window.MANG = (function () {
     const ver = $('stVer');
     ver.textContent = rej ? 'REJECT normality' : 'Cannot reject';
     ver.className = 'v ' + (rej ? 'bad' : 'good');
-    // notice
     const dist = $('dist').value, df = parseInt($('df').value, 10);
     let msg = '<b>What to notice:</b> These returns are <b>iid</b> — notice there is <em>no volatility clustering</em>: ' +
       'big moves are not followed by more big moves, unlike real market data. ';
@@ -353,18 +691,499 @@ window.MANG = (function () {
     $('simNotice').innerHTML = msg;
   }
 
-  ['mu', 'sig', 'dist', 'df', 'nobs'].forEach(id => {
-    $(id).addEventListener('input', function () {
-      $('muV').textContent = parseFloat($('mu').value).toFixed(3);
-      $('sigV').textContent = parseFloat($('sig').value).toFixed(2);
-      $('dfV').textContent = $('df').value;
-      $('nV').textContent = $('nobs').value;
-      generate();
+  const EXPS = [
+    function () { $('dist').value = 't'; $('df').value = 3; $('sig').value = 5; $('mu').value = 0; $('nobs').value = 1250; },
+    function () { $('dist').value = 'normal'; $('sig').value = 1; $('mu').value = 0.03; $('nobs').value = 250; },
+    function () { $('dist').value = 't'; $('df').value = 30; $('sig').value = 1; $('nobs').value = 1000; },
+    function () { $('dist').value = 'normal'; $('mu').value = 0.05; $('sig').value = 3; $('nobs').value = 250; }
+  ];
+
+  function init() {
+    ['mu', 'sig', 'dist', 'df', 'nobs'].forEach(id => {
+      $(id).addEventListener('input', function () { labels(); generate(); });
     });
+    $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
+    document.querySelectorAll('#p1 .setit').forEach(function (b) {
+      b.addEventListener('click', function () {
+        EXPS[parseInt(b.getAttribute('data-x'), 10)]();
+        labels();
+        seed = (Math.random() * 1e9) >>> 0;
+        generate();
+      });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p1')) redraw(); });
+    labels();
+    generate();
+  }
+  M.registerPlatform('p1', { init: init, redraw: redraw });
+})();
+</script>
+
+<script>
+/* ===== Platform 2: Distribution lab (densities + QQ) ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  let seed = 31415, sample = [];
+
+  function labels() {
+    $('df2V').textContent = $('df2').value;
+    $('sk2V').textContent = parseFloat($('sk2').value).toFixed(1);
+    $('n2V').textContent = $('n2').value;
+  }
+
+  function generate() {
+    const dist = $('dist2').value;
+    const df = parseInt($('df2').value, 10);
+    const al = parseFloat($('sk2').value);
+    const n = parseInt($('n2').value, 10);
+    const rng = M.mulberry32(seed);
+    sample = new Array(n);
+    for (let i = 0; i < n; i++) {
+      if (dist === 't') sample[i] = M.tDraw(rng, df);
+      else if (dist === 'skew') sample[i] = M.skewDraw(rng, al);
+      else sample[i] = M.gauss(rng);
+    }
+    redraw();
+  }
+
+  function pdfChosen(z) {
+    const dist = $('dist2').value;
+    if (dist === 't') return M.tPdfStd(z, parseInt($('df2').value, 10));
+    if (dist === 'skew') return M.skewPdfStd(z, parseFloat($('sk2').value));
+    return M.normPdf(z);
+  }
+
+  function redraw() {
+    if (!sample.length) return;
+    const n = sample.length;
+    // --- density overlay ---
+    const dc = M.fitCanvas($('densC2'));
+    const LO = -5, HI = 5, NB = 60, bw = (HI - LO) / NB;
+    const counts = new Array(NB).fill(0);
+    let inRange = 0;
+    for (const v of sample) {
+      if (v >= LO && v < HI) { counts[Math.floor((v - LO) / bw)]++; inRange++; }
+    }
+    let ymax = 0;
+    const grid = [];
+    for (let i = 0; i <= 200; i++) {
+      const z = LO + (HI - LO) * i / 200;
+      const p1 = M.normPdf(z), p2 = pdfChosen(z);
+      grid.push({ z: z, pn: p1, pc: p2 });
+      if (p1 > ymax) ymax = p1;
+      if (p2 > ymax) ymax = p2;
+    }
+    for (let b = 0; b < NB; b++) { const d = counts[b] / (n * bw); if (d > ymax) ymax = d; }
+    const f = M.frame(dc.ctx, dc.W, dc.H, LO, HI, 0, ymax * 1.1, { title: 'Theoretical density: chosen (blue) vs standard normal (gold); bars = your sample' });
+    dc.ctx.fillStyle = 'rgba(56,189,248,0.25)';
+    for (let b = 0; b < NB; b++) {
+      const d = counts[b] / (n * bw);
+      const x0 = f.X(LO + b * bw), x1 = f.X(LO + (b + 1) * bw);
+      dc.ctx.fillRect(x0 + 0.5, f.Y(d), Math.max(1, x1 - x0 - 1), f.Y(0) - f.Y(d));
+    }
+    M.drawLine(dc.ctx, f, grid.map(g => g.z), grid.map(g => g.pn), '#fbbf24', 2);
+    M.drawLine(dc.ctx, f, grid.map(g => g.z), grid.map(g => g.pc), '#38bdf8', 2);
+    // --- QQ plot ---
+    const qc = M.fitCanvas($('qqC2'));
+    const st = M.stats(sample);
+    const sorted = sample.slice().sort(function (a, b) { return a - b; });
+    const zs = sorted.map(function (v) { return (v - st.mean) / st.sd; });
+    const idx = [];
+    const step = Math.max(1, Math.floor(n / 600));
+    for (let i = 0; i < n; i += step) idx.push(i);
+    if (idx[idx.length - 1] !== n - 1) idx.push(n - 1);
+    const tq = idx.map(function (i) { return M.invNorm((i + 0.5) / n); });
+    const sq = idx.map(function (i) { return zs[i]; });
+    let lim = 0;
+    for (const v of tq) if (Math.abs(v) > lim) lim = Math.abs(v);
+    for (const v of sq) if (Math.abs(v) > lim) lim = Math.abs(v);
+    lim *= 1.08;
+    const fq = M.frame(qc.ctx, qc.W, qc.H, -lim, lim, -lim, lim, { title: 'QQ plot: sample quantiles (y) vs normal quantiles (x); gold = 45° line' });
+    M.drawLine(qc.ctx, fq, [-lim, lim], [-lim, lim], '#fbbf24', 2);
+    M.drawDots(qc.ctx, fq, tq, sq, '#38bdf8', 2);
+    // --- stats ---
+    $('p2Sk').textContent = st.skew.toFixed(3);
+    $('p2Ku').textContent = st.exk.toFixed(3);
+    $('p2Jb').textContent = st.jb.toFixed(2);
+    const rej = st.jb > 5.99;
+    $('p2Ver').textContent = rej ? 'REJECT normality' : 'Cannot reject';
+    $('p2Ver').className = 'v ' + (rej ? 'bad' : 'good');
+    // --- notice ---
+    const dist = $('dist2').value;
+    let msg = '<b>What to notice:</b> ';
+    if (dist === 't') {
+      const df = parseInt($('df2').value, 10);
+      msg += 'The standardised t(' + df + ') has the SAME variance as the normal — the difference is all in the tails. On the QQ plot the sample bends into an <b>S-shape</b>: the lowest quantiles sit below the line and the highest above it, because extreme draws are more extreme than the normal predicts. Theoretical K = ' + (df > 4 ? (6 / (df - 4)).toFixed(2) : '∞') + '; your sample gave K = ' + st.exk.toFixed(2) + '.';
+    } else if (dist === 'skew') {
+      const al = parseFloat($('sk2').value);
+      const d = al / Math.sqrt(1 + al * al);
+      const m1 = d * Math.sqrt(2 / Math.PI);
+      const theoS = (4 - Math.PI) / 2 * Math.pow(m1, 3) / Math.pow(1 - m1 * m1, 1.5);
+      msg += 'Skew-normal with α = ' + al.toFixed(1) + ': theoretical S = ' + theoS.toFixed(2) + ' (it can never exceed |0.995| — real crash skew comes mostly from fat tails + clustering, not from a skewed iid density). On the QQ plot only <b>one tail</b> peels off the line — the ' + (al < 0 ? 'left (crashes)' : 'right (melt-ups)') + '.';
+    } else {
+      msg += 'The blue and gold densities coincide and the QQ dots ride the 45° line, wobbling only at the extreme ends where quantiles are estimated from a handful of observations. Genuinely normal data still produces ragged tails — don’t over-read the last 2–3 dots.';
+    }
+    $('ntc2').innerHTML = msg;
+  }
+
+  const EXPS = [
+    function () { $('dist2').value = 't'; $('df2').value = 3; $('n2').value = 2000; },
+    function () { $('dist2').value = 'skew'; $('sk2').value = -4; $('n2').value = 2000; },
+    function () { $('dist2').value = 't'; $('df2').value = 30; $('n2').value = 2000; },
+    function () { $('dist2').value = 't'; $('df2').value = 5; $('n2').value = 200; }
+  ];
+
+  function init() {
+    ['dist2', 'df2', 'sk2', 'n2'].forEach(id => {
+      $(id).addEventListener('input', function () { labels(); generate(); });
+    });
+    $('regen2').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
+    document.querySelectorAll('#p2 .setit').forEach(function (b) {
+      b.addEventListener('click', function () {
+        EXPS[parseInt(b.getAttribute('data-x'), 10)]();
+        labels();
+        seed = (Math.random() * 1e9) >>> 0;
+        generate();
+      });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p2')) redraw(); });
+    labels();
+    generate();
+  }
+  M.registerPlatform('p2', { init: init, redraw: redraw });
+})();
+</script>
+
+<script>
+/* ===== Platform 3: JB testing bench (Monte Carlo) ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const REPS = 500;
+  let history = [], running = false;
+
+  function labels() {
+    $('df3V').textContent = $('df3').value;
+    $('n3V').textContent = $('n3').value;
+  }
+
+  function drawBars() {
+    const cv = M.fitCanvas($('rejC3'));
+    const ctx = cv.ctx, W = cv.W, H = cv.H;
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(0, 0, W, H);
+    const padL = 46, padR = 10, padT = 24, padB = 42;
+    const Y = v => H - padB - v * (H - padT - padB);
+    ctx.font = '11px Segoe UI, sans-serif';
+    for (let i = 0; i <= 4; i++) {
+      const v = i / 4;
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padL, Y(v)); ctx.lineTo(W - padR, Y(v)); ctx.stroke();
+      ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'right';
+      ctx.fillText((v * 100).toFixed(0) + '%', padL - 6, Y(v) + 4);
+    }
+    ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'left';
+    ctx.fillText('JB rejection rate over ' + REPS + ' Monte-Carlo replications (5% test)', padL, 14);
+    // 5% nominal line
+    ctx.strokeStyle = '#fbbf24'; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(padL, Y(0.05)); ctx.lineTo(W - padR, Y(0.05)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'left';
+    ctx.fillText('5%', W - padR - 22, Y(0.05) - 4);
+    const NSLOT = 8;
+    const slotW = (W - padL - padR) / NSLOT;
+    history.forEach(function (h, i) {
+      const cx = padL + slotW * (i + 0.5);
+      const bw = slotW * 0.5;
+      ctx.fillStyle = h.isNull ? '#34d399' : '#38bdf8';
+      ctx.fillRect(cx - bw / 2, Y(h.rate), bw, Y(0) - Y(h.rate));
+      ctx.fillStyle = '#e2e8f0'; ctx.textAlign = 'center';
+      ctx.fillText((h.rate * 100).toFixed(1) + '%', cx, Y(h.rate) - 5);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(h.lab1, cx, H - padB + 14);
+      ctx.fillText(h.lab2, cx, H - padB + 27);
+    });
+  }
+
+  function run() {
+    if (running) return;
+    running = true;
+    $('run3').disabled = true;
+    const dist = $('dist3').value;
+    const df = parseInt($('df3').value, 10);
+    const n = parseInt($('n3').value, 10);
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    let done = 0, rej = 0;
+    const buf = new Array(n);
+    function chunk() {
+      const lim = Math.min(done + 25, REPS);
+      for (; done < lim; done++) {
+        for (let i = 0; i < n; i++) buf[i] = (dist === 't') ? M.tDraw(rng, df) : M.gauss(rng);
+        if (M.stats(buf).jb > 5.99) rej++;
+      }
+      $('prog3').textContent = done + '/' + REPS;
+      if (done < REPS) { setTimeout(chunk, 0); return; }
+      running = false;
+      $('run3').disabled = false;
+      $('prog3').textContent = 'done';
+      const rate = rej / REPS;
+      history.push({
+        rate: rate, isNull: dist === 'normal',
+        lab1: dist === 'normal' ? 'N(0,1)' : 't(' + df + ')',
+        lab2: 'n=' + n
+      });
+      if (history.length > 8) history.shift();
+      $('cnt3').textContent = history.length;
+      drawBars();
+      let msg = '<b>What to notice:</b> ';
+      if (dist === 'normal') {
+        msg += 'H₀ was TRUE, so this ' + (rate * 100).toFixed(1) + '% is the test’s actual <b>size</b>. With 500 reps the Monte-Carlo standard error is √(0.05·0.95/500) ≈ 1pp, so anything in roughly 3–7% is consistent with the nominal 5%. In very small samples (try n = 25) JB’s size drifts well away from 5% — the χ²(2) approximation hasn’t kicked in yet.';
+      } else {
+        msg += 'H₀ was FALSE (true dist = t(' + df + ')), so ' + (rate * 100).toFixed(1) + '% is the test’s <b>power</b>. Power grows with n (JB = n/6·(S²+K²/4) scales linearly in n) and with the distance from normality (smaller ν). Compare bars: same ν at different n, or same n at different ν.';
+      }
+      $('ntc3').innerHTML = msg;
+    }
+    chunk();
+  }
+
+  const EXPS = [
+    function () { $('dist3').value = 'normal'; $('n3').value = 100; },
+    function () { $('dist3').value = 't'; $('df3').value = 5; $('n3').value = 50; },
+    function () { $('dist3').value = 't'; $('df3').value = 5; $('n3').value = 500; },
+    function () { $('dist3').value = 't'; $('df3').value = 25; $('n3').value = 2000; }
+  ];
+
+  function init() {
+    ['df3', 'n3'].forEach(id => $(id).addEventListener('input', labels));
+    $('run3').addEventListener('click', run);
+    $('clear3').addEventListener('click', function () {
+      history = []; $('cnt3').textContent = 0; drawBars();
+    });
+    document.querySelectorAll('#p3 .setit').forEach(function (b) {
+      b.addEventListener('click', function () {
+        EXPS[parseInt(b.getAttribute('data-x'), 10)]();
+        labels();
+        run();
+      });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p3')) drawBars(); });
+    labels();
+    drawBars();
+  }
+  M.registerPlatform('p3', { init: init, redraw: drawBars });
+})();
+</script>
+
+<script>
+/* ===== Platform 4: Market profiles ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const N = 1000;
+  const PROFILES = {
+    eq: { name: '📊 Calm large-cap equity', unit: '%', sd: 1.0, nu: 6, a: 0.08, b: 0.89, ann: 252 },
+    fx: { name: '💱 FX major pair', unit: '%', sd: 0.6, nu: 10, a: 0.05, b: 0.92, ann: 252 },
+    cr: { name: '🪙 Crypto', unit: '%', sd: 5.0, nu: 4, a: 0.15, b: 0.82, ann: 365 },
+    bd: { name: '🏦 Bond yield changes', unit: 'bp', sd: 5.0, nu: 6, a: 0.10, b: 0.85, ann: 252 }
+  };
+  let results = {}, lastKey = null, lastSeries = null;
+
+  function genProfile(k) {
+    const p = PROFILES[k];
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const omega = p.sd * p.sd * (1 - p.a - p.b);
+    let s2 = p.sd * p.sd;
+    const r = new Array(N);
+    for (let t = 0; t < N; t++) {
+      const e = Math.sqrt(s2) * M.tDraw(rng, p.nu);
+      r[t] = e;
+      s2 = omega + p.a * e * e + p.b * s2; // GARCH(1,1)
+    }
+    const st = M.stats(r);
+    results[k] = { st: st, p: p };
+    lastKey = k; lastSeries = r;
+    redraw();
+  }
+
+  function redraw() {
+    if (lastSeries) {
+      const p = PROFILES[lastKey];
+      const sc = M.fitCanvas($('mpSer'));
+      let mx = 0; for (const v of lastSeries) if (Math.abs(v) > mx) mx = Math.abs(v);
+      const f = M.frame(sc.ctx, sc.W, sc.H, 0, N, -mx * 1.1, mx * 1.1, { title: p.name + ' — daily changes (' + p.unit + ')' });
+      sc.ctx.strokeStyle = '#475569';
+      sc.ctx.beginPath(); sc.ctx.moveTo(f.X(0), f.Y(0)); sc.ctx.lineTo(f.X(N), f.Y(0)); sc.ctx.stroke();
+      M.drawLine(sc.ctx, f, lastSeries.map((_, i) => i), lastSeries, '#38bdf8', 1);
+      const hc = M.fitCanvas($('mpHist'));
+      M.drawHist(hc.ctx, hc.W, hc.H, lastSeries, 50, { normal: true, title: 'Histogram vs fitted normal (gold)' });
+    }
+    // table
+    let html = '<table style="border-collapse:collapse;width:100%;font:.85rem Consolas,monospace;margin:10px 0">' +
+      '<tr><th style="border:1px solid #334155;padding:5px 8px;background:var(--panel2);color:var(--muted);text-align:left">profile</th>' +
+      ['σ̂ daily', 'ann. vol', 'S', 'K', 'JB', 'verdict'].map(h => '<th style="border:1px solid #334155;padding:5px 8px;background:var(--panel2);color:var(--muted);text-align:right">' + h + '</th>').join('') + '</tr>';
+    ['eq', 'fx', 'cr', 'bd'].forEach(function (k) {
+      const r = results[k];
+      const nm = PROFILES[k].name + (k === lastKey ? ' ◀' : '');
+      if (!r) {
+        html += '<tr><td style="border:1px solid #334155;padding:5px 8px">' + PROFILES[k].name + '</td><td colspan="6" style="border:1px solid #334155;padding:5px 8px;color:var(--muted);text-align:right">not generated yet</td></tr>';
+        return;
+      }
+      const annv = r.st.sd * Math.sqrt(r.p.ann);
+      const rej = r.st.jb > 5.99;
+      const cells = [
+        r.st.sd.toFixed(2) + ' ' + r.p.unit,
+        annv.toFixed(0) + ' ' + r.p.unit + ' (×√' + r.p.ann + ')',
+        r.st.skew.toFixed(2),
+        r.st.exk.toFixed(2),
+        r.st.jb.toFixed(0),
+        rej ? 'REJECT normal' : 'cannot reject'
+      ];
+      html += '<tr><td style="border:1px solid #334155;padding:5px 8px">' + nm + '</td>' +
+        cells.map(function (c, i) {
+          const col = (i === 5) ? (rej ? 'color:var(--bad)' : 'color:var(--good)') : '';
+          return '<td style="border:1px solid #334155;padding:5px 8px;text-align:right;' + col + '">' + c + '</td>';
+        }).join('') + '</tr>';
+    });
+    html += '</table>';
+    $('mpTable').innerHTML = html;
+    if (lastKey) {
+      const r = results[lastKey], p = PROFILES[lastKey];
+      $('ntc4').innerHTML = '<b>What to notice:</b> ' + p.name + ' was generated with σ = ' + p.sd + p.unit + '/day, t(ν=' + p.nu +
+        ') shocks and GARCH persistence α+β = ' + (p.a + p.b).toFixed(2) +
+        '. The sample shows K = ' + r.st.exk.toFixed(2) + ' — fat tails come from BOTH the t-shocks and the volatility clustering. ' +
+        (lastKey === 'cr' ? 'Crypto trades every day, so the table annualises by √365, not √252.' :
+          lastKey === 'bd' ? 'Yield changes are in basis points — a 5bp daily sd is ~80bp a year. Never compare raw σ across different units.' :
+            'Generate the other profiles and compare the K column across asset classes.');
+    }
+  }
+
+  function init() {
+    document.querySelectorAll('#p4 .prof').forEach(function (b) {
+      b.addEventListener('click', function () { genProfile(b.getAttribute('data-k')); });
+    });
+    const EXPS = [
+      function () { genProfile('eq'); genProfile('fx'); genProfile('cr'); genProfile('bd'); },
+      function () { genProfile('cr'); },
+      function () { genProfile('eq'); },
+      function () { genProfile('bd'); }
+    ];
+    document.querySelectorAll('#p4 .setit').forEach(function (b) {
+      b.addEventListener('click', function () { EXPS[parseInt(b.getAttribute('data-x'), 10)](); });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p4')) redraw(); });
+    redraw();
+  }
+  M.registerPlatform('p4', { init: init, redraw: redraw });
+  // open the first platform now everything is registered
+  M.openPlatform('p1');
+})();
+</script>
+
+<script>
+/* ===== Problems clinic demos ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+
+  // 1: JB size at n=30
+  $('c1btn').addEventListener('click', function () {
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const REPS = 300, n = 30;
+    let rej = 0;
+    const buf = new Array(n);
+    for (let r = 0; r < REPS; r++) {
+      for (let i = 0; i < n; i++) buf[i] = M.gauss(rng);
+      if (M.stats(buf).jb > 5.99) rej++;
+    }
+    const rate = rej / REPS;
+    const cv = $('c1cv'); cv.style.display = 'block';
+    const c = M.fitCanvas(cv);
+    const f = M.frame(c.ctx, c.W, c.H, 0, 1, 0, 0.12, { title: 'Nominal 5% vs actual rejection rate (normal data, n = 30)' });
+    c.ctx.fillStyle = '#fbbf24';
+    c.ctx.fillRect(f.X(0.15), f.Y(0.05), f.X(0.45) - f.X(0.15), f.Y(0) - f.Y(0.05));
+    c.ctx.fillStyle = '#38bdf8';
+    c.ctx.fillRect(f.X(0.55), f.Y(rate), f.X(0.85) - f.X(0.55), f.Y(0) - f.Y(rate));
+    c.ctx.fillStyle = '#e2e8f0'; c.ctx.font = '12px Segoe UI, sans-serif'; c.ctx.textAlign = 'center';
+    c.ctx.fillText('nominal 5%', f.X(0.3), f.Y(0.05) - 6);
+    c.ctx.fillText('actual ' + (rate * 100).toFixed(1) + '%', f.X(0.7), f.Y(rate) - 6);
+    $('c1out').textContent = 'With n = 30 the asymptotic χ²(2) critical value gives an actual size of ' + (rate * 100).toFixed(1) +
+      '% in this run (300 reps) — JB tends to under-reject in small samples, then suddenly over-rejects with mild skew. Either way: not the advertised 5%.';
   });
-  $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
-  window.addEventListener('resize', redraw);
-  generate();
+
+  // 2: log vs simple
+  $('c2btn').addEventListener('click', function () {
+    const cv = $('c2cv'); cv.style.display = 'block';
+    const c = M.fitCanvas(cv);
+    const f = M.frame(c.ctx, c.W, c.H, -0.6, 1.0, -1.2, 1.0, { title: 'r_log = ln(1+R) (blue) vs r_log = R approximation (gold)' });
+    const xs = [], ysL = [], ysR = [];
+    for (let i = 0; i <= 160; i++) {
+      const R = -0.6 + 1.6 * i / 160;
+      xs.push(R); ysL.push(Math.log(1 + R)); ysR.push(R);
+    }
+    M.drawLine(c.ctx, f, xs, ysR, '#fbbf24', 1.5);
+    M.drawLine(c.ctx, f, xs, ysL, '#38bdf8', 2);
+    c.ctx.fillStyle = '#e2e8f0'; c.ctx.font = '12px Segoe UI, sans-serif'; c.ctx.textAlign = 'left';
+    c.ctx.fillText('at R = −50%: ln(0.5) = −69.3%', f.X(-0.58), f.Y(-1.05));
+  });
+
+  // 3: ACF of squared returns, iid vs GARCH
+  $('c3btn').addEventListener('click', function () {
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const n = 1000;
+    const iid = new Array(n), gar = new Array(n);
+    let s2 = 1;
+    for (let t = 0; t < n; t++) {
+      iid[t] = M.gauss(rng);
+      const e = Math.sqrt(s2) * M.gauss(rng);
+      gar[t] = e;
+      s2 = 0.03 + 0.13 * e * e + 0.84 * s2;
+    }
+    function acf2(x, L) {
+      const sq = x.map(v => v * v);
+      let m = 0; for (const v of sq) m += v; m /= sq.length;
+      let v0 = 0; for (const v of sq) v0 += (v - m) * (v - m);
+      const out = [];
+      for (let l = 1; l <= L; l++) {
+        let s = 0;
+        for (let t = l; t < sq.length; t++) s += (sq[t] - m) * (sq[t - l] - m);
+        out.push(s / v0);
+      }
+      return out;
+    }
+    const L = 15, aI = acf2(iid, L), aG = acf2(gar, L);
+    const cv = $('c3cv'); cv.style.display = 'block';
+    const c = M.fitCanvas(cv);
+    const f = M.frame(c.ctx, c.W, c.H, 0, L + 1, -0.15, 0.5, { title: 'ACF of squared returns, lags 1–15 (dashed = ±1.96/√n)' });
+    const bnd = 1.96 / Math.sqrt(n);
+    c.ctx.strokeStyle = '#94a3b8'; c.ctx.setLineDash([4, 4]);
+    c.ctx.beginPath(); c.ctx.moveTo(f.X(0), f.Y(bnd)); c.ctx.lineTo(f.X(L + 1), f.Y(bnd)); c.ctx.stroke();
+    c.ctx.beginPath(); c.ctx.moveTo(f.X(0), f.Y(-bnd)); c.ctx.lineTo(f.X(L + 1), f.Y(-bnd)); c.ctx.stroke();
+    c.ctx.setLineDash([]);
+    for (let l = 1; l <= L; l++) {
+      c.ctx.fillStyle = '#fbbf24';
+      c.ctx.fillRect(f.X(l) - 6, Math.min(f.Y(0), f.Y(aI[l - 1])), 5, Math.abs(f.Y(aI[l - 1]) - f.Y(0)));
+      c.ctx.fillStyle = '#38bdf8';
+      c.ctx.fillRect(f.X(l) + 1, Math.min(f.Y(0), f.Y(aG[l - 1])), 5, Math.abs(f.Y(aG[l - 1]) - f.Y(0)));
+    }
+  });
+
+  // 4: one outlier poisons K
+  $('c4btn').addEventListener('click', function () {
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const n = 250;
+    const base = [];
+    for (let i = 0; i < n; i++) base.push(M.gauss(rng)); // sigma 1%
+    const s0 = M.stats(base);
+    const withO = base.slice(); withO[100] = -20;
+    const s1 = M.stats(withO);
+    $('c4out').innerHTML = 'Clean 250 days: S = ' + s0.skew.toFixed(2) + ', K = ' + s0.exk.toFixed(2) + ', JB = ' + s0.jb.toFixed(1) +
+      ' (' + (s0.jb > 5.99 ? 'reject' : 'pass') + ').<br>Add ONE −20% day: S = <b>' + s1.skew.toFixed(2) + '</b>, K = <b>' + s1.exk.toFixed(2) +
+      '</b>, JB = <b>' + s1.jb.toFixed(0) + '</b> — one observation out of 250 owns the third and fourth moments. Always look at your largest |return| before trusting S and K.';
+  });
 })();
 </script>
 
@@ -519,6 +1338,16 @@ window.MANG = (function () {
       prompt: 'Plot a histogram of the returns with 50 bins.',
       py: { code: 'import matplotlib.pyplot as plt\nplt.___(ret.dropna(), bins=50)\nplt.show()', correct: 'hist', opts: ['hist', 'bar', 'histogram', 'plot_hist'], expl: 'plt.hist(data, bins=50); plt.bar() needs you to pre-compute the bins.' },
       r: { code: 'hist(ret, ___ = 50, col = "steelblue")', correct: 'breaks', opts: ['breaks', 'bins', 'n', 'nbreaks'], expl: 'Base-R hist() calls them "breaks", not "bins" (that one trips everyone up).' }
+    },
+    {
+      prompt: 'Aggregate daily prices to month-end and get monthly returns (check "aggregational Gaussianity").',
+      py: { code: "monthly = prices.resample('M').___()\nmret = monthly.pct_change()", correct: 'last', opts: ['last', 'mean', 'sum', 'max'], expl: 'Month-END price = .last(); averaging prices inside the month smooths artificially and induces spurious autocorrelation.' },
+      r: { code: 'library(xts)\nmonthly <- ___(prices_xts, last)\nmret <- diff(log(monthly))', correct: 'apply.monthly', opts: ['apply.monthly', 'to.daily', 'rollapply', 'aggregate.month'], expl: 'xts::apply.monthly(x, last) keeps the final observation of each month.' }
+    },
+    {
+      prompt: 'Draw a QQ-plot of returns against the normal — the tails tell the fat-tail story.',
+      py: { code: 'import statsmodels.api as sm\nsm.___(ret.dropna(), line="s")\nplt.show()', correct: 'qqplot', opts: ['qqplot', 'qq_plot', 'plot_qq', 'normplot'], expl: 'sm.qqplot(data, line="s") plots sample vs normal quantiles with a standardised reference line; fat tails peel away at both ends.' },
+      r: { code: '___(ret)\nqqline(ret, col = "red")', correct: 'qqnorm', opts: ['qqnorm', 'qqplot', 'qqtest', 'normqq'], expl: 'Base R: qqnorm() draws the points, qqline() adds the reference line through the quartiles.' }
     }
   ];
   let lang = 'py';

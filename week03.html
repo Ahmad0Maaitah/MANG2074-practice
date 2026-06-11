@@ -24,6 +24,8 @@ button:disabled{opacity:.45;cursor:default;filter:none}
 button.alt{background:var(--panel2);color:var(--text);border:1px solid #475569}
 button.choice{background:var(--panel2);color:var(--text);border:1px solid #475569;margin:4px 6px 4px 0}
 button.choice:hover{border-color:var(--accent)}
+button.tog{background:var(--panel2);color:var(--text);border:1px solid #475569;margin:4px 6px 4px 0}
+button.tog.on{background:var(--accent);color:#0f172a;border-color:var(--accent)}
 .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px 18px;margin:6px 0 16px}
 .ctl{background:var(--panel2);border-radius:10px;padding:10px 14px}
 .ctl label{display:block;font-size:.88rem;color:var(--muted);margin-bottom:4px}
@@ -63,6 +65,33 @@ table.reg th:first-child,table.reg td:first-child{text-align:left}
 table.reg th{background:var(--panel2);color:var(--muted)}
 table.reg td.sig{color:var(--good);font-weight:700}
 table.reg td.insig{color:var(--bad)}
+.rssbar{height:20px;border-radius:6px;background:var(--bg);overflow:hidden;margin:3px 0 10px}
+.rssbar>div{height:100%;border-radius:6px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.pcard{background:var(--panel2);border-radius:10px;padding:12px 16px;cursor:pointer;border:1px solid #334155}
+.pcard:hover{border-color:var(--accent)}
+.pcard .sym{font-weight:700;color:var(--accent2);font-size:1.05rem}
+.pcard .one{color:var(--muted);font-size:.9rem}
+.pcard .body{display:none;font-size:.9rem;margin-top:8px;border-top:1px solid #334155;padding-top:8px}
+.pcard.open .body{display:block}
+.pcard .body p{margin:6px 0}
+.lbl{color:var(--accent);font-weight:600}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tabbar button{background:var(--panel2);color:var(--text);border:1px solid #334155;padding:8px 14px;border-radius:8px;cursor:pointer;font:600 .9rem var(--font)}
+.tabbar button.active{background:var(--accent);color:#0f172a;font-weight:600}
+.platform{display:none}
+.platform.active{display:block}
+.xp{background:var(--panel2);border-radius:10px;padding:12px 16px;margin-top:14px;font-size:.93rem}
+.xp ol{margin:6px 0 0;padding-left:20px}
+.xp li{margin:8px 0}
+button.setit{padding:3px 10px;font-size:.8rem;margin-left:8px;background:var(--accent2)}
+.clinic{border:1px solid #334155;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.clinic>.head{padding:10px 16px;cursor:pointer;background:var(--panel2);font-weight:600;font-size:.97rem}
+.clinic>.head:hover{color:var(--accent)}
+.clinic>.body{display:none;padding:12px 16px;font-size:.93rem}
+.clinic.open>.body{display:block}
+.clinic .body p{margin:6px 0}
+canvas.mini{height:160px}
 footer{max-width:1000px;margin:0 auto;padding:18px 16px 34px;color:var(--muted);font-size:.9rem;text-align:center}
 footer .nav{display:flex;justify-content:space-between;margin-bottom:10px}
 footer a{color:var(--accent);text-decoration:none}
@@ -78,13 +107,104 @@ footer a:hover{text-decoration:underline}
 <main>
 <div class="intro">
   Add more regressors and R² always goes up — even when the “factors” are pure noise. This week you stuff a kitchen-sink
-  regression with junk, watch adjusted R² and the F-test fight back, then prove you can read a regression output table
-  under pressure in “Significant or Spurious?”.
+  regression with junk, dissect the F-statistic, watch multicollinearity stretch your estimates along a ridge, and build
+  model specifications against a known truth. Then the clinic, the “Significant or Spurious?” game, and the code.
 </div>
 
-<!-- ============ SECTION A: SIMULATION ============ -->
-<section id="sim">
-<h2>🔬 Simulation — The kitchen-sink regression</h2>
+<!-- ============ PARAMETERS & CONCEPTS ============ -->
+<section id="params">
+<h2>📚 Parameters &amp; concepts</h2>
+<p style="color:var(--muted);font-size:.93rem;margin-top:0">Click a card to expand. The model is y = β₀ + β₁x₁ + … + β<sub>k</sub>x<sub>k</sub> + u.</p>
+<div class="pgrid">
+
+<div class="pcard"><div class="sym">k — number of regressors</div><div class="one">How many explanatory variables you put in (excluding the constant).</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the dimensionality of your model. Each regressor spends one degree of freedom of your data.</p>
+<p><span class="lbl">Formula:</span> residual df = n − k − 1; every t-test and the F-test reference it.</p>
+<p><span class="lbl">Typical values:</span> asset-pricing models: 1 (CAPM) to 5–6 (Fama–French + momentum); corporate-finance panels: 5–15 controls.</p>
+<p><span class="lbl">At the extremes:</span> k = 0 — just the mean; k → n−1 — perfect "fit" with zero residual df, explaining nothing about the future; the academic "factor zoo" now exceeds 400 published factors.</p>
+<p><span class="lbl">Estimation problems:</span> every extra regressor inflates the variance of the others (especially if correlated) and invites data mining — see the clinic.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">R² — coefficient of determination</div><div class="one">Share of variance "explained" — and a number that can only go up.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the fraction of Var(y) reproduced by the fitted values.</p>
+<p><span class="lbl">Formula:</span> R² = 1 − RSS/TSS. Mechanically non-decreasing in k.</p>
+<p><span class="lbl">Typical values:</span> daily stock returns on factors: 0.1–0.4; macro quarterly regressions: 0.6–0.9; anything near 1 with trending series = spurious (Week 2 clinic).</p>
+<p><span class="lbl">At the extremes:</span> R² = 1 ⇔ y is an exact linear combination of the regressors (or you included y itself by accident — it happens); R² = 0 ⇔ slopes all zero.</p>
+<p><span class="lbl">Estimation problems:</span> useless for comparing models with different k or different y transformations; maximising it selects junk.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">Adjusted R² — R̄²</div><div class="one">R² with a penalty for wasted degrees of freedom.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> rises only if a new regressor pulls its weight (|t| &gt; 1, roughly).</p>
+<p><span class="lbl">Formula:</span> R̄² = 1 − (RSS/(n−k−1))/(TSS/(n−1)).</p>
+<p><span class="lbl">Typical values:</span> a whisker below R²; the gap widens as k grows relative to n.</p>
+<p><span class="lbl">At the extremes:</span> can go NEGATIVE — your model fits worse than a horizontal line once df costs are billed; equals R² only when k = 0.</p>
+<p><span class="lbl">Estimation problems:</span> a soft penalty — it still favours slightly-overfit models; AIC/BIC punish harder.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">F — joint test statistic</div><div class="one">"Do these m restrictions cost a suspicious amount of fit?"</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> compares the restricted model's RSS with the unrestricted one's — the price of imposing H₀, per restriction, in units of residual variance.</p>
+<p><span class="lbl">Formula:</span> F = [(RRSS − URSS)/m] ÷ [URSS/(n−k−1)] ~ F(m, n−k−1) under H₀.</p>
+<p><span class="lbl">Typical values:</span> 5% critical values: F(1,100) ≈ 3.94, F(5,100) ≈ 2.31, F(10,100) ≈ 1.93 — more restrictions ⇒ lower bar per restriction.</p>
+<p><span class="lbl">At the extremes:</span> F &lt; 1 — the restrictions barely cost anything; F with m = 1 equals t² for the same hypothesis; the "overall" F tests all slopes = 0 at once.</p>
+<p><span class="lbl">Estimation problems:</span> assumes homoscedastic, uncorrelated errors — with financial data use robust (Wald) versions or the conclusion can be pure artefact.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">m — number of restrictions</div><div class="one">How many separate "=" signs your hypothesis contains.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the count of independent constraints under test — the numerator df of the F.</p>
+<p><span class="lbl">Formula:</span> H₀: β₂ = β₃ = 0 is m = 2; H₀: β₂ + β₃ = 1 is m = 1 (one equation, two coefficients!).</p>
+<p><span class="lbl">Typical values:</span> 1 (a t-test in disguise) to k (the overall F-test).</p>
+<p><span class="lbl">At the extremes:</span> the same total RSS gap spread over more restrictions gives a SMALLER F — a genuine effect can hide inside a big sloppy joint test.</p>
+<p><span class="lbl">Estimation problems:</span> counting m wrong is the classic exam error: "β₂ = β₃ = 0" (m=2) vs "β₂ = β₃" (m=1) vs "β₂ + β₃ = 0" (m=1, different meaning again).</p>
+</div></div>
+
+<div class="pcard"><div class="sym">VIF — variance inflation factor</div><div class="one">How much multicollinearity inflates a coefficient's variance.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> the multiplier on Var(β̂ⱼ) caused by xⱼ being predictable from the other regressors.</p>
+<p><span class="lbl">Formula:</span> VIFⱼ = 1/(1−R²ⱼ), R²ⱼ from regressing xⱼ on all the other x's. SE inflates by √VIF.</p>
+<p><span class="lbl">Typical values:</span> below 5 comfortable; 10+ is the standard alarm; size and book-to-market factors typically 1.5–3.</p>
+<p><span class="lbl">At the extremes:</span> ρ = 0.95 between two regressors ⇒ VIF ≈ 10.3; ρ = 0.99 ⇒ VIF = 50.3; perfect collinearity ⇒ VIF = ∞ and (X′X) is singular — software refuses or silently drops a column.</p>
+<p><span class="lbl">Estimation problems:</span> high VIF ⇒ huge SEs, sign flips between samples, but the model's FORECASTS and the SUM of the twin coefficients stay fine — see Platform 3.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">t vs F — one knife, one net</div><div class="one">t tests a single coefficient; F tests a team of them jointly.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> t answers "does xⱼ matter, given everything else?"; F answers "does this GROUP matter at all?". They can disagree — legitimately.</p>
+<p><span class="lbl">Formula:</span> for m = 1, F = t²; otherwise F pools the joint evidence including the covariances between estimates.</p>
+<p><span class="lbl">Typical values:</span> under multicollinearity: all individual |t| &lt; 2 yet joint F strongly significant — the group matters, the data just can't say which member.</p>
+<p><span class="lbl">At the extremes:</span> the reverse (one big t, insignificant joint F) signals m is too big — significance diluted across irrelevant restrictions.</p>
+<p><span class="lbl">Estimation problems:</span> dropping variables one-by-one on t-ratios (general-to-specific) can dismantle a jointly significant block — always F-test the block before deleting it.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">AIC / BIC — information criteria</div><div class="one">Fit minus a fine for complexity; lower is better.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> model-selection scores trading off RSS against the number of parameters — usable across non-nested models, unlike F-tests.</p>
+<p><span class="lbl">Formula:</span> AIC = n·ln(RSS/n) + 2K; BIC = n·ln(RSS/n) + K·ln(n), K = parameters incl. constant.</p>
+<p><span class="lbl">Typical values:</span> only DIFFERENCES matter; the absolute level is meaningless. ΔAIC &gt; 2 between models is conventionally "real".</p>
+<p><span class="lbl">At the extremes:</span> ln(n) &gt; 2 once n ≥ 8, so BIC penalises harder and picks SMALLER models than AIC, essentially always; AIC tends to overselect.</p>
+<p><span class="lbl">Estimation problems:</span> comparing AICs across different y's (levels vs logs) is meaningless; both criteria still assume you brought the true model to the party.</p>
+</div></div>
+
+</div>
+</section>
+
+<!-- ============ PLATFORMS ============ -->
+<section id="platforms">
+<h2>🔬 Platforms — the model-building lab</h2>
+<div class="tabbar">
+  <button data-p="p1">1 · Kitchen sink</button>
+  <button data-p="p2">2 · F-test anatomy</button>
+  <button data-p="p3">3 · Multicollinearity</button>
+  <button data-p="p4">4 · Specification builder</button>
+</div>
+
+<!-- ---- Platform 1 ---- -->
+<div class="platform" id="p1">
+<h3>The kitchen-sink regression</h3>
 <p>True DGP (n = 120): <code>y = 1 + 0.8·x₁ − 0.5·x₂ + u</code>, u ~ N(0, 2²). The junk regressors z₁…z₈ are pure noise — they have <em>nothing</em> to do with y.</p>
 <div class="controls">
   <div class="ctl" style="display:flex;align-items:center;gap:8px">
@@ -110,6 +230,161 @@ footer a:hover{text-decoration:underline}
 <button id="ftBtn">⚖️ Test the junk block</button>
 <div class="feedback" id="ftOut"></div>
 <div class="notice" id="simNotice"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>Load all 8 junk regressors: R² creeps up every time, adjusted R² sags, and AIC votes for fewer variables. <button class="setit" data-x="0">Set it up</button></li>
+<li>Strip back to the true model (0 junk) and note where adjusted R² and AIC sit — the criteria usually (not always!) point home. <button class="setit" data-x="1">Set it up</button></li>
+<li>With 3 junk variables, run the block F-test: it should say "throw them out" about 95% of the time. <button class="setit" data-x="2">Set it up</button></li>
+<li>Junk lottery: 8 junk + new sample + F-test, repeatedly. Roughly 1 sample in 20 will fake joint significance — that's what α = 5% means. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 2 ---- -->
+<div class="platform" id="p2">
+<h3>F-test anatomy — where the number comes from</h3>
+<p>The F-statistic compares the fit you LOSE by imposing m restrictions against the noise level of the unrestricted model.
+Here URSS is fixed at 100; you control the gap. F = [(RRSS − URSS)/m] ÷ [URSS/(n−k−1)] — every piece is on a slider.</p>
+<div class="controls">
+  <div class="ctl"><label><b>m</b> restrictions: <span class="val" id="m2V">2</span></label>
+    <input type="range" id="m2" min="1" max="5" step="1" value="2"></div>
+  <div class="ctl"><label><b>n</b> observations: <span class="val" id="n2V">100</span></label>
+    <input type="range" id="n2" min="40" max="300" step="10" value="100"></div>
+  <div class="ctl"><label><b>k</b> regressors (unrestricted): <span class="val" id="k2V">5</span></label>
+    <input type="range" id="k2" min="2" max="8" step="1" value="5"></div>
+  <div class="ctl"><label><b>RSS gap</b> (RRSS above URSS, %): <span class="val" id="g2V">8</span></label>
+    <input type="range" id="g2" min="0" max="50" step="1" value="8"></div>
+</div>
+<div style="margin:10px 0">
+  <div style="font-size:.85rem;color:var(--muted)">RRSS (restricted model) = <b id="rrssV" style="color:var(--accent2)">–</b></div>
+  <div class="rssbar"><div id="rrssBar" style="background:var(--accent2);width:0%"></div></div>
+  <div style="font-size:.85rem;color:var(--muted)">URSS (unrestricted model) = <b style="color:var(--accent)">100.0</b></div>
+  <div class="rssbar"><div id="urssBar" style="background:var(--accent);width:66%"></div></div>
+</div>
+<div class="stats">
+  <div class="stat"><div class="k">F statistic</div><div class="v" id="f2V">–</div></div>
+  <div class="stat"><div class="k">crit F(m, n−k−1) at 5%</div><div class="v" id="c2V">–</div></div>
+  <div class="stat"><div class="k">p-value</div><div class="v" id="p2V">–</div></div>
+  <div class="stat"><div class="k">verdict</div><div class="v" id="v2V">–</div></div>
+</div>
+<canvas id="fC" style="height:260px"></canvas>
+<div class="notice" id="ntc2"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>A tiny 3% RSS gap with n = 300: significant! Big samples convict small sins — statistical vs economic significance. <button class="setit" data-x="0">Set it up</button></li>
+<li>The same 3% gap with n = 40: nowhere near the critical value. Identical evidence, different verdict — sample size IS part of the test. <button class="setit" data-x="1">Set it up</button></li>
+<li>Hold the gap at 15% and slide m from 1 to 5: the F shrinks as the same fit-loss is spread across more restrictions. <button class="setit" data-x="2">Set it up</button></li>
+<li>k = 8 with n = 40: the denominator df collapses to 31, the F density fattens, the critical value climbs. Greedy models raise their own bar. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 3 ---- -->
+<div class="platform" id="p3">
+<h3>Multicollinearity lab — the ridge of doom</h3>
+<p>DGP (n = 60): y = 1 + 1·x₁ + 1·x₂ + u, with Corr(x₁, x₂) = ρ on the slider. We redraw 100 samples and plot every (β̂₁, β̂₂) pair.
+Watch the cloud stretch along the ridge β₁ + β₂ = 2 as ρ → 1: each coefficient goes haywire while their SUM stays nailed down.</p>
+<div class="controls">
+  <div class="ctl"><label><b>ρ(x₁, x₂)</b>: <span class="val" id="r3V">0.50</span></label>
+    <input type="range" id="r3" min="0" max="0.99" step="0.01" value="0.5"></div>
+  <div class="ctl" style="display:flex;align-items:center"><button id="regen3" style="width:100%">🎲 Redraw 100 samples</button></div>
+</div>
+<div class="stats">
+  <div class="stat"><div class="k">VIF = 1/(1−ρ²)</div><div class="v" id="st3v">–</div></div>
+  <div class="stat"><div class="k">SE multiplier √VIF</div><div class="v" id="st3s">–</div></div>
+  <div class="stat"><div class="k">samples with |t₁| &gt; 2</div><div class="v" id="st3t">–</div></div>
+  <div class="stat"><div class="k">samples with joint F sig.</div><div class="v" id="st3f">–</div></div>
+  <div class="stat"><div class="k">sd of (β̂₁+β̂₂)</div><div class="v" id="st3sum">–</div></div>
+</div>
+<div class="charts2">
+  <canvas id="cloudC" style="height:260px"></canvas>
+  <canvas id="vifC" style="height:260px"></canvas>
+</div>
+<div class="notice" id="ntc3"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>ρ = 0: a circular cloud centred on the truth (1, 1). Each coefficient is estimated independently and cleanly. <button class="setit" data-x="0">Set it up</button></li>
+<li>ρ = 0.90: the cloud becomes a cigar along β₁ + β₂ = 2. Individual t's start failing while the joint F stays significant in ~100% of samples. <button class="setit" data-x="1">Set it up</button></li>
+<li>ρ = 0.99: VIF = 50 — coefficients swing past zero and FLIP SIGNS sample to sample, yet sd(β̂₁+β̂₂) hasn't budged. The data know the total effect, not the split. <button class="setit" data-x="2">Set it up</button></li>
+<li>Trace the gold √VIF curve: it's flat until ρ ≈ 0.8 then goes vertical — multicollinearity is harmless right up until it isn't. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 4 ---- -->
+<div class="platform" id="p4">
+<h3>Specification builder — race against a known truth</h3>
+<p>The TRUE DGP (n = 150): <code>ret = 0.5 + 0.8·value + 0.5·size + 0·mom + u</code>, u ~ N(0, 2²), with Corr(value, size) = 0.6 and
+<em>mom</em> pure noise. Toggle regressors in and out and watch the estimates, the information criteria, and the omitted-variable bias appear live.</p>
+<div style="margin:8px 0">
+  <button class="tog on" id="tgV">value (true β = 0.8)</button>
+  <button class="tog on" id="tgS">size (true β = 0.5)</button>
+  <button class="tog" id="tgM">mom (true β = 0)</button>
+  <button class="alt" id="regen4" style="margin-left:10px">🎲 New sample</button>
+</div>
+<div id="specT"></div>
+<div class="stats">
+  <div class="stat"><div class="k">adjusted R²</div><div class="v" id="st4a">–</div></div>
+  <div class="stat"><div class="k">AIC</div><div class="v" id="st4aic">–</div></div>
+  <div class="stat"><div class="k">BIC</div><div class="v" id="st4bic">–</div></div>
+  <div class="stat"><div class="k">overall F p-value</div><div class="v" id="st4f">–</div></div>
+</div>
+<canvas id="coefC" style="height:230px"></canvas>
+<div class="feedback info" id="verdict4" style="display:block">…</div>
+<div class="notice" id="ntc4"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>The true specification (value + size): estimates near (0.8, 0.5), clean t's, AIC/BIC at or near their minimum. <button class="setit" data-x="0">Set it up</button></li>
+<li>Drop size: value's coefficient jumps to ≈ 1.1 = 0.8 + 0.5×0.6 — omitted-variable bias, exactly the textbook formula, live. The model still "looks fine"! <button class="setit" data-x="1">Set it up</button></li>
+<li>Add mom to the true model: its t is (usually) insignificant, adjusted R² ticks down, AIC/BIC rise — the price of irrelevant variables is efficiency, not bias. <button class="setit" data-x="2">Set it up</button></li>
+<li>mom only: the overall F-test (usually) says "this model is statistically useless". When it doesn't, you've met data mining in person. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+</section>
+
+<!-- ============ PROBLEMS CLINIC ============ -->
+<section id="clinicSec">
+<h2>⚠️ Problems clinic</h2>
+<p style="color:var(--muted);font-size:.93rem;margin-top:0">Six ways multiple regressions mislead — and how to catch them.</p>
+
+<div class="clinic"><div class="head">▸ 1 · Omitted-variable bias: the formula that tells you WHICH WAY you're wrong</div><div class="body">
+<p><span class="lbl">What it is:</span> leaving out a relevant variable that's correlated with an included one. The included variable picks up its friend's work: plim β̂₁ = β₁ + β₂·δ, where δ is the slope from regressing the omitted x₂ on the included x₁.</p>
+<p><span class="lbl">How it bites:</span> estimating a "value effect" while omitting size (correlated with value) — your value premium is part size premium. Sign rule: bias = (sign of β₂) × (sign of Corr) — you can predict the direction before running anything.</p>
+<p><span class="lbl">How to detect:</span> coefficients that move a lot when you add controls; theory telling you a confounder exists; comparing nested specifications (Platform 4).</p>
+<p><span class="lbl">Remedy:</span> include the variable (best), find a proxy, or use instruments/panel methods (later weeks). NO amount of extra data fixes it — it's bias, not noise.</p>
+<button class="alt" id="c1btn">▶ Demo: 200 replications with size omitted — mean of β̂(value)</button>
+<div id="c1out" style="font-size:.9rem;color:var(--muted)"></div>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 2 · Irrelevant variables: bias-free but never free</div><div class="body">
+<p><span class="lbl">What it is:</span> including regressors whose true coefficient is zero. Estimates stay unbiased — but every SE in the model inflates, especially when the junk correlates with real regressors.</p>
+<p><span class="lbl">How it bites:</span> a "comprehensive" 15-control regression where the variable you care about is now insignificant — not because the effect vanished but because you burned the precision. df also shrink: with n = 60 and k = 15 your t critical values quietly grow.</p>
+<p><span class="lbl">How to detect:</span> adjusted R² falls when the variable enters; |t| &lt; 1; AIC/BIC rise; block F-tests on groups of controls.</p>
+<p><span class="lbl">Remedy:</span> theory-first selection, general-to-specific testing with F-tests on blocks (not one-at-a-time t fishing), information criteria as referee.</p>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 3 · Multicollinearity: significant together, invisible apart</div><div class="body">
+<p><span class="lbl">What it is:</span> regressors that move together. (X′X) becomes near-singular; individual coefficients are barely identified even though the model fits well.</p>
+<p><span class="lbl">How it bites:</span> "size" and "liquidity" in the same regression (ρ ≈ 0.9): both t's collapse below 1, a referee asks you to drop "the insignificant ones", and you delete a genuinely priced factor. Sign flips across subsamples destroy credibility.</p>
+<p><span class="lbl">How to detect:</span> the symptom triad — high R² + significant overall F + individually insignificant t's; VIF &gt; 10; coefficient instability across subsamples (Platform 3's cloud).</p>
+<p><span class="lbl">Remedy:</span> more data (the only true cure), combine the twins into one variable (e.g. an index), drop one ON THEORY GROUNDS and say so, or accept that you know the sum but not the split.</p>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 4 · Data mining &amp; the factor zoo: torture the data until they confess</div><div class="body">
+<p><span class="lbl">What it is:</span> testing many candidate variables at the 5% level guarantees "discoveries": testing 20 pure-noise factors yields about one significant t by luck. Finance journals have published hundreds of return "factors"; most fail out-of-sample.</p>
+<p><span class="lbl">How it bites:</span> your backtest tries 50 signals, three clear t &gt; 2, you trade the three — and they immediately stop working, because they never worked. Multiple testing is THE silent killer of quant strategies.</p>
+<p><span class="lbl">How to detect:</span> ask "how many things were tried?"; demand out-of-sample evidence; with N tests, expect N×5% false positives; Harvey–Liu–Zhu argue new factors should clear |t| &gt; 3, not 2.</p>
+<p><span class="lbl">Remedy:</span> hold-out samples, Bonferroni-style corrections (α/N), pre-registration of hypotheses, economic priors before statistical sifting.</p>
+<button class="alt" id="c4btn">▶ Demo: regress pure-noise returns on 20 random "factors"</button>
+<div id="c4out" style="font-size:.9rem;color:var(--muted)"></div>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 5 · The dummy variable trap: perfect collinearity by construction</div><div class="body">
+<p><span class="lbl">What it is:</span> including a dummy for EVERY category plus the intercept. The dummies sum to 1 = the constant column — exact linear dependence, (X′X) singular.</p>
+<p><span class="lbl">How it bites:</span> four quarter dummies + constant in a seasonality regression: R errors out or silently drops one; Python's patsy quietly picks a base category — and students then misread the coefficients, which are now <em>differences from the base</em>, not level effects.</p>
+<p><span class="lbl">How to detect:</span> software complaints ("singular matrix", NA coefficients) or one dummy mysteriously missing from the output.</p>
+<p><span class="lbl">Remedy:</span> use g−1 dummies with an intercept (coefficients = gaps to the base), or all g dummies with NO intercept (coefficients = category means). Pick one and interpret accordingly.</p>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 6 · R² worship: fit is not truth</div><div class="body">
+<p><span class="lbl">What it is:</span> treating R² as the score of the analysis. R² measures in-sample correlation with fitted values — not correctness, causality, or forecastability.</p>
+<p><span class="lbl">How it bites:</span> in finance, GOOD models of daily returns have R² ≈ 0.01–0.05 — and that's tradeable! Meanwhile spurious levels regressions flaunt R² = 0.99. Selecting strategies by in-sample R² selects overfit ones.</p>
+<p><span class="lbl">How to detect:</span> ask what R² SHOULD be for this problem; compare with adjusted R², AIC/BIC, and out-of-sample RMSE; be suspicious of fits that are too good.</p>
+<p><span class="lbl">Remedy:</span> judge models on out-of-sample performance, economically sensible coefficients and surviving diagnostic tests (Week 4) — not on the prettiest in-sample number.</p>
+</div></div>
 </section>
 
 <!-- ============ SECTION B: GAME ============ -->
@@ -136,7 +411,7 @@ t-ratios, p-values, R², the overall F. <b>+10</b> per correct answer, <b>+5</b>
 <div class="langtog">
   <button id="ccPy" class="on">Python</button>
   <button id="ccR" class="alt">R</button>
-  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/6</span>
+  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/8</span>
 </div>
 <div id="cc-list"></div>
 </section>
@@ -268,7 +543,7 @@ window.MANG = (function () {
     const adjr2 = 1 - (rss / (n - k)) / (tss / (n - 1));
     return { beta: beta, se: se, rss: rss, tss: tss, r2: r2, adjr2: adjr2, resid: resid, fitted: fitted, n: n, k: k, s2: s2 };
   }
-  /* ---- distributions: regularised incomplete beta -> t & F CDFs ---- */
+  /* ---- distributions: regularised incomplete beta -> t & F CDFs, F pdf ---- */
   function logGamma(x) {
     const g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
     let y = x, tmp = x + 5.5;
@@ -323,12 +598,51 @@ window.MANG = (function () {
     }
     return (lo + hi) / 2;
   }
-  return { mulberry32: mulberry32, gauss: gauss, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, olsK: olsK, matInv: matInv, tCDF: tCDF, tPval2: tPval2, fCDF: fCDF, fCrit: fCrit, fmt: fmt };
+  function fPdf(x, d1, d2) {
+    if (x <= 0) return 0;
+    const lnB = logGamma(d1 / 2) + logGamma(d2 / 2) - logGamma((d1 + d2) / 2);
+    return Math.exp((d1 / 2) * Math.log(d1 / d2) + (d1 / 2 - 1) * Math.log(x) - ((d1 + d2) / 2) * Math.log(1 + d1 * x / d2) - lnB);
+  }
+  /* --- platform tab plumbing --- */
+  const platforms = {};
+  function registerPlatform(id, obj) { platforms[id] = { obj: obj, inited: false }; }
+  function openPlatform(id) {
+    document.querySelectorAll('.tabbar button[data-p]').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-p') === id);
+    });
+    document.querySelectorAll('.platform').forEach(function (p) {
+      p.classList.toggle('active', p.id === id);
+    });
+    const rec = platforms[id];
+    if (rec) {
+      if (!rec.inited) { rec.inited = true; rec.obj.init(); }
+      else if (rec.obj.redraw) { rec.obj.redraw(); }
+    }
+  }
+  function isActive(id) {
+    const el = document.getElementById(id);
+    return el && el.classList.contains('active');
+  }
+  return { mulberry32: mulberry32, gauss: gauss, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, olsK: olsK, matInv: matInv, tCDF: tCDF, tPval2: tPval2, fCDF: fCDF, fCrit: fCrit, fPdf: fPdf, fmt: fmt, registerPlatform: registerPlatform, openPlatform: openPlatform, isActive: isActive };
+})();
+
+/* ===== Accordions + tab clicks ===== */
+(function () {
+  'use strict';
+  document.querySelectorAll('.pcard').forEach(function (c) {
+    c.addEventListener('click', function () { c.classList.toggle('open'); });
+  });
+  document.querySelectorAll('.clinic > .head').forEach(function (h) {
+    h.addEventListener('click', function () { h.parentElement.classList.toggle('open'); });
+  });
+  document.querySelectorAll('.tabbar button[data-p]').forEach(function (b) {
+    b.addEventListener('click', function () { window.MANG.openPlatform(b.getAttribute('data-p')); });
+  });
 })();
 </script>
 
 <script>
-/* ===== SECTION A: Kitchen-sink regression ===== */
+/* ===== Platform 1: Kitchen-sink regression ===== */
 (function () {
   'use strict';
   const M = window.MANG;
@@ -380,13 +694,12 @@ window.MANG = (function () {
     } else {
       msg += 'With ' + j + ' junk regressor' + (j > 1 ? 's' : '') + ', R² rose by ' + dR2 + ' pp but adjusted R² moved by ' + dA +
         ' pp — the penalty for wasted degrees of freedom at work. Most junk t-ratios sit below |1.98|, and the block F-test below will usually say “leave them out”. ' +
-        'Beware the reverse trap too: with <em>multicollinear</em> regressors you can get individually insignificant t’s yet a strongly significant joint F.';
+        'Beware the reverse trap too: with <em>multicollinear</em> regressors you can get individually insignificant t’s yet a strongly significant joint F (Platform 3).';
     }
     $('simNotice').innerHTML = msg;
   }
 
   function drawCharts() {
-    // R2 vs adjR2 path
     const c = M.fitCanvas($('r2C'));
     let lo = 1, hi = 0;
     for (const f of fits) { lo = Math.min(lo, f.adjr2, f.r2); hi = Math.max(hi, f.r2, f.adjr2); }
@@ -396,7 +709,6 @@ window.MANG = (function () {
     M.drawLine(c.ctx, fr, ks, fits.map(f => f.r2), '#38bdf8', 2);
     M.drawLine(c.ctx, fr, ks, fits.map(f => f.adjr2), '#fbbf24', 2);
     M.drawDots(c.ctx, fr, [j, j], [fits[j].r2, fits[j].adjr2], '#e2e8f0', 4);
-    // AIC bars
     const a = M.fitCanvas($('aicC'));
     let alo = Infinity, ahi = -Infinity;
     for (const f of fits) { alo = Math.min(alo, f.aic); ahi = Math.max(ahi, f.aic); }
@@ -447,12 +759,445 @@ window.MANG = (function () {
         : '<b>Cannot reject H₀</b> — the junk block adds nothing. The F-test correctly tells you to throw it out, whatever R² says.');
   }
 
-  $('addJ').addEventListener('click', function () { if (j < MAXJ) { j++; update(); } });
-  $('remJ').addEventListener('click', function () { if (j > 0) { j--; update(); } });
-  $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
-  $('ftBtn').addEventListener('click', fTest);
-  window.addEventListener('resize', drawCharts);
-  generate();
+  const EXPS = [
+    function () { j = MAXJ; update(); },
+    function () { j = 0; update(); },
+    function () { j = 3; update(); fTest(); },
+    function () { j = MAXJ; seed = (Math.random() * 1e9) >>> 0; generate(); fTest(); }
+  ];
+
+  function init() {
+    $('addJ').addEventListener('click', function () { if (j < MAXJ) { j++; update(); } });
+    $('remJ').addEventListener('click', function () { if (j > 0) { j--; update(); } });
+    $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
+    $('ftBtn').addEventListener('click', fTest);
+    document.querySelectorAll('#p1 .setit').forEach(function (b) {
+      b.addEventListener('click', function () { EXPS[parseInt(b.getAttribute('data-x'), 10)](); });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p1')) drawCharts(); });
+    generate();
+  }
+  M.registerPlatform('p1', { init: init, redraw: drawCharts });
+})();
+</script>
+
+<script>
+/* ===== Platform 2: F-test anatomy ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const URSS = 100;
+
+  function labels() {
+    $('m2V').textContent = $('m2').value;
+    $('n2V').textContent = $('n2').value;
+    $('k2V').textContent = $('k2').value;
+    $('g2V').textContent = $('g2').value;
+  }
+
+  function redraw() {
+    let m = parseInt($('m2').value, 10);
+    const n = parseInt($('n2').value, 10);
+    const k = parseInt($('k2').value, 10);
+    if (m > k) { m = k; $('m2').value = k; $('m2V').textContent = k; }
+    const gap = parseFloat($('g2').value);
+    const rrss = URSS * (1 + gap / 100);
+    const dfDen = n - k - 1;
+    const F = ((rrss - URSS) / m) / (URSS / dfDen);
+    const crit = M.fCrit(m, dfDen, 0.05);
+    const p = 1 - M.fCDF(F, m, dfDen);
+    const rej = F > crit;
+    // bars
+    $('rrssV').textContent = rrss.toFixed(1);
+    const wmax = URSS * 1.5;
+    $('rrssBar').style.width = (100 * Math.min(1, rrss / wmax)).toFixed(1) + '%';
+    $('urssBar').style.width = (100 * URSS / wmax).toFixed(1) + '%';
+    // stats
+    $('f2V').textContent = F.toFixed(3);
+    $('c2V').textContent = crit.toFixed(2);
+    $('p2V').textContent = p < 0.001 ? '<0.001' : p.toFixed(3);
+    const v = $('v2V');
+    v.textContent = rej ? 'REJECT H₀' : 'cannot reject';
+    v.className = 'v ' + (rej ? 'bad' : 'good');
+    // F density with rejection region
+    const c = M.fitCanvas($('fC'));
+    const xmax = Math.max(crit * 1.8, F * 1.15, 5);
+    let ymax = 0;
+    const xs = [], ys = [];
+    for (let i = 1; i <= 240; i++) {
+      const x = xmax * i / 240;
+      const yv = M.fPdf(x, m, dfDen);
+      xs.push(x); ys.push(yv);
+      if (isFinite(yv) && yv > ymax) ymax = yv;
+    }
+    if (m <= 2) ymax = Math.min(ymax, 1.2);
+    const f = M.frame(c.ctx, c.W, c.H, 0, xmax, 0, ymax * 1.12, { title: 'F(' + m + ', ' + dfDen + ') density — red area = 5% rejection region, marker = your F' });
+    // shade rejection region
+    c.ctx.fillStyle = 'rgba(248,113,113,0.30)';
+    c.ctx.beginPath();
+    c.ctx.moveTo(f.X(crit), f.Y(0));
+    for (let i = 0; i <= 80; i++) {
+      const x = crit + (xmax - crit) * i / 80;
+      c.ctx.lineTo(f.X(x), f.Y(Math.min(ymax * 1.12, M.fPdf(x, m, dfDen))));
+    }
+    c.ctx.lineTo(f.X(xmax), f.Y(0));
+    c.ctx.closePath(); c.ctx.fill();
+    // density curve
+    const cl = xs.map(function (x, i) { return Math.min(ymax * 1.12, ys[i]); });
+    M.drawLine(c.ctx, f, xs, cl, '#38bdf8', 2);
+    // crit line
+    c.ctx.strokeStyle = '#f87171'; c.ctx.setLineDash([5, 4]);
+    c.ctx.beginPath(); c.ctx.moveTo(f.X(crit), f.Y(0)); c.ctx.lineTo(f.X(crit), f.Y(ymax)); c.ctx.stroke();
+    c.ctx.setLineDash([]);
+    c.ctx.fillStyle = '#f87171'; c.ctx.font = '12px Segoe UI, sans-serif'; c.ctx.textAlign = 'center';
+    c.ctx.fillText('crit ' + crit.toFixed(2), f.X(crit), f.Y(ymax) - 6);
+    // observed F marker
+    c.ctx.strokeStyle = '#fbbf24'; c.ctx.lineWidth = 2.5;
+    c.ctx.beginPath(); c.ctx.moveTo(f.X(F), f.Y(0)); c.ctx.lineTo(f.X(F), f.Y(ymax * 0.7)); c.ctx.stroke();
+    c.ctx.fillStyle = '#fbbf24';
+    c.ctx.fillText('F = ' + F.toFixed(2), f.X(F), f.Y(ymax * 0.7) - 8);
+    // notice
+    $('ntc2').innerHTML = '<b>What to notice:</b> the same RSS gap of ' + gap.toFixed(0) + '% produces F = ' + F.toFixed(2) +
+      ' here. The numerator is the gap <em>per restriction</em>; the denominator URSS/(n−k−1) = ' + (URSS / dfDen).toFixed(3) +
+      ' is the model’s noise yardstick — more df makes the yardstick smaller and the same gap more damning. ' +
+      (rej ? 'Your F sits inside the red region: imposing these restrictions costs more fit than chance could explain — <b>reject H₀</b>.'
+        : 'Your F sits left of the critical value: the fit lost is within what sampling noise produces — <b>the restrictions are acceptable</b>.') +
+      ' In finance this is how you test "do these 3 extra factors matter?" or "is β₁ = β₂?"';
+  }
+
+  const EXPS = [
+    function () { $('g2').value = 3; $('n2').value = 300; $('m2').value = 2; $('k2').value = 5; },
+    function () { $('g2').value = 3; $('n2').value = 40; $('m2').value = 2; $('k2').value = 5; },
+    function () { $('g2').value = 15; $('m2').value = 5; $('n2').value = 100; $('k2').value = 5; },
+    function () { $('k2').value = 8; $('n2').value = 40; $('m2').value = 3; $('g2').value = 15; }
+  ];
+
+  function init() {
+    ['m2', 'n2', 'k2', 'g2'].forEach(id => $(id).addEventListener('input', function () { labels(); redraw(); }));
+    document.querySelectorAll('#p2 .setit').forEach(function (b) {
+      b.addEventListener('click', function () { EXPS[parseInt(b.getAttribute('data-x'), 10)](); labels(); redraw(); });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p2')) redraw(); });
+    labels();
+    redraw();
+  }
+  M.registerPlatform('p2', { init: init, redraw: redraw });
+})();
+</script>
+
+<script>
+/* ===== Platform 3: Multicollinearity lab ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const N = 60, REPS = 100, SIGU = 2;
+  let seed = 5150, reps = null, scatterSample = null;
+
+  function labels() { $('r3V').textContent = parseFloat($('r3').value).toFixed(2); }
+
+  function simulate() {
+    const rho = parseFloat($('r3').value);
+    const rng = M.mulberry32(seed);
+    reps = [];
+    let nT = 0, nF = 0;
+    const sums = [];
+    for (let r = 0; r < REPS; r++) {
+      const x1 = new Array(N), x2 = new Array(N), y = new Array(N), X = new Array(N);
+      for (let t = 0; t < N; t++) {
+        x1[t] = M.gauss(rng);
+        x2[t] = rho * x1[t] + Math.sqrt(1 - rho * rho) * M.gauss(rng);
+        y[t] = 1 + 1 * x1[t] + 1 * x2[t] + SIGU * M.gauss(rng);
+        X[t] = [1, x1[t], x2[t]];
+      }
+      const f = M.olsK(X, y);
+      const t1 = f.beta[1] / f.se[1];
+      const dfRes = N - 3;
+      const F = (f.r2 / 2) / ((1 - f.r2) / dfRes);
+      const Fcrit = 3.16; // F(2,57) 5% ≈ 3.16
+      if (Math.abs(t1) > 2.002) nT++;
+      if (F > Fcrit) nF++;
+      reps.push({ b1: f.beta[1], b2: f.beta[2] });
+      sums.push(f.beta[1] + f.beta[2]);
+      if (r === 0) scatterSample = { x1: x1, x2: x2 };
+    }
+    let ms = 0; for (const s of sums) ms += s; ms /= REPS;
+    let vs = 0; for (const s of sums) vs += (s - ms) * (s - ms); vs /= (REPS - 1);
+    reps.tShare = nT / REPS; reps.fShare = nF / REPS; reps.sdSum = Math.sqrt(vs);
+    redraw();
+  }
+
+  function redraw() {
+    if (!reps) return;
+    const rho = parseFloat($('r3').value);
+    const vif = 1 / (1 - rho * rho);
+    // left: coefficient cloud
+    const c1 = M.fitCanvas($('cloudC'));
+    let lim = 0.5;
+    for (const r of reps) {
+      if (Math.abs(r.b1 - 1) > lim) lim = Math.abs(r.b1 - 1);
+      if (Math.abs(r.b2 - 1) > lim) lim = Math.abs(r.b2 - 1);
+    }
+    lim *= 1.15;
+    const f1 = M.frame(c1.ctx, c1.W, c1.H, 1 - lim, 1 + lim, 1 - lim, 1 + lim, { title: '100 estimates of (β̂₁, β̂₂) — truth at the green cross' });
+    // ridge line b1 + b2 = 2
+    M.drawLine(c1.ctx, f1, [1 - lim, 1 + lim], [1 + lim, 1 - lim], '#475569', 1);
+    M.drawDots(c1.ctx, f1, reps.map(r => r.b1), reps.map(r => r.b2), '#38bdf8', 2.5);
+    // truth cross
+    c1.ctx.strokeStyle = '#34d399'; c1.ctx.lineWidth = 2;
+    c1.ctx.beginPath(); c1.ctx.moveTo(f1.X(1) - 8, f1.Y(1)); c1.ctx.lineTo(f1.X(1) + 8, f1.Y(1)); c1.ctx.stroke();
+    c1.ctx.beginPath(); c1.ctx.moveTo(f1.X(1), f1.Y(1) - 8); c1.ctx.lineTo(f1.X(1), f1.Y(1) + 8); c1.ctx.stroke();
+    c1.ctx.fillStyle = '#94a3b8'; c1.ctx.font = '11px Segoe UI, sans-serif'; c1.ctx.textAlign = 'left';
+    c1.ctx.fillText('grey line: β₁+β₂ = 2', f1.X(1 - lim) + 6, f1.Y(1 - lim) - 8);
+    // right: sqrt(VIF) curve + x1-x2 scatter inset? draw curve
+    const c2 = M.fitCanvas($('vifC'));
+    const xs = [], ys = [];
+    let ymax = 0;
+    for (let i = 0; i <= 99; i++) {
+      const r = i / 100;
+      xs.push(r); ys.push(Math.sqrt(1 / (1 - r * r)));
+    }
+    ymax = Math.max(4, Math.sqrt(vif) * 1.2);
+    const f2 = M.frame(c2.ctx, c2.W, c2.H, 0, 1, 0, ymax, { title: 'SE inflation √VIF as a function of ρ — marker = current ρ' });
+    M.drawLine(c2.ctx, f2, xs, ys.map(v => Math.min(v, ymax)), '#fbbf24', 2);
+    M.drawDots(c2.ctx, f2, [rho], [Math.min(Math.sqrt(vif), ymax)], '#38bdf8', 5);
+    c2.ctx.fillStyle = '#38bdf8'; c2.ctx.font = '12px Segoe UI, sans-serif'; c2.ctx.textAlign = 'center';
+    c2.ctx.fillText('√VIF = ' + Math.sqrt(vif).toFixed(2), f2.X(rho), f2.Y(Math.min(Math.sqrt(vif), ymax)) - 10);
+    // stats
+    $('st3v').textContent = vif.toFixed(2);
+    $('st3s').textContent = '×' + Math.sqrt(vif).toFixed(2);
+    $('st3t').textContent = (reps.tShare * 100).toFixed(0) + '%';
+    $('st3f').textContent = (reps.fShare * 100).toFixed(0) + '%';
+    $('st3sum').textContent = reps.sdSum.toFixed(3);
+    // count sign flips
+    let flips = 0;
+    for (const r of reps) if (r.b1 < 0 || r.b2 < 0) flips++;
+    $('ntc3').innerHTML = '<b>What to notice:</b> at ρ = ' + rho.toFixed(2) + ', VIF = 1/(1−ρ²) = ' + vif.toFixed(2) +
+      ' — each coefficient’s SE is ×' + Math.sqrt(vif).toFixed(2) + ' what it would be with orthogonal regressors. ' +
+      'Individual significance: only ' + (reps.tShare * 100).toFixed(0) + '% of samples get |t₁| &gt; 2, yet the joint F is significant in ' +
+      (reps.fShare * 100).toFixed(0) + '% — the classic "F says yes, t’s say nothing" signature. ' +
+      (flips > 0 ? flips + ' of 100 samples even produced a NEGATIVE estimate for a true-positive coefficient. ' : '') +
+      'Meanwhile sd(β̂₁+β̂₂) = ' + reps.sdSum.toFixed(3) + ' barely moves with ρ: the data pin down the SUM, only the split is lost.';
+  }
+
+  const EXPS = [
+    function () { $('r3').value = 0; },
+    function () { $('r3').value = 0.9; },
+    function () { $('r3').value = 0.99; },
+    function () { $('r3').value = 0.8; }
+  ];
+
+  function init() {
+    $('r3').addEventListener('input', function () { labels(); simulate(); });
+    $('regen3').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; simulate(); });
+    document.querySelectorAll('#p3 .setit').forEach(function (b) {
+      b.addEventListener('click', function () {
+        EXPS[parseInt(b.getAttribute('data-x'), 10)]();
+        labels();
+        seed = (Math.random() * 1e9) >>> 0;
+        simulate();
+      });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p3')) redraw(); });
+    labels();
+    simulate();
+  }
+  M.registerPlatform('p3', { init: init, redraw: redraw });
+})();
+</script>
+
+<script>
+/* ===== Platform 4: Specification builder ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const N = 150;
+  const TRUE = { value: 0.8, size: 0.5, mom: 0 };
+  let seed = 9192, world = null;
+  const inc = { value: true, size: true, mom: false };
+
+  function generate() {
+    const rng = M.mulberry32(seed);
+    const value = [], size = [], mom = [], y = [];
+    for (let t = 0; t < N; t++) {
+      value.push(M.gauss(rng));
+      size.push(0.6 * value[t] + 0.8 * M.gauss(rng));
+      mom.push(M.gauss(rng));
+      y.push(0.5 + TRUE.value * value[t] + TRUE.size * size[t] + 2 * M.gauss(rng));
+    }
+    world = { value: value, size: size, mom: mom, y: y };
+    redraw();
+  }
+
+  function redraw() {
+    if (!world) return;
+    const names = [], cols = [];
+    if (inc.value) { names.push('value'); cols.push(world.value); }
+    if (inc.size) { names.push('size'); cols.push(world.size); }
+    if (inc.mom) { names.push('mom'); cols.push(world.mom); }
+    const k = names.length;
+    const X = [];
+    for (let t = 0; t < N; t++) {
+      const row = [1];
+      for (let q = 0; q < k; q++) row.push(cols[q][t]);
+      X.push(row);
+    }
+    const f = M.olsK(X, world.y);
+    const dfRes = N - k - 1;
+    const K = k + 1;
+    const aic = N * Math.log(f.rss / N) + 2 * K;
+    const bic = N * Math.log(f.rss / N) + K * Math.log(N);
+    // table
+    let html = '<table class="reg"><tr><th>variable</th><th>coef</th><th>SE</th><th>t</th><th>p</th><th>true β</th></tr>';
+    const allNames = ['const'].concat(names);
+    const trueVals = [0.5].concat(names.map(nm => TRUE[nm]));
+    for (let i = 0; i < f.beta.length; i++) {
+      const t = f.beta[i] / f.se[i], p = M.tPval2(t, dfRes);
+      html += '<tr><td>' + allNames[i] + '</td><td>' + f.beta[i].toFixed(3) + '</td><td>' + f.se[i].toFixed(3) +
+        '</td><td class="' + (Math.abs(t) > 1.98 ? 'sig' : 'insig') + '">' + t.toFixed(2) + '</td><td>' + p.toFixed(3) +
+        '</td><td>' + trueVals[i].toFixed(2) + '</td></tr>';
+    }
+    html += '</table>';
+    $('specT').innerHTML = html;
+    // stats
+    $('st4a').textContent = k > 0 ? f.adjr2.toFixed(4) : '0';
+    $('st4aic').textContent = aic.toFixed(1);
+    $('st4bic').textContent = bic.toFixed(1);
+    let fp = NaN;
+    if (k > 0) {
+      const F = (f.r2 / k) / ((1 - f.r2) / dfRes);
+      fp = 1 - M.fCDF(F, k, dfRes);
+      $('st4f').textContent = fp < 0.001 ? '<0.001' : fp.toFixed(3);
+      $('st4f').className = 'v ' + (fp < 0.05 ? 'good' : 'bad');
+    } else { $('st4f').textContent = '–'; }
+    // coefficient bar chart (estimates vs truth) for the three candidate regressors
+    const c = M.fitCanvas($('coefC'));
+    const cand = ['value', 'size', 'mom'];
+    const est = cand.map(function (nm) {
+      const idx = names.indexOf(nm);
+      return idx >= 0 ? f.beta[idx + 1] : null;
+    });
+    let lo = -0.4, hi = 1.4;
+    for (const e of est) if (e !== null) { if (e < lo) lo = e; if (e > hi) hi = e; }
+    const fr = M.frame(c.ctx, c.W, c.H, -0.5, 2.8, lo - 0.1, hi + 0.25, { title: 'Estimated coefficient (blue bar) vs true value (green tick); grey = excluded' });
+    cand.forEach(function (nm, i) {
+      const x0 = fr.X(i - 0.28), x1 = fr.X(i + 0.28);
+      if (est[i] === null) {
+        c.ctx.fillStyle = '#334155';
+        c.ctx.fillRect(x0, fr.Y(0.04), x1 - x0, fr.Y(0) - fr.Y(0.04));
+      } else {
+        c.ctx.fillStyle = '#38bdf8';
+        const yTop = Math.min(fr.Y(0), fr.Y(est[i]));
+        c.ctx.fillRect(x0, yTop, x1 - x0, Math.abs(fr.Y(est[i]) - fr.Y(0)));
+      }
+      // true tick
+      c.ctx.strokeStyle = '#34d399'; c.ctx.lineWidth = 3;
+      c.ctx.beginPath(); c.ctx.moveTo(x0 - 4, fr.Y(TRUE[nm])); c.ctx.lineTo(x1 + 4, fr.Y(TRUE[nm])); c.ctx.stroke();
+      c.ctx.fillStyle = '#94a3b8'; c.ctx.font = '12px Segoe UI, sans-serif'; c.ctx.textAlign = 'center';
+      c.ctx.fillText(nm, (x0 + x1) / 2, fr.Y(lo - 0.1) - (-16));
+    });
+    // verdict
+    const vd = $('verdict4');
+    let msg;
+    if (inc.value && inc.size && !inc.mom) {
+      msg = '✅ <b>This is the true specification.</b> Estimates should sit near (0.8, 0.5) with honest SEs, and AIC/BIC are usually (not always — sampling noise!) at their minimum here.';
+    } else if (inc.value && !inc.size) {
+      const idx = names.indexOf('value');
+      const bv = f.beta[idx + 1];
+      msg = '⚠️ <b>Omitted-variable bias in action.</b> size is in the DGP (β = 0.5) and correlated with value (δ = 0.6 from regressing size on value), so value’s coefficient absorbs it: plim β̂ = 0.8 + 0.5×0.6 = <b>1.10</b>. Your estimate: <b>' + bv.toFixed(3) + '</b>. Nothing in this table tells you it’s wrong — only theory does.';
+    } else if (!inc.value && inc.size) {
+      msg = '⚠️ <b>Omitted-variable bias, mirror image.</b> value (β = 0.8) is missing and correlated with size, so size’s coefficient is inflated far above its true 0.5. Looks great, means little.';
+    } else if (k === 0) {
+      msg = 'No regressors — y is fitted by its mean alone. Toggle something in.';
+    } else if (!inc.value && !inc.size && inc.mom) {
+      msg = (fp < 0.05 ? '🎰 <b>You got the 1-in-20 fluke!</b> mom is pure noise, yet this sample’s F-test calls the model significant. New sample and it will (probably) vanish — data mining in miniature.'
+        : '✅ The overall F correctly says this model is statistically useless: mom is noise and nothing real is included.');
+    } else {
+      msg = 'Both true factors are in, plus the noise factor mom: estimates stay unbiased, but you pay in efficiency — check mom’s t, and whether AIC/BIC prefer the cleaner model.';
+    }
+    vd.innerHTML = msg;
+    $('ntc4').innerHTML = '<b>What to notice:</b> R²-type measures CANNOT detect omitted-variable bias — the misspecified models often fit almost as well. The defence is theory (what SHOULD be in the model?) plus watching coefficients move as controls enter. In factor investing this is literally the difference between a real anomaly and a repackaged size effect.';
+  }
+
+  function setTog() {
+    $('tgV').className = 'tog' + (inc.value ? ' on' : '');
+    $('tgS').className = 'tog' + (inc.size ? ' on' : '');
+    $('tgM').className = 'tog' + (inc.mom ? ' on' : '');
+  }
+
+  const EXPS = [
+    function () { inc.value = true; inc.size = true; inc.mom = false; },
+    function () { inc.value = true; inc.size = false; inc.mom = false; },
+    function () { inc.value = true; inc.size = true; inc.mom = true; },
+    function () { inc.value = false; inc.size = false; inc.mom = true; }
+  ];
+
+  function init() {
+    $('tgV').addEventListener('click', function () { inc.value = !inc.value; setTog(); redraw(); });
+    $('tgS').addEventListener('click', function () { inc.size = !inc.size; setTog(); redraw(); });
+    $('tgM').addEventListener('click', function () { inc.mom = !inc.mom; setTog(); redraw(); });
+    $('regen4').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
+    document.querySelectorAll('#p4 .setit').forEach(function (b) {
+      b.addEventListener('click', function () { EXPS[parseInt(b.getAttribute('data-x'), 10)](); setTog(); redraw(); });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p4')) redraw(); });
+    setTog();
+    generate();
+  }
+  M.registerPlatform('p4', { init: init, redraw: redraw });
+  M.openPlatform('p1');
+})();
+</script>
+
+<script>
+/* ===== Problems clinic demos ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+
+  // 1: OVB Monte Carlo
+  $('c1btn').addEventListener('click', function () {
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const REPS = 200, n = 100;
+    let sumFull = 0, sumOmit = 0;
+    for (let r = 0; r < REPS; r++) {
+      const v = [], s = [], y = [], Xf = [], Xo = [];
+      for (let t = 0; t < n; t++) {
+        v.push(M.gauss(rng));
+        s.push(0.6 * v[t] + 0.8 * M.gauss(rng));
+        y.push(0.5 + 0.8 * v[t] + 0.5 * s[t] + 2 * M.gauss(rng));
+        Xf.push([1, v[t], s[t]]);
+        Xo.push([1, v[t]]);
+      }
+      sumFull += M.olsK(Xf, y).beta[1];
+      sumOmit += M.olsK(Xo, y).beta[1];
+    }
+    $('c1out').innerHTML = 'True β(value) = 0.80. Across ' + REPS + ' samples (n = 100):<br>• full model (value + size): mean β̂ = <b>' +
+      (sumFull / REPS).toFixed(3) + '</b> — unbiased.<br>• size omitted: mean β̂ = <b>' + (sumOmit / REPS).toFixed(3) +
+      '</b> ≈ 0.8 + 0.5×0.6 = 1.10 — biased by exactly β₂·δ, and MORE data would only estimate the wrong number more precisely.';
+  });
+
+  // 4: factor zoo
+  $('c4btn').addEventListener('click', function () {
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const n = 120, K = 20;
+    const y = [];
+    for (let t = 0; t < n; t++) y.push(M.gauss(rng));
+    const sig = [];
+    for (let k = 0; k < K; k++) {
+      const x = [], X = [];
+      for (let t = 0; t < n; t++) { x.push(M.gauss(rng)); X.push([1, x[t]]); }
+      const f = M.olsK(X, y);
+      const t = f.beta[1] / f.se[1];
+      if (Math.abs(t) > 1.98) sig.push('factor_' + (k + 1) + ' (t = ' + t.toFixed(2) + ')');
+    }
+    $('c4out').innerHTML = 'Returns = pure noise. Tested 20 random "factors" one at a time at the 5% level.<br>"Discovered": <b>' +
+      (sig.length ? sig.join(', ') : 'none this time — click again, the zoo giveth eventually') +
+      '</b>.<br>Expected false discoveries = 20 × 5% = 1. Every click is someone’s SSRN paper.';
+  });
 })();
 </script>
 
@@ -656,6 +1401,16 @@ window.MANG = (function () {
       prompt: 'Get the overall F-statistic (H₀: all slope coefficients are zero).',
       py: { code: 'fstat = model.___\npval  = model.f_pvalue', correct: 'fvalue', opts: ['fvalue', 'fstat', 'f_test', 'F'], expl: '.fvalue holds the overall F statistic; .f_pvalue its p-value.' },
       r: { code: 'summary(model)$___', correct: 'fstatistic', opts: ['fstatistic', 'fvalue', 'f.stat', 'Ftest'], expl: 'summary(model)$fstatistic returns the F value with its two df.' }
+    },
+    {
+      prompt: 'Compare model specifications with information criteria (lower = better).',
+      py: { code: 'print(model.___, model.bic)   # AIC and BIC of the fitted model', correct: 'aic', opts: ['aic', 'AIC', 'aic()', 'akaike'], expl: 'statsmodels exposes them as lower-case attributes: model.aic and model.bic.' },
+      r: { code: '___(model1, model2)   # also try BIC(model1, model2)', correct: 'AIC', opts: ['AIC', 'aic', 'Akaike', 'IC'], expl: 'Base-R AIC() (capitals) accepts several models at once and tabulates them; BIC() likewise.' }
+    },
+    {
+      prompt: 'Test whether TWO coefficients are EQUAL: H₀: β_size = β_value (m = 1 restriction).',
+      py: { code: "model.f_test('___')", correct: 'size = value', opts: ['size = value', 'size = value = 0', 'size == value', 'size - value'], expl: '"size = value" is ONE restriction (their difference is zero). "size = value = 0" would be TWO restrictions — a different hypothesis.' },
+      r: { code: 'library(car)\nlinearHypothesis(model, "___")', correct: 'size = value', opts: ['size = value', 'size == value', 'size & value', 'size - value = 1'], expl: 'Single "=" again: "size = value". With m = 1, this F equals the square of the corresponding t-test.' }
     }
   ];
   let lang = 'py';

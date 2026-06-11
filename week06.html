@@ -49,7 +49,28 @@ pre{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px;o
 .stat .k{font-size:.76rem;color:var(--muted);}
 footer{max-width:1000px;margin:30px auto 0;padding:0 20px 40px;color:var(--muted);font-size:.85rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
-@media(max-width:720px){.controls{align-items:stretch;}}
+/* ---- v2 upgrade ---- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.tabbar button{background:var(--panel2);color:var(--text);border:1px solid #334155;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:400;}
+.tabbar button.active{background:var(--accent);color:#0f172a;font-weight:600;}
+.plat{display:none;}
+.plat.active{display:block;}
+.plat h3{font-size:1.05rem;margin:4px 0 10px;}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
+.pcard{background:var(--panel2);border:1px solid #334155;border-radius:10px;padding:12px 14px;cursor:pointer;}
+.pcard .sym{font-size:1.12rem;font-weight:700;color:var(--accent);margin-right:8px;}
+.pcard .nm{font-weight:600;}
+.pcard .one{color:var(--muted);font-size:.87rem;margin-top:2px;}
+.pcard .more{display:none;font-size:.88rem;margin-top:9px;border-top:1px solid #334155;padding-top:8px;line-height:1.55;}
+.pcard.open .more{display:block;}
+.pcard .more b{color:var(--accent2);}
+.pcard .arrow{float:right;color:var(--muted);font-size:.78rem;}
+.try{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:10px 16px;margin-top:14px;font-size:.92rem;}
+.try ol{margin:6px 0 2px;padding-left:20px;}
+.try li{margin:7px 0;}
+.try button{font-size:.78rem;padding:2px 10px;margin-left:8px;background:transparent;color:var(--accent);border:1px solid var(--accent);}
+@media(max-width:720px){.controls{align-items:stretch;}.grid2{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -61,7 +82,87 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
 <p class="intro">A model is only as good as its out-of-sample forecasts. Here you split a 20-year monthly series (synthetic UK-house-price-style growth) into training and hold-out samples, watch dynamic and static forecasts behave very differently, and judge models by RMSE and MAE — then go head-to-head against an AR(1) in the Forecast Duel.</p>
 
 <section class="card">
-<h2>🔬 Simulation — Out-of-sample test bench</h2>
+<h2>📚 Parameters &amp; concepts</h2>
+<p style="font-size:.92rem;color:var(--muted)">The vocabulary of forecast evaluation. Click any card for the formula, real-market values, the extremes, and the estimation traps.</p>
+<div class="pgrid">
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">h</span><span class="nm">Forecast horizon</span>
+<div class="one">How many steps ahead you are predicting.</div>
+<div class="more"><b>Meaning.</b> The distance between the information you have (time t) and the thing you want (time t+h). Everything about forecast quality degrades in h.<br>
+<b>Formula.</b> ŷ<sub>t+h|t</sub> = E[y<sub>t+h</sub> | Ω<sub>t</sub>]; for an AR(1): μ + φ<sup>h</sup>(y<sub>t</sub> − μ).<br>
+<b>Typical values.</b> Risk desks: h = 1–10 days. Macro: 1–8 quarters. Equity-return &ldquo;forecasts&rdquo; beyond a few days: effectively the unconditional mean.<br>
+<b>At the extremes.</b> h = 1: dynamics matter most. h → ∞: the forecast collapses to the mean and the error variance to the unconditional variance — the model adds nothing.<br>
+<b>Estimation problems.</b> h-step errors overlap and are serially correlated (MA(h−1) even for a perfect model), so naive standard errors and tests on them are wrong.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">T₀</span><span class="nm">Training window / split</span>
+<div class="one">The data your parameters are allowed to see; the rest is the hold-out.</div>
+<div class="more"><b>Meaning.</b> Estimation uses {1…T₀}; honest evaluation uses {T₀+1…T} only. The split is the firewall between fitting and testing.<br>
+<b>Formula.</b> RMSE<sub>oos</sub> computed over t = T₀+1…T with parameters frozen (or re-estimated using only data ≤ t).<br>
+<b>Typical values.</b> 70–80% train; finance backtests roll 250–1000-day windows.<br>
+<b>At the extremes.</b> Window too short: parameter noise dominates. Too long: averages over regime changes (see Platform 4). No hold-out at all: you are reporting in-sample fit, which is marketing, not evidence.<br>
+<b>Estimation problems.</b> A single split is one random draw — rankings can flip with the split point. Use rolling-origin evaluation; never shuffle time-series data.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">RMSE</span><span class="nm">RMSE &amp; MAE</span>
+<div class="one">Average miss size — RMSE punishes big misses quadratically, MAE doesn&rsquo;t.</div>
+<div class="more"><b>Meaning.</b> The two standard loss summaries of forecast errors e<sub>t</sub> = y<sub>t</sub> − ŷ<sub>t</sub>.<br>
+<b>Formula.</b> RMSE = √(mean e²); MAE = mean |e|. Always RMSE ≥ MAE.<br>
+<b>Typical values.</b> A useless model&rsquo;s RMSE ≈ the standard deviation of the target — that is the bar to beat, and for returns it is barely beatable.<br>
+<b>At the extremes.</b> RMSE ≫ MAE: a few catastrophic misses (fat-tailed errors). RMSE mysteriously below the in-sample σ̂: smell look-ahead bias.<br>
+<b>Estimation problems.</b> Both are scale-dependent: an RMSE of 2 means nothing without the target&rsquo;s scale, and comparing RMSEs across different samples or periods is meaningless (see clinic).</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">±1.96σ̂<sub>h</sub></span><span class="nm">Forecast interval</span>
+<div class="one">The range that should contain the outcome 95% of the time — if the model is right.</div>
+<div class="more"><b>Meaning.</b> A point forecast plus honesty about its precision. Central banks publish these as fan charts.<br>
+<b>Formula.</b> ŷ<sub>t+h</sub> ± 1.96·σ̂<sub>e</sub>(h), with σ̂<sub>e</sub>²(h) = σ̂²·Σ<sub>j&lt;h</sub>ψ<sub>j</sub>² for an ARMA.<br>
+<b>Typical values.</b> Width grows with h and flattens at ±1.96 × unconditional sd — the fan you saw in Platform 1.<br>
+<b>At the extremes.</b> h = 1: width ±1.96σ̂. h → ∞: the widest the fan ever gets. If intervals do NOT widen with h, the model thinks it can see the future — be suspicious.<br>
+<b>Estimation problems.</b> Standard intervals ignore parameter and model uncertainty, so true coverage &lt; 95%; with fat-tailed financial errors they are narrower still than they should be.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">dyn/stat</span><span class="nm">Dynamic vs static forecasts</span>
+<div class="one">Feed your own forecasts back in (dynamic) — or peek at actual data each step (static).</div>
+<div class="more"><b>Meaning.</b> Dynamic = true multi-step forecasting: ŷ<sub>t+2</sub> uses ŷ<sub>t+1</sub>. Static = a sequence of one-step forecasts using actual lags.<br>
+<b>Formula.</b> Dynamic: ŷ<sub>t+2</sub> = ĉ + φ̂ŷ<sub>t+1</sub>. Static: ŷ<sub>t+2</sub> = ĉ + φ̂y<sub>t+1</sub>.<br>
+<b>Typical values.</b> Static errors stay ≈ σ̂ at all &ldquo;horizons&rdquo;; dynamic errors grow with h.<br>
+<b>At the extremes.</b> Static forecasts hug the data and look brilliant — they are answering an easier question. Dynamic forecasts decay to the mean — that humility is correct.<br>
+<b>Estimation problems.</b> Quoting static accuracy as if it were multi-step performance is one of the oldest over-claims in applied forecasting. Always say which you computed.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">ψ<sub>j</sub></span><span class="nm">ψ-weights (impulse responses)</span>
+<div class="one">The MA(∞) weights that build the forecast-error variance.</div>
+<div class="more"><b>Meaning.</b> ψ<sub>j</sub> is how much a shock from j periods ago still moves today&rsquo;s value — the building blocks of the fan chart.<br>
+<b>Formula.</b> y<sub>t</sub> = μ + Σψ<sub>j</sub>ε<sub>t−j</sub>; σ<sub>e</sub>²(h) = σ²·Σ<sub>j=0</sub><sup>h−1</sup>ψ<sub>j</sub>². AR(1): ψ<sub>j</sub> = φ<sup>j</sup>.<br>
+<b>Typical values.</b> Equity returns: ψ&rsquo;s die almost instantly. Rates and volatility: slow geometric decay.<br>
+<b>At the extremes.</b> Σψ<sub>j</sub>² &lt; ∞ ⇔ stationary. Random walk: ψ<sub>j</sub> = 1 forever, so σ<sub>e</sub>²(h) = hσ² grows without bound — intervals never stop widening.<br>
+<b>Estimation problems.</b> ψ̂&rsquo;s inherit the parameter noise of φ̂ and θ̂, and the errors compound as you iterate them out to long horizons.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">α</span><span class="nm">SES smoothing constant</span>
+<div class="one">How fast exponential smoothing forgets the past.</div>
+<div class="more"><b>Meaning.</b> Simple exponential smoothing forecasts a flat line at a level that is a geometrically weighted average of history — α sets the forgetting rate.<br>
+<b>Formula.</b> ℓ<sub>t</sub> = αy<sub>t</sub> + (1−α)ℓ<sub>t−1</sub>; weight on the observation j periods back: α(1−α)<sup>j</sup>. SES ≡ ARIMA(0,1,1) in disguise.<br>
+<b>Typical values.</b> 0.1–0.3 for macro series; RiskMetrics&rsquo; famous λ = 0.94 for variance is the same idea with α = 0.06.<br>
+<b>At the extremes.</b> α → 1: the naive last-value forecast (random-walk behaviour). α → 0: the long-run average of everything ever seen.<br>
+<b>Estimation problems.</b> An optimised α̂ near 1 is the data telling you the series is close to a random walk; α̂ is poorly pinned down when the series is short or the level barely moves.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">DM</span><span class="nm">Diebold–Mariano test</span>
+<div class="one">Is model 1 genuinely more accurate than model 2 — or just lucky this sample?</div>
+<div class="more"><b>Meaning.</b> A t-test on the loss differential between two forecast series. The antidote to &ldquo;my RMSE is 0.02 smaller, ship it&rdquo;.<br>
+<b>Formula.</b> d<sub>t</sub> = e²<sub>1t</sub> − e²<sub>2t</sub>; DM = d̄ / √(LRV(d̄)/n) → N(0,1) under H₀: equal accuracy.<br>
+<b>Typical values.</b> |DM| &gt; 1.96 rejects at 5%. Sobering fact: most published model comparisons fail to reject — accuracy differences are usually within noise.<br>
+<b>At the extremes.</b> Short evaluation windows: hopeless power. h &gt; 1: overlapping errors require a HAC variance. Nested models: use the Clark–West correction.<br>
+<b>Estimation problems.</b> Running DM on the best of fifty tried models is data snooping — the test is only honest for one pre-registered comparison.</div></div>
+
+</div>
+</section>
+
+<section class="card">
+<h2>🔬 Platforms — four forecasting workbenches</h2>
+<div class="tabbar" id="tabbar">
+  <button class="active" data-plat="plat1">1 · Test bench</button>
+  <button data-plat="plat2">2 · Horizon decay</button>
+  <button data-plat="plat3">3 · Model tournament</button>
+  <button data-plat="plat4">4 · Window &amp; breaks</button>
+</div>
+<div class="plat active" id="plat1">
+<h3>Out-of-sample test bench</h3>
 <p style="font-size:.92rem;color:var(--muted)">Data: monthly annual-growth series, Jan 2005 – Dec 2024 (n = 240), generated once from yₜ = 0.5 + 1.1yₜ₋₁ − 0.3yₜ₋₂ + εₜ, σ = 0.8 (unconditional mean 2.5%). The model is estimated by OLS on the training window only.</p>
 <div class="controls">
   <span class="ctl"><label>Train/test split</label><input type="range" id="sSplit" min="144" max="228" step="6" value="192"><span class="val" id="vSplit"></span></span>
@@ -79,6 +180,136 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
 <canvas id="cMain"></canvas>
 <table id="tblErr"></table>
 <div class="notice"><b>What to notice.</b> <span id="simNote"></span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>AR(2), dynamic, split at 2016 (training 144): watch the fan flatten at the unconditional mean — long-horizon forecasts are &ldquo;the mean, plus humility&rdquo;. <button onclick="MANG.exp1(0)">Set it up</button></li>
+<li>Same setup, static: the forecast suddenly hugs the data and the band stops widening. It looks better because it answers an easier question — one month ahead, every time. <button onclick="MANG.exp1(1)">Set it up</button></li>
+<li>Mean benchmark, dynamic: at long horizons the gap to the AR(2) is smaller than you would guess. Parsimony is a serious competitor. <button onclick="MANG.exp1(2)">Set it up</button></li>
+<li>Split at 2023 (12-month hold-out): re-run your comparisons — rankings wobble, because 12 observations cannot reliably rank models. <button onclick="MANG.exp1(3)">Set it up</button></li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat2">
+<h3>Horizon decay lab — how fast does forecastability die?</h3>
+<p style="font-size:.92rem;color:var(--muted)">Pick the persistence of an AR(1) world. We simulate 300 fresh paths; on each, the model is estimated by OLS on 100 observations and forecasts h = 1…24 steps ahead. The chart shows the RMSE at each horizon converging to the unconditional standard deviation — the &ldquo;I know nothing&rdquo; ceiling.</p>
+<div class="controls">
+  <span class="ctl"><label>φ (persistence of the DGP)</label><input type="range" id="hdPhi" min="0" max="0.95" step="0.05" value="0.80"><span class="val" id="hdVPhi">0.80</span></span>
+  <button id="hdRun">▶ Run 300 paths</button>
+</div>
+<div class="statgrid" id="hdStats"></div>
+<div class="grid2">
+  <canvas id="hdRmse"></canvas>
+  <canvas id="hdFan"></canvas>
+</div>
+<div class="notice"><b>What to notice.</b> <span id="hdNote">Press ▶ to simulate.</span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>φ = 0.90: forecastability survives a dozen periods or so before hitting the ceiling. This is what volatility forecasting feels like. <button onclick="MANG.exp2(0)">Set it up &amp; run</button></li>
+<li>φ = 0.30: the RMSE curve is at the ceiling by h ≈ 3. Macro-growth forecasting, roughly. <button onclick="MANG.exp2(1)">Set it up &amp; run</button></li>
+<li>φ = 0.05 — &ldquo;equity returns mode&rdquo;: the curve starts AT the ceiling. Even one-step-ahead return forecasts are nearly useless; that is the efficient-markets hypothesis drawn as a chart. <button onclick="MANG.exp2(2)">Set it up &amp; run</button></li>
+<li>Compare the &ldquo;horizon where 95% of forecastability is gone&rdquo; readout across the three settings — RMSE reaches 95% of the ceiling when φ<sup>2h</sup> ≤ 0.0975, i.e. h ≈ ln(0.0975)/(2·ln φ).</li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat3">
+<h3>Model tournament — 200 series, five forecasters, one leaderboard</h3>
+<p style="font-size:.92rem;color:var(--muted)">Pick the true data-generating process. One click simulates 200 independent series (T = 130); on each, five rival forecasters are estimated on 110 observations and produce dynamic forecasts for the final 20. The leaderboard reports average RMSE across all horizons and replications.</p>
+<div class="controls">
+  <span class="ctl"><label>True DGP</label>
+    <select id="tnDgp">
+      <option value="ar2">AR(2): yₜ = 0.5 + 1.1yₜ₋₁ − 0.3yₜ₋₂ + εₜ</option>
+      <option value="rw">Random walk: yₜ = yₜ₋₁ + εₜ</option>
+      <option value="nu">Near unit root: φ = 0.98</option>
+    </select></span>
+  <button id="tnRun">🏁 Run the tournament (200 series)</button>
+</div>
+<div id="tnTbl"></div>
+<canvas id="tnBars"></canvas>
+<div class="notice"><b>What to notice.</b> <span id="tnNote">Choose a DGP and press 🏁.</span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>DGP = AR(2): the correctly specified AR(2) wins — but look how close AR(1) runs it. Extra correct structure buys surprisingly little. <button onclick="MANG.exp3(0)">Run it</button></li>
+<li>DGP = random walk: the naive no-change forecast wins and the sample-mean forecast is a disaster — the mean of a random walk is a meaningless number. <button onclick="MANG.exp3(1)">Run it</button></li>
+<li>DGP = near unit root (φ = 0.98): the WRONG random-walk model beats the CORRECTLY specified AR(1). Estimating φ near 1 costs more than assuming φ = 1 for free — a deep forecasting lesson. <button onclick="MANG.exp3(2)">Run it</button></li>
+<li>Note SES&rsquo;s quiet competence everywhere — robustness is why practitioners still love exponential smoothing 70 years on.</li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat4">
+<h3>Window &amp; re-estimation lab — expanding vs rolling when the world changes</h3>
+<p style="font-size:.92rem;color:var(--muted)">An AR(1) series (T = 300) whose intercept can jump at t = 150, shifting the long-run mean from 0 to 5. From t = 80 we produce one-step forecasts, re-estimating by OLS each period two ways: an <b>expanding</b> window (all history) and a <b>rolling</b> window (last W observations). Watch who recovers after the break.</p>
+<div class="controls">
+  <span class="ctl"><label>Highlight scheme</label>
+    <button id="wbExp" class="alt on" style="padding:5px 10px">Expanding</button>
+    <button id="wbRoll" class="alt" style="padding:5px 10px">Rolling</button></span>
+  <span class="ctl"><label>W (rolling window length)</label><input type="range" id="wbW" min="40" max="120" step="10" value="60"><span class="val" id="wbVW">60</span></span>
+  <span class="ctl"><label>Structural break at t = 150</label>
+    <select id="wbBrk"><option value="1">On — mean shifts 0 → 5</option><option value="0">Off — stable world</option></select></span>
+  <button id="wbNew">🎲 New series</button>
+</div>
+<canvas id="wbSeries"></canvas>
+<canvas id="wbErr"></canvas>
+<div id="wbTbl"></div>
+<div class="notice"><b>What to notice.</b> <span id="wbNote"></span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>Break on, W = 40: the rolling forecaster recovers within ~40 periods of the break; the expanding one is still dragged towards the dead regime years later. <button onclick="MANG.exp4(0)">Set it up</button></li>
+<li>Break on, W = 120: rolling now adapts much more slowly — window length is a bet on how fast the world changes. <button onclick="MANG.exp4(1)">Set it up</button></li>
+<li>Break off: the expanding window wins (slightly) — more data, less parameter noise. Stability rewards memory; instability punishes it. <button onclick="MANG.exp4(2)">Set it up</button></li>
+<li>This bias–variance trade-off is why banks re-estimate risk models on rolling 250-day windows rather than &ldquo;all data since 1990&rdquo;.</li>
+</ol></div>
+</div>
+</section>
+
+<section class="card clinic">
+<h2>⚠️ Problems clinic</h2>
+<p style="font-size:.92rem;color:var(--muted)">Six ways forecast evaluations lie to you. Click each card for the symptoms, the test, and the fix — two have live demos.</p>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Look-ahead bias</span>
+<div class="one">Using information at time t that only became available after t.</div>
+<div class="more"><b>What it is.</b> Future data leaking into the information set: standardising with the full-sample mean and sd, using finally-revised macro data, or &ldquo;forecasting&rdquo; today&rsquo;s close with today&rsquo;s close embedded in an indicator.<br>
+<b>How it bites.</b> A backtest Sharpe ratio that doubles, then evaporates the day the strategy trades real money. Quant funds have died of this.<br>
+<b>How to detect.</b> Results too good to be true (out-of-sample RMSE below in-sample σ̂ is a red flag); audit every transformation for full-sample statistics; re-run with strictly real-time (vintage) data.<br>
+<b>Remedy.</b> A pipeline in which the forecast at t may only touch data with timestamps ≤ t — no exceptions, including the scaling constants.</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Data snooping in backtests</span>
+<div class="one">Try 50 models, report the best — &ldquo;significance&rdquo; is then guaranteed and meaningless.</div>
+<div class="more"><b>What it is.</b> Selection bias: the maximum of many noisy performance measures is biased upwards even if every model is useless.<br>
+<b>How it bites.</b> Of 50 random no-skill strategies, the best one typically shows an impressive in-sample equity curve — and a flat one thereafter. Entire newsletters are built on this.<br>
+<b>How to detect.</b> Ask &ldquo;how many things were tried?&rdquo;; White&rsquo;s reality check / Hansen&rsquo;s SPA test correct for the search; an untouched final hold-out exposes the winner.<br>
+<b>Remedy.</b> Pre-register the comparison, keep a sacred hold-out sample you use exactly once, and shade every reported Sharpe by the size of the search that produced it.
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('snoop','dcSNOOP')">▦ Demo: best of 50 useless strategies</button></div>
+<canvas id="dcSNOOP" style="display:none"></canvas></div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Ignoring parameter uncertainty in intervals</span>
+<div class="one">Your fan chart pretends φ̂ and σ̂ are the truth. They are estimates.</div>
+<div class="more"><b>What it is.</b> The textbook interval ŷ ± 1.96σ̂√(Σψ̂²) conditions on the estimated parameters — the extra noise from estimating them is ignored.<br>
+<b>How it bites.</b> Nominal 95% intervals cover perhaps 85–90% in short samples; the understatement is worst exactly when data are scarce and decisions are biggest.<br>
+<b>How to detect.</b> Backtest the intervals: count how often outcomes fall outside (should be ≈ 5%); simulate from the fitted model and check coverage.<br>
+<b>Remedy.</b> Bootstrap forecast intervals, Bayesian predictive distributions, or at minimum a humility factor — and never quote interval coverage you have not backtested.</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Comparing RMSE across different samples</span>
+<div class="one">&ldquo;Model A: RMSE 1.2 (2015–19). Model B: RMSE 2.8 (2020–24). A wins!&rdquo; — no.</div>
+<div class="more"><b>What it is.</b> RMSE is scale- and period-dependent. 2020&rsquo;s volatility was triple 2017&rsquo;s, so the comparison measures the period, not the models.<br>
+<b>How it bites.</b> Vendor pitches and student dissertations alike: a model evaluated on calm years &ldquo;beats&rdquo; one evaluated through a crisis.<br>
+<b>How to detect.</b> Always ask: same target, same transformation, same evaluation window? If not, the numbers are incommensurable.<br>
+<b>Remedy.</b> Common hold-out period for all candidates; scale-free metrics (Theil&rsquo;s U = RMSE/RMSE<sub>naive</sub>); and a Diebold–Mariano test on the SAME error series.</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Structural breaks</span>
+<div class="one">Parameters that shift mid-sample poison forecasts estimated on all of history.</div>
+<div class="more"><b>What it is.</b> Means, persistence or variances change (2008, COVID, a new policy regime). A model estimated across the break is a weighted average of two worlds and forecasts neither.<br>
+<b>How it bites.</b> The expanding-window forecaster in Platform 4 keeps predicting the OLD mean long after the world moved — systematic, one-sided errors that a desk pays for daily.<br>
+<b>How to detect.</b> CUSUM of forecast errors drifting one way; rolling-window parameter estimates trending; Chow tests at suspected break dates.<br>
+<b>Remedy.</b> Rolling windows or exponential down-weighting of old data, break dummies, or regime-switching models (week 9 preview).</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Overfit in-sample ⇒ underperform out-of-sample</span>
+<div class="one">Fit always improves with parameters. Forecasting doesn&rsquo;t.</div>
+<div class="more"><b>What it is.</b> Extra lags soak up sampling noise as if it were signal. In-sample σ̂ falls mechanically; out-of-sample RMSE rises once the memorised noise fails to repeat.<br>
+<b>How it bites.</b> The AIC-champion ARMA(3,3) from week 5; the 12-feature return regression with R² = 0.3 in-sample and negative out-of-sample R². Overfitted trading models lose real money with great confidence.<br>
+<b>How to detect.</b> A widening gap between in-sample fit and pseudo-out-of-sample RMSE as you add parameters; BIC refusing to follow AIC upwards.<br>
+<b>Remedy.</b> BIC, hold-out evaluation, rolling-origin cross-validation — and the old rule: when in doubt, leave it out.
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('ofit','dcOFIT')">▦ Demo: AR(8) vs AR(1) on AR(1) data</button></div>
+<canvas id="dcOFIT" style="display:none"></canvas></div></div>
 </section>
 
 <section class="card">
@@ -100,7 +331,7 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
 
 <section class="card">
 <h2>⌨️ Code challenges</h2>
-<p>Fill the blank in each snippet. Toggle Python (statsmodels) / R (stats + forecast). Score: <span style="color:var(--accent2)">x/6</span> top-right.</p>
+<p>Fill the blank in each snippet. Toggle Python (statsmodels) / R (stats + forecast). Score: <span style="color:var(--accent2)">x/8</span> top-right.</p>
 <div id="quiz"></div>
 </section>
 </main>
@@ -485,9 +716,426 @@ window.MANG = (function(){
          why:'SimpleExpSmoothing lives in statsmodels.tsa.holtwinters. SES forecasts are flat — a weighted average of the past with geometrically decaying weights.'},
      r:{code:'library(forecast)\nfc_ses <- ___(train, h = 12)   # simple exponential smoothing\naccuracy(fc_ses, test)',
         opts:['ses','sma','tslm','arfima'],correct:0,
-        why:'ses() fits simple exponential smoothing and forecasts h steps; accuracy() then reports RMSE/MAE against the hold-out, just like our table.'}}
+        why:'ses() fits simple exponential smoothing and forecasts h steps; accuracy() then reports RMSE/MAE against the hold-out, just like our table.'}},
+    {title:'Diebold–Mariano: is the accuracy gap real?',
+     py:{code:'# e1, e2 = forecast errors of the two models on the SAME hold-out\nd  = e1**2 - e2**2                      # loss differential\ndm = d.mean() / np.sqrt(___ / len(d))   # ~ N(0,1) under H0\n# |dm| > 1.96 -> the accuracy difference is statistically real',
+         opts:['d.var(ddof=1)','d.mean()','d.sum()','len(d)'],correct:0,
+         why:'DM is a t-test on the mean loss differential, so the denominator needs the variance of d (HAC-adjusted for h > 1). Most RMSE gaps you will meet fail this test — sampling noise is huge.'},
+     r:{code:'library(forecast)\n___(e1, e2, h = 1, power = 2)\n# H0: equal forecast accuracy; small p -> one model really is better',
+        opts:['dm.test','t.test','accuracy','var.test'],correct:0,
+        why:'forecast::dm.test implements Diebold–Mariano with the HAC variance built in. A plain t.test ignores the autocorrelation of multi-step loss differentials.'}},
+    {title:'Rolling-origin evaluation (no shuffling!)',
+     py:{code:'from sklearn.model_selection import ___\nfor train_idx, test_idx in TimeSeriesSplit(n_splits=5).split(y):\n    pass  # each fold trains on the PAST, tests on the future',
+         opts:['TimeSeriesSplit','KFold','ShuffleSplit','train_test_split'],correct:0,
+         why:'TimeSeriesSplit keeps time order: folds always train on earlier data and test on later. KFold/ShuffleSplit leak the future into training — the cardinal sin of forecast evaluation.'},
+     r:{code:'library(forecast)\ne <- ___(y, function(x, h) forecast(auto.arima(x), h = h), h = 1)\nsqrt(mean(e^2, na.rm = TRUE))   # rolling-origin RMSE',
+        opts:['tsCV','cv.glm','rollapply','sample'],correct:0,
+        why:'tsCV re-fits at every origin and forecasts forward — the time-series version of cross-validation. One split is one draw; rolling origins average over many.'}}
   ];
   MANG.quiz('quiz',Q);
+})();
+
+/* ---------- v2 shared helpers ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.setCtl=function(map){Object.keys(map).forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.value=String(map[id]);el.dispatchEvent(new Event('input'));});};
+  M.chip=function(k,v){return '<span class="stat"><span class="v">'+v+'</span><br><span class="k">'+k+'</span></span>';};
+  M.exp1=function(k){
+    if(k===0){M.setCtl({sSplit:144,selModel:'ar2'});document.getElementById('bDyn').click();}
+    else if(k===1){M.setCtl({sSplit:144,selModel:'ar2'});document.getElementById('bStat').click();}
+    else if(k===2){M.setCtl({sSplit:144,selModel:'mean'});document.getElementById('bDyn').click();}
+    else {M.setCtl({sSplit:228,selModel:'ar2'});document.getElementById('bDyn').click();}
+  };
+})();
+
+/* ---------- v2 platform 2: horizon decay lab ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat2=function(){
+    var sPhi=document.getElementById('hdPhi'),vPhi=document.getElementById('hdVPhi'),
+        stats=document.getElementById('hdStats'),note=document.getElementById('hdNote'),
+        runBtn=document.getElementById('hdRun');
+    var runId=0;
+    sPhi.addEventListener('input',function(){vPhi.textContent=M.fmt(+sPhi.value,2);});
+    vPhi.textContent=M.fmt(+sPhi.value,2);
+    function run(){
+      var my=++runId,phi=+sPhi.value,NREP=300,H=24,TR=100;
+      var rng=M.mulberry32((Math.random()*4294967296)>>>0),g=M.gauss(rng);
+      var sse=new Array(H).fill(0),done=0,lastPath=null,lastFit=null;
+      runBtn.disabled=true;
+      function chunk(){
+        if(my!==runId)return;
+        var stop=Math.min(NREP,done+30);
+        for(;done<stop;done++){
+          var y=[],prev=0,t;
+          for(t=0;t<TR+H+100;t++){var v=phi*prev+g();y.push(v);prev=v;}
+          y=y.slice(100);
+          var X=[],Y=[];
+          for(t=1;t<TR;t++){X.push([1,y[t-1]]);Y.push(y[t]);}
+          var f=M.ols(X,Y);
+          var l=y[TR-1];
+          for(var h=0;h<H;h++){
+            var fc=f.beta[0]+f.beta[1]*l;l=fc;
+            var e=y[TR+h]-fc;sse[h]+=e*e;
+          }
+          lastPath=y;lastFit=f;
+        }
+        runBtn.textContent='Running… '+done+'/'+NREP;
+        if(done<NREP){setTimeout(chunk,0);return;}
+        runBtn.disabled=false;runBtn.textContent='▶ Run 300 paths';
+        finish(phi,sse,NREP,H,TR,lastPath,lastFit);
+      }
+      chunk();
+    }
+    function finish(phi,sse,NREP,H,TR,path,fit){
+      var rmse=[],hs=[],theo=[],h;
+      var ceil=(phi<1)?1/Math.sqrt(1-phi*phi):Infinity;
+      for(h=1;h<=H;h++){
+        hs.push(h);
+        rmse.push(Math.sqrt(sse[h-1]/NREP));
+        theo.push(Math.sqrt((1-Math.pow(phi,2*h))/(1-phi*phi)));
+      }
+      var top=Math.max(ceil*1.15,Math.max.apply(null,rmse)*1.08);
+      var c=M.Chart(document.getElementById('hdRmse'),230);
+      c.range(0,H,0,top).clear();
+      c.axes(M.ticks(0,H,6),M.ticks(0,top,4),null,function(v){return M.fmt(v,2);});
+      c.hline(ceil,'#94a3b8',[5,4]);
+      c.text('unconditional sd σ/√(1−φ²) = '+M.fmt(ceil,2)+' — the "know nothing" ceiling',c.pad.l+6,c.py(ceil)-6,'#94a3b8');
+      c.line(hs,rmse,'#38bdf8',2);
+      c.dots(hs,theo,'#fbbf24',3);
+      c.text('RMSE by horizon · blue = 300 simulated paths · gold dots = theory σ√((1−φ²ʰ)/(1−φ²))',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      /* fan chart of the last path */
+      var show=40,hist=path.slice(TR-show,TR),xs=[],i;
+      for(i=0;i<show;i++)xs.push(i);
+      var fx=[],fm=[],fl=[],fu=[],l=path[TR-1],phiH=fit.beta[1],sum=0;
+      for(h=1;h<=H;h++){
+        var fc=fit.beta[0]+phiH*l;l=fc;
+        sum+=Math.pow(phiH,2*(h-1));
+        var se=Math.sqrt(sum);
+        fx.push(show-1+h);fm.push(fc);fl.push(fc-1.96*se);fu.push(fc+1.96*se);
+      }
+      var allv=hist.concat(fl,fu);
+      var lo2=Math.min.apply(null,allv),hi2=Math.max.apply(null,allv),m2=(hi2-lo2)*0.08;
+      var c2=M.Chart(document.getElementById('hdFan'),230);
+      c2.range(0,show-1+H,lo2-m2,hi2+m2).clear();
+      c2.axes(M.ticks(0,show-1+H,6),M.ticks(lo2-m2,hi2+m2,4),function(v){return v<show?String(v-show+1):'+'+(v-show+1);},function(v){return M.fmt(v,1);});
+      c2.band(fx,fl,fu,'rgba(251,191,36,0.16)');
+      c2.hline(0,'#94a3b8',[4,4]);
+      c2.line(xs,hist,'#38bdf8',1.6);
+      c2.line(fx,fm,'#fbbf24',2);
+      c2.vline(show-1,'#94a3b8',[5,4]);
+      c2.dots(fx,path.slice(TR,TR+H),'#34d399',2.5);
+      c2.text('One path: history, forecast + 95% fan, green dots = what actually happened',c2.pad.l+6,c2.pad.t+4,'#e2e8f0');
+      var h95=(phi>0.01)?Math.log(0.0975)/(2*Math.log(phi)):0;
+      stats.innerHTML=
+        M.chip('φ (DGP persistence)',M.fmt(phi,2))+
+        M.chip('RMSE at h = 1',M.fmt(rmse[0],3))+
+        M.chip('RMSE at h = 24',M.fmt(rmse[H-1],3))+
+        M.chip('ceiling σ∞',M.fmt(ceil,3))+
+        M.chip('95% of forecastability gone by',(phi>0.01&&h95>=1)?('h ≈ '+M.fmt(h95,1)):'h = 1');
+      note.innerHTML='At h = 1 the model only fails by the one new shock: RMSE ≈ σ = 1. As h grows, unresolved shocks pile up and RMSE climbs to the unconditional sd '+M.fmt(ceil,2)+
+        ' — beyond that point the model knows nothing the long-run mean doesn’t. '+
+        (phi<=0.1?'<b>With φ ≈ 0 the curve starts AT the ceiling: returns are like this, which is why long-horizon (or any-horizon) return forecasts are nearly useless — the efficient-markets hypothesis as a picture.</b>':
+        'Squeeze φ towards 0 to see the equity-returns case, where even h = 1 offers nothing.')+
+        ' Note the simulated RMSE sits slightly ABOVE the gold theory dots: that gap is parameter-estimation error, the cost of using φ̂ instead of φ.';
+    }
+    runBtn.onclick=run;
+    M.exp2=function(k){
+      M.setCtl({hdPhi:k===0?0.9:(k===1?0.3:0.05)});
+      run();
+    };
+    run();
+  };
+})();
+
+/* ---------- v2 platform 3: model tournament ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat3=function(){
+    var dgpSel=document.getElementById('tnDgp'),runBtn=document.getElementById('tnRun'),
+        tbl=document.getElementById('tnTbl'),note=document.getElementById('tnNote');
+    var NAMES=['AR(1)','AR(2)','SES (α = 0.3)','Sample mean','Random walk (no change)'];
+    var runId=0;
+    function run(){
+      var my=++runId,dgp=dgpSel.value,NREP=200,T=130,TRN=110,H=20;
+      var rng=M.mulberry32((Math.random()*4294967296)>>>0),g=M.gauss(rng);
+      var sse=[0,0,0,0,0],cnt=0,done=0;
+      runBtn.disabled=true;
+      function chunk(){
+        if(my!==runId)return;
+        var stop=Math.min(NREP,done+20);
+        for(;done<stop;done++){
+          var y=[],t,v;
+          if(dgp==='ar2'){var y1=2.5,y2=2.5;for(t=0;t<T+100;t++){v=0.5+1.1*y1-0.3*y2+g();y.push(v);y2=y1;y1=v;}y=y.slice(100);}
+          else if(dgp==='rw'){var pr=0;for(t=0;t<T;t++){pr+=g();y.push(pr);}}
+          else {var pv=0;for(t=0;t<T+100;t++){pv=0.98*pv+g();y.push(pv);}y=y.slice(100);}
+          var X1=[],Y1=[],X2=[],Y2=[];
+          for(t=1;t<TRN;t++){X1.push([1,y[t-1]]);Y1.push(y[t]);}
+          for(t=2;t<TRN;t++){X2.push([1,y[t-1],y[t-2]]);Y2.push(y[t]);}
+          var f1=M.ols(X1,Y1),f2=M.ols(X2,Y2);
+          var lvl=y[0];for(t=1;t<TRN;t++)lvl=0.3*y[t]+0.7*lvl;
+          var mu=0;for(t=0;t<TRN;t++)mu+=y[t];mu/=TRN;
+          var a1=y[TRN-1],a2a=y[TRN-1],a2b=y[TRN-2];
+          for(var h=0;h<H;h++){
+            var fAr1=f1.beta[0]+f1.beta[1]*a1;a1=fAr1;
+            var fAr2=f2.beta[0]+f2.beta[1]*a2a+f2.beta[2]*a2b;a2b=a2a;a2a=fAr2;
+            var truth=y[TRN+h];
+            var errs=[fAr1-truth,fAr2-truth,lvl-truth,mu-truth,y[TRN-1]-truth];
+            for(var i=0;i<5;i++)sse[i]+=errs[i]*errs[i];
+            cnt++;
+          }
+        }
+        runBtn.textContent='Running… '+done+'/'+NREP;
+        if(done<NREP){setTimeout(chunk,0);return;}
+        runBtn.disabled=false;runBtn.textContent='🏁 Run the tournament (200 series)';
+        finish(dgp,sse,cnt);
+      }
+      chunk();
+    }
+    function finish(dgp,sse,cnt){
+      var rows=NAMES.map(function(nm,i){return {nm:nm,rmse:Math.sqrt(sse[i]/cnt)};});
+      rows.sort(function(a,b){return a.rmse-b.rmse;});
+      var html='<table><tr><th>rank</th><th>forecaster</th><th>avg RMSE (h = 1…20, 200 series)</th></tr>';
+      rows.forEach(function(r,i){
+        html+='<tr><td>'+(i+1)+(i===0?' 🏆':'')+'</td><td'+(i===0?' class="win"':'')+'>'+r.nm+'</td><td'+(i===0?' class="win"':'')+'>'+M.fmt(r.rmse,3)+'</td></tr>';
+      });
+      html+='</table>';
+      tbl.innerHTML=html;
+      var top=Math.max.apply(null,rows.map(function(r){return r.rmse;}))*1.2;
+      var c=M.Chart(document.getElementById('tnBars'),200);
+      c.range(0,5,0,top).clear();
+      c.axes([],M.ticks(0,top,4),null,function(v){return M.fmt(v,1);});
+      rows.forEach(function(r,i){
+        var bw=(c.px(0.8)-c.px(0));
+        c.bars([i+0.5],[r.rmse],i===0?'#34d399':'#38bdf8',bw);
+        c.text(r.nm,c.px(i+0.5),c.h-8,'#94a3b8','center');
+        c.text(M.fmt(r.rmse,2),c.px(i+0.5),c.py(r.rmse)-5,i===0?'#34d399':'#e2e8f0','center');
+      });
+      c.text('Average RMSE — lower is better',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      var w=rows[0].nm,meanRow=rows.filter(function(r){return r.nm==='Sample mean';})[0];
+      var txt;
+      if(dgp==='ar2')txt='Truth is an AR(2) — and the correctly specified AR(2) wins ('+M.fmt(rows[0].rmse,3)+'), with AR(1) close behind. Knowing the right structure helps, but less than students expect: most of the error is the unforecastable future shocks.';
+      else if(dgp==='rw')txt='Truth is a random walk, and <b>'+w+'</b> takes the trophy ('+M.fmt(rows[0].rmse,3)+'). The sample-mean forecaster is a catastrophe ('+M.fmt(meanRow.rmse,2)+') — a random walk has no mean to revert to, so anchoring forecasts on ȳ is meaningless. If markets are efficient, equity prices are this row: the best forecast of tomorrow’s price is today’s.';
+      else txt='Truth has φ = 0.98 — stationary, so the AR(1) is correctly specified… and yet <b>'+w+'</b> wins. Estimating φ near 1 brings downward bias and noise that cost more than simply assuming φ = 1 for free. A wrong-but-parameter-free model beating a right-but-estimated one is one of forecasting’s deepest lessons.';
+      note.innerHTML=txt;
+    }
+    runBtn.onclick=run;
+    M.exp3=function(k){
+      dgpSel.value=k===0?'ar2':(k===1?'rw':'nu');
+      run();
+    };
+    run();
+  };
+})();
+
+/* ---------- v2 platform 4: window & re-estimation lab ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat4=function(){
+    var bExp=document.getElementById('wbExp'),bRoll=document.getElementById('wbRoll'),
+        sW=document.getElementById('wbW'),vW=document.getElementById('wbVW'),
+        selBrk=document.getElementById('wbBrk'),tbl=document.getElementById('wbTbl'),
+        note=document.getElementById('wbNote');
+    var seed=20260606,scheme='exp',T=300,BRK=150,START=80;
+    function gen(brk){
+      var rng=M.mulberry32(seed),g=M.gauss(rng),y=[],prev=0,t;
+      for(t=0;t<T+50;t++){
+        var tt=t-50;
+        var c=(brk&&tt>=BRK)?2.5:0;   /* phi=0.5 -> long-run mean c/(1-phi) = 5 after the break */
+        var v=c+0.5*prev+g();
+        y.push(v);prev=v;
+      }
+      return y.slice(50);
+    }
+    function olsPair(y,from,to){ /* fit y_t = a + b*y_{t-1}, t in [from,to) */
+      var n=0,sx=0,sy=0,sxx=0,sxy=0,t;
+      for(t=from;t<to;t++){var x=y[t-1],yy=y[t];n++;sx+=x;sy+=yy;sxx+=x*x;sxy+=x*yy;}
+      var den=n*sxx-sx*sx;
+      var b=(den!==0)?(n*sxy-sx*sy)/den:0;
+      var a=(sy-b*sx)/n;
+      return {a:a,b:b};
+    }
+    function draw(){
+      var W=+sW.value,brk=selBrk.value==='1';
+      vW.textContent=String(W);
+      bExp.className=scheme==='exp'?'alt on':'alt';
+      bRoll.className=scheme==='roll'?'alt on':'alt';
+      var y=gen(brk),t;
+      var eE=[],eR=[],xs=[];
+      for(t=START;t<T;t++){
+        var fe=olsPair(y,1,t);
+        var fr=olsPair(y,Math.max(1,t-W),t);
+        eE.push(y[t]-(fe.a+fe.b*y[t-1]));
+        eR.push(y[t]-(fr.a+fr.b*y[t-1]));
+        xs.push(t);
+      }
+      /* series chart */
+      var lo=Math.min.apply(null,y),hi=Math.max.apply(null,y),m=(hi-lo)*0.08;
+      var c=M.Chart(document.getElementById('wbSeries'),190);
+      c.range(0,T-1,lo-m,hi+m).clear();
+      c.axes(M.ticks(0,T-1,6),M.ticks(lo-m,hi+m,4),null,function(v){return M.fmt(v,0);});
+      var xi=[];for(t=0;t<T;t++)xi.push(t);
+      c.line(xi,y,'#38bdf8',1.2);
+      if(brk){c.vline(BRK,'#f87171',[6,4]);c.text('break: mean 0 → 5',c.px(BRK)+5,c.pad.t+16,'#f87171');}
+      c.hline(0,'#334155');
+      c.text('The series'+(brk?' (intercept jumps at t = 150)':' (stable world)'),c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      /* smoothed |errors| */
+      function smooth(e){
+        var out=[],K=15;
+        for(var i=0;i<e.length;i++){
+          var s=0,n2=0;
+          for(var j=Math.max(0,i-K+1);j<=i;j++){s+=Math.abs(e[j]);n2++;}
+          out.push(s/n2);
+        }
+        return out;
+      }
+      var smE=smooth(eE),smR=smooth(eR);
+      var hi2=Math.max(Math.max.apply(null,smE),Math.max.apply(null,smR))*1.15;
+      var c2=M.Chart(document.getElementById('wbErr'),210);
+      c2.range(START,T-1,0,hi2).clear();
+      c2.axes(M.ticks(START,T-1,6),M.ticks(0,hi2,4),null,function(v){return M.fmt(v,1);});
+      if(brk)c2.vline(BRK,'#f87171',[6,4]);
+      c2.line(xs,smE,'#fbbf24',scheme==='exp'?2.6:1.4);
+      c2.line(xs,smR,'#38bdf8',scheme==='roll'?2.6:1.4);
+      c2.text('One-step |forecast error|, 15-period moving average · gold = expanding · blue = rolling (W = '+W+')',c2.pad.l+6,c2.pad.t+4,'#e2e8f0');
+      /* RMSE table */
+      function rmseOf(e,from,to){
+        var s=0,n2=0;
+        for(var i=0;i<xs.length;i++){if(xs[i]>=from&&xs[i]<to){s+=e[i]*e[i];n2++;}}
+        return Math.sqrt(s/Math.max(1,n2));
+      }
+      var pre=[rmseOf(eE,START,BRK),rmseOf(eR,START,BRK)],
+          post=[rmseOf(eE,BRK,T),rmseOf(eR,BRK,T)],
+          full=[rmseOf(eE,START,T),rmseOf(eR,START,T)];
+      function row(nm,vals,other){
+        var html='<tr><td>'+nm+'</td>';
+        vals.forEach(function(v,i){html+='<td class="'+(v<=other[i]?'win':'')+'">'+M.fmt(v,3)+'</td>';});
+        return html+'</tr>';
+      }
+      tbl.innerHTML='<table><tr><th>One-step RMSE</th><th>before t = 150</th><th>after t = 150</th><th>full sample</th></tr>'+
+        row('Expanding window',[pre[0],post[0],full[0]],[pre[1],post[1],full[1]])+
+        row('Rolling window (W = '+W+')',[pre[1],post[1],full[1]],[pre[0],post[0],full[0]])+
+        '</table>';
+      note.innerHTML=brk?
+        'After the break the expanding forecaster keeps averaging in the dead regime — its intercept is a blend of two worlds, so it under-predicts for a long stretch (gold hump). The rolling window forgets the old regime after ~'+sW.value+' periods and recovers (post-break RMSE '+M.fmt(post[1],2)+' vs '+M.fmt(post[0],2)+'). Before the break, expanding is '+(pre[0]<=pre[1]?'slightly better':'about as good')+' — more data, less parameter noise. Window choice is a bet on how fast the world changes.':
+        'No break: the expanding window '+(full[0]<=full[1]?'wins':'roughly ties')+' ('+M.fmt(full[0],3)+' vs '+M.fmt(full[1],3)+') because every extra observation reduces parameter noise and nothing ever goes stale. Rolling pays a variance price for agility it never needs. Turn the break on to see the price reverse.';
+    }
+    bExp.onclick=function(){scheme='exp';draw();};
+    bRoll.onclick=function(){scheme='roll';draw();};
+    sW.addEventListener('input',draw);
+    selBrk.addEventListener('input',draw);
+    document.getElementById('wbNew').onclick=function(){seed=(Math.random()*4294967296)>>>0;draw();};
+    window.addEventListener('resize',function(){if(document.getElementById('plat4').classList.contains('active'))draw();});
+    M.exp4=function(k){
+      if(k===0){selBrk.value='1';M.setCtl({wbW:40});}
+      else if(k===1){selBrk.value='1';M.setCtl({wbW:120});}
+      else {selBrk.value='0';M.setCtl({wbW:60});}
+      draw();
+    };
+    draw();
+  };
+})();
+
+/* ---------- v2 clinic demos ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.clinicDemo=function(kind,cid){
+    var cv=document.getElementById(cid);
+    cv.style.display='block';
+    var rng=M.mulberry32((Math.random()*4294967296)>>>0),g=M.gauss(rng),i,t;
+    if(kind==='snoop'){
+      var NS=50,IS=120,OOS=60,best=null,bestSum=-Infinity,curves=[];
+      for(i=0;i<NS;i++){
+        var cum=[0],s=0;
+        for(t=0;t<IS+OOS;t++){s+=g();cum.push(s);}
+        var inEnd=cum[IS];
+        if(inEnd>bestSum){bestSum=inEnd;best=cum;}
+      }
+      var lo=Math.min.apply(null,best),hi=Math.max.apply(null,best),m=(hi-lo)*0.1||1;
+      var c=M.Chart(cv,190);
+      c.range(0,IS+OOS,lo-m,hi+m).clear();
+      c.axes(M.ticks(0,IS+OOS,6),M.ticks(lo-m,hi+m,4),null,function(v){return M.fmt(v,0);});
+      c.hline(0,'#94a3b8',[4,4]);
+      var xs1=[],xs2=[],i2;
+      for(i2=0;i2<=IS;i2++)xs1.push(i2);
+      for(i2=IS;i2<=IS+OOS;i2++)xs2.push(i2);
+      c.line(xs1,best.slice(0,IS+1),'#fbbf24',2);
+      c.line(xs2,best.slice(IS),'#f87171',2);
+      c.vline(IS,'#94a3b8',[5,4]);
+      c.text('Best of 50 ZERO-skill strategies: golden in-sample, flat/red after selection',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+    }else{
+      /* overfit demo: AR(1) vs AR(8) on AR(1) data, 50 reps */
+      var REP=50,TRN=100,TST=40,fit1=0,fit8=0,oos1=0,oos8=0,n1=0,n8=0;
+      for(var r=0;r<REP;r++){
+        var y=[],prev=0;
+        for(t=0;t<TRN+TST+50;t++){var v=0.5*prev+g();y.push(v);prev=v;}
+        y=y.slice(50);
+        var X1=[],Y1=[],X8=[],Y8=[];
+        for(t=8;t<TRN;t++){
+          X1.push([1,y[t-1]]);Y1.push(y[t]);
+          var row=[1];for(var j=1;j<=8;j++)row.push(y[t-j]);
+          X8.push(row);Y8.push(y[t]);
+        }
+        var f1=M.ols(X1,Y1),f8=M.ols(X8,Y8);
+        fit1+=Math.sqrt(f1.sigma2);fit8+=Math.sqrt(f8.sigma2);
+        for(t=TRN;t<TRN+TST;t++){
+          var p1=f1.beta[0]+f1.beta[1]*y[t-1],p8=f8.beta[0];
+          for(j=1;j<=8;j++)p8+=f8.beta[j]*y[t-j];
+          oos1+=(y[t]-p1)*(y[t]-p1);n1++;
+          oos8+=(y[t]-p8)*(y[t]-p8);n8++;
+        }
+      }
+      var vals=[fit1/REP,fit8/REP,Math.sqrt(oos1/n1),Math.sqrt(oos8/n8)];
+      var labs=['AR(1) in-sample σ̂','AR(8) in-sample σ̂','AR(1) OOS RMSE','AR(8) OOS RMSE'];
+      var cols=['#38bdf8','#fbbf24','#38bdf8','#fbbf24'];
+      var top=Math.max.apply(null,vals)*1.25;
+      var c2=M.Chart(cv,190);
+      c2.range(0,4,0,top).clear();
+      c2.axes([],M.ticks(0,top,4),null,function(v){return M.fmt(v,2);});
+      vals.forEach(function(v,i3){
+        var bw=(c2.px(0.7)-c2.px(0));
+        c2.bars([i3+0.5],[v],cols[i3],bw);
+        c2.text(M.fmt(v,3),c2.px(i3+0.5),c2.py(v)-5,'#e2e8f0','center');
+        c2.text(labs[i3],c2.px(i3+0.5),c2.h-8,'#94a3b8','center');
+      });
+      c2.text('AR(8) "fits" better in-sample — and forecasts worse out-of-sample (50 reps)',c2.pad.l+6,c2.pad.t+4,'#e2e8f0');
+    }
+  };
+})();
+
+/* ---------- v2 tabs + accordions ---------- */
+(function(){
+  'use strict';
+  document.querySelectorAll('.pcard').forEach(function(card){
+    card.addEventListener('click',function(e){
+      var tag=e.target.tagName;
+      if(tag==='BUTTON'||tag==='CANVAS'||tag==='SELECT'||tag==='INPUT'||tag==='OPTION')return;
+      card.classList.toggle('open');
+      var ar=card.querySelector('.arrow');
+      if(ar)ar.textContent=card.classList.contains('open')?'▴ close':'▾ details';
+    });
+  });
+  var bar=document.getElementById('tabbar');
+  if(!bar)return;
+  var btns=Array.prototype.slice.call(bar.querySelectorAll('button'));
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      btns.forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      document.querySelectorAll('.plat').forEach(function(p){p.classList.remove('active');});
+      var id=b.getAttribute('data-plat');
+      document.getElementById(id).classList.add('active');
+      var init=window.MANG['init_'+id];
+      if(init&&!init._done){init._done=true;init();}
+    });
+  });
 })();
 </script>
 </body>

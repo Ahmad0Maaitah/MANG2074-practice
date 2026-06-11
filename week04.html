@@ -33,6 +33,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 select.ui{background:var(--panel2);color:var(--text);border:1px solid #475569;border-radius:8px;padding:6px 10px;font:.95rem var(--font);width:100%}
 canvas{display:block;width:100%;background:var(--panel);border:1px solid #334155;border-radius:10px;margin:10px 0}
 .charts2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
+.stat{background:var(--panel2);border-radius:10px;padding:8px 12px;text-align:center}
+.stat .k{font-size:.8rem;color:var(--muted)}
+.stat .v{font-size:1.12rem;font-weight:700;color:var(--accent)}
+.stat .v.good{color:var(--good)}
+.stat .v.bad{color:var(--bad)}
 .notice{background:var(--panel2);border-left:4px solid var(--accent2);border-radius:10px;padding:12px 16px;margin-top:14px;font-size:.95rem}
 .notice b{color:var(--accent2)}
 .hud{display:flex;gap:14px;flex-wrap:wrap;align-items:center;background:var(--panel2);border-radius:10px;padding:10px 14px;margin:12px 0}
@@ -58,6 +64,37 @@ pre.code select{background:#1e293b;color:var(--accent2);border:1px solid #475569
 .light{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle}
 .light.pass{background:var(--good);box-shadow:0 0 7px var(--good)}
 .light.fail{background:var(--bad);box-shadow:0 0 7px var(--bad)}
+table.reg{border-collapse:collapse;width:100%;font:.88rem Consolas,monospace;margin:10px 0}
+table.reg th,table.reg td{border:1px solid #334155;padding:5px 10px;text-align:right}
+table.reg th:first-child,table.reg td:first-child{text-align:left}
+table.reg th{background:var(--panel2);color:var(--muted)}
+table.reg td.sig{color:var(--good);font-weight:700}
+table.reg td.insig{color:var(--bad)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.pcard{background:var(--panel2);border-radius:10px;padding:12px 16px;cursor:pointer;border:1px solid #334155}
+.pcard:hover{border-color:var(--accent)}
+.pcard .sym{font-weight:700;color:var(--accent2);font-size:1.05rem}
+.pcard .one{color:var(--muted);font-size:.9rem}
+.pcard .body{display:none;font-size:.9rem;margin-top:8px;border-top:1px solid #334155;padding-top:8px}
+.pcard.open .body{display:block}
+.pcard .body p{margin:6px 0}
+.lbl{color:var(--accent);font-weight:600}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tabbar button{background:var(--panel2);color:var(--text);border:1px solid #334155;padding:8px 14px;border-radius:8px;cursor:pointer;font:600 .9rem var(--font)}
+.tabbar button.active{background:var(--accent);color:#0f172a;font-weight:600}
+.platform{display:none}
+.platform.active{display:block}
+.xp{background:var(--panel2);border-radius:10px;padding:12px 16px;margin-top:14px;font-size:.93rem}
+.xp ol{margin:6px 0 0;padding-left:20px}
+.xp li{margin:8px 0}
+button.setit{padding:3px 10px;font-size:.8rem;margin-left:8px;background:var(--accent2)}
+.clinic{border:1px solid #334155;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.clinic>.head{padding:10px 16px;cursor:pointer;background:var(--panel2);font-weight:600;font-size:.97rem}
+.clinic>.head:hover{color:var(--accent)}
+.clinic>.body{display:none;padding:12px 16px;font-size:.93rem}
+.clinic.open>.body{display:block}
+.clinic .body p{margin:6px 0}
+canvas.mini{height:160px}
 footer{max-width:1000px;margin:0 auto;padding:18px 16px 34px;color:var(--muted);font-size:.9rem;text-align:center}
 footer .nav{display:flex;justify-content:space-between;margin-bottom:10px}
 footer a{color:var(--accent);text-decoration:none}
@@ -73,13 +110,105 @@ footer a:hover{text-decoration:underline}
 <main>
 <div class="intro">
   The Gauss–Markov assumptions don’t break loudly — they break in the residual plots. This week you deliberately infect a
-  regression with heteroscedasticity, autocorrelation, fat-tailed errors or the wrong functional form, watch the diagnostic
-  tests light up, and then play doctor: diagnose a hidden disease from four plots alone and prescribe the right remedy.
+  regression with heteroscedasticity, autocorrelation, fat-tailed errors or the wrong functional form; benchmark OLS vs
+  White vs Newey–West standard errors by Monte Carlo; hunt structural breaks with rolling estimates, Chow and CUSUM; and
+  measure exactly how much autocorrelation makes your t-stats lie. Then the clinic, the Regression Doctor game, and the code.
 </div>
 
-<!-- ============ SECTION A: SIMULATION ============ -->
-<section id="sim">
-<h2>🔬 Simulation — Break the assumptions</h2>
+<!-- ============ PARAMETERS & CONCEPTS ============ -->
+<section id="params">
+<h2>📚 Parameters &amp; concepts</h2>
+<p style="color:var(--muted);font-size:.93rem;margin-top:0">Click a card to expand. Eight numbers from the diagnostic toolkit — each one answers "can I trust this regression?"</p>
+<div class="pgrid">
+
+<div class="pcard"><div class="sym">BP / White LM — heteroscedasticity test</div><div class="one">Does the error variance depend on the regressors?</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> regress squared residuals û² on the regressors (Breusch–Pagan) or regressors + squares + cross-products (White). If they explain û², variance isn't constant.</p>
+<p><span class="lbl">Formula:</span> LM = n·R²<sub>aux</sub> ~ χ²(p), p = regressors in the auxiliary regression (crit 5.99 for p = 2).</p>
+<p><span class="lbl">Typical values:</span> with volatility-clustered financial returns, LM rejects almost always at daily frequency.</p>
+<p><span class="lbl">At the extremes:</span> LM ≈ 0 — û² unpredictable (good); huge LM — variance strongly structured. White also reacts to misspecified functional form: a red light isn't a unique diagnosis.</p>
+<p><span class="lbl">Estimation problems:</span> White's version with many regressors eats df (all the squares and cross terms); both tests need the mean equation to be right first.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">DW d — Durbin–Watson</div><div class="one">First-order autocorrelation of residuals; healthy ≈ 2.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> measures whether neighbouring residuals look alike. d ≈ 2(1−ρ̂): positive autocorrelation pushes d below 2, negative above.</p>
+<p><span class="lbl">Formula:</span> d = Σ(û<sub>t</sub> − û<sub>t−1</sub>)² / Σû<sub>t</sub>², bounded in [0, 4].</p>
+<p><span class="lbl">Typical values:</span> d = 2 ⇒ ρ̂ = 0; d = 1 ⇒ ρ̂ ≈ 0.5; d = 0.4 ⇒ ρ̂ ≈ 0.8 (a screaming alarm); levels regressions of trending series often give d &lt; 0.5 — the spurious-regression fingerprint.</p>
+<p><span class="lbl">At the extremes:</span> d → 0 — residuals are basically a random walk; d → 4 — flip-flopping residuals (over-differenced data).</p>
+<p><span class="lbl">Estimation problems:</span> only tests lag 1; invalid with lagged dependent variables (use BG instead); has an "inconclusive zone" in exact small-sample inference.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">BG — Breusch–Godfrey, p lags</div><div class="one">DW's bigger sibling: autocorrelation at any chosen lag depth.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> regress û<sub>t</sub> on the X's plus û<sub>t−1</sub>…û<sub>t−p</sub>; if the lags help, residuals remember their past.</p>
+<p><span class="lbl">Formula:</span> LM = (n−p)·R²<sub>aux</sub> ~ χ²(p).</p>
+<p><span class="lbl">Typical values:</span> p = 4 for quarterly data, 12 for monthly, 5–10 for daily — match p to plausible memory.</p>
+<p><span class="lbl">At the extremes:</span> p too small misses seasonal autocorrelation; p too large wastes power. Valid even with lagged y's, unlike DW.</p>
+<p><span class="lbl">Estimation problems:</span> rejecting tells you residuals correlate but not WHY — omitted dynamics, misspecification, or genuinely AR errors all trigger it; each remedy is different.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">JB — Jarque–Bera on residuals</div><div class="one">Are the residuals normal enough for exact t and F inference?</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> tests residual skewness and excess kurtosis jointly against the normal benchmark (Week 1's test, now applied to û).</p>
+<p><span class="lbl">Formula:</span> JB = n/6·(S² + K²/4) ~ χ²(2), crit 5.99.</p>
+<p><span class="lbl">Typical values:</span> with daily financial data, JB on residuals rejects nearly always — fat tails survive the regression.</p>
+<p><span class="lbl">At the extremes:</span> mild non-normality + large n ⇒ harmless (CLT rescues the t-stats); huge JB driven by a couple of outliers ⇒ investigate the observations, not the distribution.</p>
+<p><span class="lbl">Estimation problems:</span> in small samples non-normality genuinely distorts t and F; JB itself is unreliable below n ≈ 100 (Week 1 clinic).</p>
+</div></div>
+
+<div class="pcard"><div class="sym">VIF — variance inflation factor</div><div class="one">Multicollinearity meter: how redundant is each regressor?</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> VIFⱼ = the factor by which Var(β̂ⱼ) is inflated because xⱼ is predictable from the other regressors (Week 3's lab, now part of the standard check-up).</p>
+<p><span class="lbl">Formula:</span> VIFⱼ = 1/(1−R²ⱼ); SE multiplier = √VIF.</p>
+<p><span class="lbl">Typical values:</span> &lt; 5 fine; &gt; 10 (R²ⱼ &gt; 0.9) the conventional alarm.</p>
+<p><span class="lbl">At the extremes:</span> VIF = 1 — orthogonal luxury; VIF = ∞ — exact collinearity (dummy trap), estimation impossible.</p>
+<p><span class="lbl">Estimation problems:</span> it's a symptom meter, not a test — no p-value, and dropping a variable to "fix" VIF can create omitted-variable bias, which is worse.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">RESET — Ramsey's functional form test</div><div class="one">Is "linear" the right shape at all?</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> add powers of the fitted values (ŷ², ŷ³) to the regression; if they're significant, the conditional mean isn't linear in your X's.</p>
+<p><span class="lbl">Formula:</span> t-test on ŷ² (or F-test on ŷ², ŷ³ jointly) in y = Xβ + γ₂ŷ² + γ₃ŷ³ + u.</p>
+<p><span class="lbl">Typical values:</span> healthy linear DGP ⇒ p ≈ U(0,1); quadratic truth fitted linear ⇒ p &lt; 0.001 routinely.</p>
+<p><span class="lbl">At the extremes:</span> RESET rejecting ⇒ your coefficients are BIASED — robust standard errors cannot save you; the model itself must change (logs, squares, interactions).</p>
+<p><span class="lbl">Estimation problems:</span> it detects "some" misspecification without naming it; significant RESET + significant White often have the same single cause.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">Chow F — structural break test</div><div class="one">Did the coefficients change at a known date?</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> split the sample at a candidate break date, fit both halves separately, and ask whether the improvement over one pooled fit is too big for chance.</p>
+<p><span class="lbl">Formula:</span> F = [(RSS<sub>pooled</sub> − RSS₁ − RSS₂)/k] ÷ [(RSS₁ + RSS₂)/(n − 2k)] ~ F(k, n−2k), k = parameters per regime.</p>
+<p><span class="lbl">Typical values:</span> tested at 2008, 2020, Brexit… financial relationships fail Chow tests depressingly often.</p>
+<p><span class="lbl">At the extremes:</span> break too near the sample edge ⇒ one regime has too few observations; unknown break date ⇒ trying every date inflates size (use sup-F/Quandt–Andrews critical values, not standard F).</p>
+<p><span class="lbl">Estimation problems:</span> assumes equal error variance across regimes — crises break that too; CUSUM-type tests complement it when the date is unknown.</p>
+</div></div>
+
+<div class="pcard"><div class="sym">HC vs HAC — robust standard errors</div><div class="one">White fixes heteroscedasticity; Newey–West fixes that AND autocorrelation.</div>
+<div class="body">
+<p><span class="lbl">Meaning:</span> keep the OLS β̂ but replace the naive variance formula with one that's valid under heteroscedasticity (HC0–HC3) or heteroscedasticity + autocorrelation (HAC / Newey–West).</p>
+<p><span class="lbl">Formula:</span> V = (X′X)⁻¹·S·(X′X)⁻¹ with S = Σû²<sub>t</sub>x<sub>t</sub>x′<sub>t</sub> (HC), plus Bartlett-weighted cross-lag terms w<sub>l</sub> = 1 − l/(L+1) up to lag L (HAC).</p>
+<p><span class="lbl">Typical values:</span> rule-of-thumb HAC lag L ≈ 0.75·n<sup>1/3</sup> (≈ 4 for n = 150); robust SEs in finance are typically 1.2–3× the naive ones.</p>
+<p><span class="lbl">At the extremes:</span> L = 0 reduces HAC to HC; L too large makes the estimate noisy. Coefficients NEVER change — only the SEs.</p>
+<p><span class="lbl">Estimation problems:</span> robust SEs fix <em>inference</em>, never <em>bias</em> — see the clinic's "robust SEs fix everything" fallacy; in small samples HC0 understates, prefer HC1/HC3.</p>
+</div></div>
+
+</div>
+</section>
+
+<!-- ============ PLATFORMS ============ -->
+<section id="platforms">
+<h2>🔬 Platforms — the diagnostics ward</h2>
+<div class="tabbar">
+  <button data-p="p1">1 · Disease simulator</button>
+  <button data-p="p2">2 · Robust SE bench</button>
+  <button data-p="p3">3 · Structural break lab</button>
+  <button data-p="p4">4 · Autocorrelation workshop</button>
+</div>
+
+<!-- ---- Platform 1 ---- -->
+<div class="platform" id="p1">
+<h3>Break the assumptions</h3>
 <p>Baseline DGP (n = 150): <code>y = 2 + 1.5·x + u</code>. Pick a disease, infect the error term u, and watch the four plots and four tests react.</p>
 <div class="controls">
   <div class="ctl"><label><b>Disease</b></label>
@@ -103,6 +232,157 @@ footer a:hover{text-decoration:underline}
 <h3>Diagnostic test panel (5% level)</h3>
 <div id="tests"></div>
 <div class="notice" id="simNotice"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>Heteroscedasticity: the funnel in plot 2 plus the White light. JB often turns red too — one disease, several alarms. <button class="setit" data-x="0">Set it up</button></li>
+<li>Autocorrelation with ρ = 0.9: plot 3 shows long lazy waves; DW ≈ 2(1−0.9) = 0.2. Then slide ρ to 0 and watch the light go green. <button class="setit" data-x="1">Set it up</button></li>
+<li>Non-linearity: the ∪-shaped residuals in plot 2. RESET fires — and unlike the others, this disease BIASES β̂; robust SEs can't help. <button class="setit" data-x="2">Set it up</button></li>
+<li>Healthy patient, new sample, repeatedly: each light still false-alarms ~5% of the time. Four tests at 5% each ⇒ ~19% chance at least one is red when nothing is wrong! <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 2 ---- -->
+<div class="platform" id="p2">
+<h3>Robust SE bench — OLS vs White vs Newey–West, head to head</h3>
+<p>One DGP, 300 Monte-Carlo samples (n = 100), true β = 1.5. For each sample we compute the SAME β̂ but three different standard errors, then check how often the 95% CI actually covers the truth. An honest SE gives ≈95% coverage; a lying one convicts innocent nulls.</p>
+<div class="controls">
+  <div class="ctl"><label><b>DGP</b> (error disease)</label>
+    <select class="ui" id="dgp2">
+      <option value="healthy">😇 Healthy — iid errors</option>
+      <option value="hetero">📈 Heteroscedastic — variance largest at extreme x</option>
+      <option value="ar">🔁 AR(1) errors, ρ = 0.8 (x persistent too)</option>
+    </select></div>
+  <div class="ctl"><label><b>L</b> Newey–West lags: <span class="val" id="L2V">5</span></label>
+    <input type="range" id="L2" min="0" max="12" step="1" value="5"></div>
+  <div class="ctl" style="display:flex;align-items:center"><button id="run2" style="width:100%">▶ Run 300 replications</button></div>
+</div>
+<div class="hud"><span class="pill">Progress <b id="prog2">idle</b></span></div>
+<div id="tbl2"></div>
+<canvas id="covC" style="height:240px"></canvas>
+<div class="notice" id="ntc2"><b>What to notice:</b> choose a DGP and press ▶.</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>Healthy DGP: all three coverages ≈95% and all three mean SEs match the true sd(β̂). When assumptions hold, plain OLS is fine — and most efficient. <button class="setit" data-x="0">Set it up</button></li>
+<li>Heteroscedastic DGP: OLS coverage sinks into the 80s — its SE is systematically too small. White/HC1 climbs back to ≈95% without touching β̂. <button class="setit" data-x="1">Set it up</button></li>
+<li>AR errors with NW lags = 8: OLS coverage collapses into the 60s (t-stats nearly twice too confident); Newey–West claws back a large chunk of it — though at n = 100 even HAC can't reach a full 95%. <button class="setit" data-x="2">Set it up</button></li>
+<li>AR errors but NW lags = 0: with no lag terms NW is just White — and White does NOT fix autocorrelation. Match the remedy to the disease. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 3 ---- -->
+<div class="platform" id="p3">
+<h3>Structural break lab — when the world changes mid-sample</h3>
+<p>n = 200 days of y = 1 + β·x + u where β jumps from 1.0 to 1.0 + Δβ at the break point. Hunt it three ways: rolling estimates (window 50),
+the Chow F-test at a split YOU choose, and the CUSUM of recursive residuals drifting outside its 5% bands. Finance framing: this is a 2008-style beta shift.</p>
+<div class="controls">
+  <div class="ctl"><label><b>Break point</b> (% of sample): <span class="val" id="bp3V">60</span>%</label>
+    <input type="range" id="bp3" min="20" max="80" step="5" value="60"></div>
+  <div class="ctl"><label><b>Δβ</b> break magnitude: <span class="val" id="mg3V">0.8</span></label>
+    <input type="range" id="mg3" min="0" max="1.5" step="0.1" value="0.8"></div>
+  <div class="ctl"><label><b>Chow split</b> tested at (%): <span class="val" id="cs3V">60</span>%</label>
+    <input type="range" id="cs3" min="20" max="80" step="5" value="60"></div>
+  <div class="ctl" style="display:flex;align-items:center"><button id="regen3" style="width:100%">🎲 New sample</button></div>
+</div>
+<div class="stats">
+  <div class="stat"><div class="k">Chow F (k = 2)</div><div class="v" id="st3f">–</div></div>
+  <div class="stat"><div class="k">crit F(2, n−4) 5%</div><div class="v" id="st3c">–</div></div>
+  <div class="stat"><div class="k">p-value</div><div class="v" id="st3p">–</div></div>
+  <div class="stat"><div class="k">verdict</div><div class="v" id="st3v">–</div></div>
+</div>
+<div class="charts2">
+  <canvas id="rollC3" style="height:240px"></canvas>
+  <canvas id="cusumC" style="height:240px"></canvas>
+</div>
+<div class="notice" id="ntc3"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>2008 mode: break at 60%, Δβ = 0.9, Chow tested at 60%. Massive F, CUSUM smashes through the band — the easy case, with hindsight. <button class="setit" data-x="0">Set it up</button></li>
+<li>Δβ = 0: no break exists. The Chow test should reject only ~5% of the time — regenerate a few times and count your false alarms. <button class="setit" data-x="1">Set it up</button></li>
+<li>True break at 40% but Chow tested at 70%: power drains away when you test the wrong date. In real life you DON'T know the date — that's what CUSUM and sup-F tests are for. <button class="setit" data-x="2">Set it up</button></li>
+<li>A subtle Δβ = 0.3 break: the rolling line barely flinches and CUSUM drifts out slowly or not at all. Most real breaks look like this, not like 2008. <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+
+<!-- ---- Platform 4 ---- -->
+<div class="platform" id="p4">
+<h3>Autocorrelation workshop — why your t-stats lie</h3>
+<p>DGP (n = 200): y = 2 + 1.5·x + u with AR(1) errors u<sub>t</sub> = ρ·u<sub>t−1</sub> + ε<sub>t</sub>, and a persistent regressor (x is AR(1) with φ<sub>x</sub> = 0.8 — like most financial predictors).
+Left: the residual ACF and tests for ONE sample. Right: the damage curve — how much bigger the TRUE sd(β̂) is than the SE that OLS reports, as ρ grows (Monte Carlo), and how much Newey–West repairs.</p>
+<div class="controls">
+  <div class="ctl"><label><b>ρ</b> AR(1) error persistence: <span class="val" id="r4V">0.70</span></label>
+    <input type="range" id="r4" min="0" max="0.95" step="0.05" value="0.7"></div>
+  <div class="ctl" style="display:flex;align-items:center;gap:8px">
+    <button id="regen4" class="alt" style="flex:1">🎲 New sample</button>
+    <button id="mc4" style="flex:1">▶ Run damage curve MC</button></div>
+</div>
+<div class="stats">
+  <div class="stat"><div class="k">DW d (≈ 2(1−ρ̂))</div><div class="v" id="st4d">–</div></div>
+  <div class="stat"><div class="k">ρ̂ from residuals</div><div class="v" id="st4r">–</div></div>
+  <div class="stat"><div class="k">BG LM p (3 lags)</div><div class="v" id="st4b">–</div></div>
+  <div class="stat"><div class="k">analytic SE ratio √((1+ρφ)/(1−ρφ))</div><div class="v" id="st4a">–</div></div>
+</div>
+<div class="charts2">
+  <canvas id="acfC" style="height:240px"></canvas>
+  <canvas id="ratioC" style="height:240px"></canvas>
+</div>
+<div class="hud"><span class="pill">MC progress <b id="prog4">not run</b></span></div>
+<div class="notice" id="ntc4"><b>What to notice:</b> …</div>
+<div class="xp"><b>🧪 Try this</b><ol>
+<li>ρ = 0: ACF flat inside the dashed bands, DW ≈ 2, ratio ≈ 1 — OLS SEs tell the truth. <button class="setit" data-x="0">Set it up</button></li>
+<li>ρ = 0.7: ACF decays geometrically (0.7, 0.49, 0.34…), DW ≈ 0.6, and the true SE is ≈1.9× what OLS reports — every t-stat is nearly double its honest size. <button class="setit" data-x="1">Set it up</button></li>
+<li>ρ = 0.95: the ratio passes 2.5×. A reported t of 5 is really a t of 2. This is how overlapping-return studies "discover" predictability. <button class="setit" data-x="2">Set it up</button></li>
+<li>Run the damage-curve MC: the gold NW line stays far closer to 1 than the red OLS line — HAC SEs repair most of the lie (never all of it at n = 200). <button class="setit" data-x="3">Set it up</button></li>
+</ol></div>
+</div>
+</section>
+
+<!-- ============ PROBLEMS CLINIC ============ -->
+<section id="clinicSec">
+<h2>⚠️ Problems clinic</h2>
+<p style="color:var(--muted);font-size:.93rem;margin-top:0">Six diagnostic disasters from real empirical finance.</p>
+
+<div class="clinic"><div class="head">▸ 1 · Heteroscedasticity in volatility-clustered returns</div><div class="body">
+<p><span class="lbl">What it is:</span> financial error variance moves in regimes — calm spells, crisis spells. Any regression on daily returns inherits this: Var(u<sub>t</sub>) is a process, not a constant.</p>
+<p><span class="lbl">How it bites:</span> event studies and CAPM regressions over windows containing a crisis get standard errors that average calm and storm — understating uncertainty exactly when observations are wildest, so "significant" announcements effects appear out of noise.</p>
+<p><span class="lbl">How to detect:</span> White/BP on residuals; plot û² over time (clusters are visible to the naked eye); ARCH-LM test (Week 7 formalises it).</p>
+<p><span class="lbl">Remedy:</span> White/HC SEs at minimum; better, model the variance with GARCH or weight observations (WLS); never quote naive SEs for daily-return regressions.</p>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 2 · Overlapping returns: autocorrelation you built yourself</div><div class="body">
+<p><span class="lbl">What it is:</span> using rolling k-period returns (e.g. 20-day returns computed daily) makes consecutive observations share k−1 days of data — mechanically autocorrelated errors with ACF declining linearly to lag k−1, even if daily returns are iid.</p>
+<p><span class="lbl">How it bites:</span> long-horizon "return predictability" regressions (dividend yield predicting 5-year returns) have famously inflated t-stats; entire literatures shrank once HAC/overlap corrections were applied.</p>
+<p><span class="lbl">How to detect:</span> you KNOW it's there by construction — check the residual ACF: triangular decay out to lag k−1 is the signature.</p>
+<p><span class="lbl">Remedy:</span> Newey–West with L ≥ k−1 lags, use non-overlapping periods (fewer but honest observations), or Hansen–Hodrick SEs.</p>
+<button class="alt" id="c2btn">▶ Demo: ACF of 20-day overlapping returns built from iid daily returns</button>
+<canvas id="c2cv" class="mini" style="display:none"></canvas>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 3 · Non-normality and small samples: when the CLT hasn't arrived yet</div><div class="body">
+<p><span class="lbl">What it is:</span> exact t and F distributions assume normal errors. With fat-tailed errors the CLT still rescues large samples, but in small ones (n &lt; ~50) t-stats are genuinely mis-sized — especially with outlier-prone financial data.</p>
+<p><span class="lbl">How it bites:</span> a hedge-fund due-diligence regression on 36 monthly observations with one −20% month: the t-distribution is the wrong yardstick, the outlier dominates β̂, and both Type I and Type II error rates are off.</p>
+<p><span class="lbl">How to detect:</span> JB on residuals + a residual QQ-plot; ask "would deleting my biggest residual change the conclusion?"</p>
+<p><span class="lbl">Remedy:</span> more data where possible; bootstrap inference; check robustness to outliers (dummy them or re-estimate without); with n large, mild non-normality is the ONE disease you may ignore.</p>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 4 · Functional-form misspecification: the disease robust SEs can't touch</div><div class="body">
+<p><span class="lbl">What it is:</span> fitting a line through a curve. The error term absorbs the systematic gap, so E[u|x] ≠ 0 — the one assumption whose failure BIASES β̂ rather than just its SE.</p>
+<p><span class="lbl">How it bites:</span> bond price vs yield (convex!), option value vs moneyness, size effects that flatten out — fitted linear, the slope is an average of different local slopes and predicts badly everywhere; hedges sized on it are wrong in both tails.</p>
+<p><span class="lbl">How to detect:</span> RESET (ŷ² significant); ∪/∩ patterns in residuals vs fitted; plot y against each x and LOOK.</p>
+<p><span class="lbl">Remedy:</span> change the model — logs, squares, piecewise terms, interactions. White SEs on a misspecified mean = precisely estimated nonsense.</p>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 5 · Structural breaks: parameters with an expiry date</div><div class="body">
+<p><span class="lbl">What it is:</span> regression coefficients that changed during the sample — regime shifts from policy (QE), technology (HFT), or crises (2008, 2020). The "full-sample" estimate describes an average world that never existed.</p>
+<p><span class="lbl">How it bites:</span> risk models calibrated across 2007–2009 averaged pre- and post-Lehman betas; pairs-trading relationships estimated across a break mean-revert to a mean that's gone. Forecasts from pre-break data fail silently.</p>
+<p><span class="lbl">How to detect:</span> Chow F at suspected dates; CUSUM/recursive estimates when the date is unknown; rolling coefficients drifting (Platform 3); sup-F (Quandt–Andrews) for honest unknown-date inference.</p>
+<p><span class="lbl">Remedy:</span> split the sample / dummy-interact the break; use post-break data for forecasting; regime-switching models (Week 9) when regimes recur.</p>
+</div></div>
+
+<div class="clinic"><div class="head">▸ 6 · The "robust SEs fix everything" fallacy</div><div class="body">
+<p><span class="lbl">What it is:</span> the belief that slapping cov_type='HAC' on any regression makes it publishable. Robust SEs fix <em>inference about an unbiased estimate</em>. They do nothing about bias from omitted variables, wrong functional form, simultaneity, or structural breaks.</p>
+<p><span class="lbl">How it bites:</span> a misspecified model with beautiful Newey–West t-stats is a confidently wrong model. The demo below: a quadratic DGP fitted linear — White SEs change the t-stat, but β̂ stays exactly as biased as before.</p>
+<p><span class="lbl">How to detect:</span> ask which assumption failed. Errors' VARIANCE/CORRELATION wrong ⇒ robust SEs appropriate. Errors' MEAN related to x (RESET, OVB, endogeneity) ⇒ the estimate itself is broken.</p>
+<p><span class="lbl">Remedy:</span> diagnose before prescribing (the game below trains exactly this); fix the mean equation first, then make the SEs robust as the final coat of paint.</p>
+<button class="alt" id="c6btn">▶ Demo: quadratic truth, linear fit — robust SEs vs the bias</button>
+<div id="c6out" style="font-size:.9rem;color:var(--muted)"></div>
+</div></div>
 </section>
 
 <!-- ============ SECTION B: GAME ============ -->
@@ -134,7 +414,7 @@ then prescribe the <b>remedy</b> (+5). Streak bonus +5 for consecutive correct d
 <div class="langtog">
   <button id="ccPy" class="on">Python</button>
   <button id="ccR" class="alt">R</button>
-  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/6</span>
+  <span class="pill" style="margin-left:auto;background:var(--panel2);border-radius:999px;padding:4px 14px">Solved <b id="ccScore" style="color:var(--accent2)">0</b>/8</span>
 </div>
 <div id="cc-list"></div>
 </section>
@@ -270,7 +550,7 @@ window.MANG = (function () {
     const jb = n / 6 * (skew * skew + exk * exk / 4);
     return { n: n, mean: m, sd: sd, skew: skew, exk: exk, jb: jb };
   }
-  /* ---- matrix OLS for aux regressions ---- */
+  /* ---- matrix OLS ---- */
   function matInv(A0) {
     const n = A0.length;
     const A = A0.map(function (row, i) {
@@ -316,9 +596,47 @@ window.MANG = (function () {
     }
     const s2 = rss / (n - k);
     const se = beta.map(function (_, i) { return Math.sqrt(s2 * Ai[i][i]); });
-    return { beta: beta, se: se, rss: rss, tss: tss, r2: 1 - rss / tss, resid: resid, fitted: fitted, n: n, k: k };
+    return { beta: beta, se: se, rss: rss, tss: tss, r2: 1 - rss / tss, resid: resid, fitted: fitted, n: n, k: k, XtXi: Ai };
   }
-  /* ---- t distribution p-values ---- */
+  /* ---- robust covariances (k small) ---- */
+  function robustSE(X, resid, XtXi, type, L) {
+    // S = sum e_t^2 x_t x_t' (+ Bartlett-weighted cross terms for HAC)
+    const n = X.length, k = X[0].length;
+    const S = [];
+    for (let i = 0; i < k; i++) S.push(new Array(k).fill(0));
+    for (let t = 0; t < n; t++) {
+      const e2 = resid[t] * resid[t];
+      for (let i = 0; i < k; i++)
+        for (let j = 0; j < k; j++) S[i][j] += e2 * X[t][i] * X[t][j];
+    }
+    if (type === 'hac' && L > 0) {
+      for (let l = 1; l <= L; l++) {
+        const w = 1 - l / (L + 1);
+        for (let t = l; t < n; t++) {
+          const ee = resid[t] * resid[t - l];
+          for (let i = 0; i < k; i++)
+            for (let j = 0; j < k; j++)
+              S[i][j] += w * ee * (X[t][i] * X[t - l][j] + X[t - l][i] * X[t][j]);
+        }
+      }
+    }
+    // V = XtXi * S * XtXi  (with HC1 small-sample scaling for 'hc1')
+    const T1 = [];
+    for (let i = 0; i < k; i++) {
+      T1.push(new Array(k).fill(0));
+      for (let j = 0; j < k; j++)
+        for (let q = 0; q < k; q++) T1[i][j] += XtXi[i][q] * S[q][j];
+    }
+    const V = [];
+    for (let i = 0; i < k; i++) {
+      V.push(new Array(k).fill(0));
+      for (let j = 0; j < k; j++)
+        for (let q = 0; q < k; q++) V[i][j] += T1[i][q] * XtXi[q][j];
+    }
+    const scale = (type === 'hc1') ? n / (n - k) : 1;
+    return V.map(function (row, i) { return Math.sqrt(Math.max(0, scale * row[i])); });
+  }
+  /* ---- t / F distributions ---- */
   function logGamma(x) {
     const g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
     let y = x, tmp = x + 5.5;
@@ -361,7 +679,63 @@ window.MANG = (function () {
     return t > 0 ? 1 - p : p;
   }
   function tPval2(t, df) { return 2 * (1 - tCDF(Math.abs(t), df)); }
-  return { mulberry32: mulberry32, gauss: gauss, tDraw: tDraw, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, drawHist: drawHist, stats: stats, olsK: olsK, tPval2: tPval2, fmt: fmt };
+  function fCDF(f, d1, d2) {
+    if (f <= 0) return 0;
+    return ibeta(d1 / 2, d2 / 2, d1 * f / (d1 * f + d2));
+  }
+  function fCrit(d1, d2, alpha) {
+    let lo = 0, hi = 1000;
+    for (let i = 0; i < 100; i++) {
+      const mid = (lo + hi) / 2;
+      if (fCDF(mid, d1, d2) < 1 - alpha) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+  function chiCDF(x, k) { // via series relation with ibeta? use gamma incomplete approx through fCDF not direct; simple: Wilson-Hilferty
+    if (x <= 0) return 0;
+    // Wilson–Hilferty approximation
+    const z = (Math.pow(x / k, 1 / 3) - (1 - 2 / (9 * k))) / Math.sqrt(2 / (9 * k));
+    // normal CDF
+    const t = 1 / (1 + 0.2316419 * Math.abs(z));
+    const d = Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+    const p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+    return z >= 0 ? 1 - p : p;
+  }
+  /* --- platform tab plumbing --- */
+  const platforms = {};
+  function registerPlatform(id, obj) { platforms[id] = { obj: obj, inited: false }; }
+  function openPlatform(id) {
+    document.querySelectorAll('.tabbar button[data-p]').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-p') === id);
+    });
+    document.querySelectorAll('.platform').forEach(function (p) {
+      p.classList.toggle('active', p.id === id);
+    });
+    const rec = platforms[id];
+    if (rec) {
+      if (!rec.inited) { rec.inited = true; rec.obj.init(); }
+      else if (rec.obj.redraw) { rec.obj.redraw(); }
+    }
+  }
+  function isActive(id) {
+    const el = document.getElementById(id);
+    return el && el.classList.contains('active');
+  }
+  return { mulberry32: mulberry32, gauss: gauss, tDraw: tDraw, fitCanvas: fitCanvas, frame: frame, drawLine: drawLine, drawDots: drawDots, drawHist: drawHist, stats: stats, olsK: olsK, matInv: matInv, robustSE: robustSE, tPval2: tPval2, tCDF: tCDF, fCDF: fCDF, fCrit: fCrit, chiCDF: chiCDF, fmt: fmt, registerPlatform: registerPlatform, openPlatform: openPlatform, isActive: isActive };
+})();
+
+/* ===== Accordions + tab clicks ===== */
+(function () {
+  'use strict';
+  document.querySelectorAll('.pcard').forEach(function (c) {
+    c.addEventListener('click', function () { c.classList.toggle('open'); });
+  });
+  document.querySelectorAll('.clinic > .head').forEach(function (h) {
+    h.addEventListener('click', function () { h.parentElement.classList.toggle('open'); });
+  });
+  document.querySelectorAll('.tabbar button[data-p]').forEach(function (b) {
+    b.addEventListener('click', function () { window.MANG.openPlatform(b.getAttribute('data-p')); });
+  });
 })();
 </script>
 
@@ -460,7 +834,7 @@ window.MANG = (function () {
 </script>
 
 <script>
-/* ===== SECTION A: Break the assumptions ===== */
+/* ===== Platform 1: Break the assumptions ===== */
 (function () {
   'use strict';
   const M = window.MANG, L = M.lab;
@@ -470,7 +844,7 @@ window.MANG = (function () {
   const NOTES = {
     healthy: 'All four lights should usually be green (each test still false-alarms ~5% of the time — regenerate to see it). Plot 2 is a structureless cloud, plot 3 is white noise, plot 4 matches the gold curve.',
     hetero: '<b>Plot 2 exposes it</b>: the residual cloud fans out as ŷ (and x) grows — Var(u) rises with x². The White/BP light turns red because x and x² explain û². (JB often turns red too: a mixture of small- and large-variance normals is itself fat-tailed!) OLS coefficients stay unbiased, but the usual SEs are wrong → use White-robust SEs.',
-    auto: '<b>Plot 3 exposes it</b>: long runs of residuals on the same side of zero. DW ≈ 2(1−ρ̂), so with ρ = ' ,
+    auto: '<b>Plot 3 exposes it</b>: long runs of residuals on the same side of zero. DW ≈ 2(1−ρ̂), so with ρ = ',
     nonnorm: '<b>Plot 4 exposes it</b>: a peaked centre and a few extreme outliers the gold normal curve can’t cover — JB blows up via the kurtosis term. With n large, inference survives via the CLT, but exact small-sample t/F results lean on normality.',
     nonlin: '<b>Plots 1 and 2 expose it</b>: the line cuts through a curve, so residuals form a ∪/∩ pattern against fitted values. RESET adds ŷ² and finds it significant — the functional form is wrong; add x² or transform, don’t just fix the SEs. (White often lights up too, since the squared residuals track x² — one disease can trip several alarms, which is why doctors look at the plots.)'
   };
@@ -509,14 +883,623 @@ window.MANG = (function () {
     $('simNotice').innerHTML = '<b>What to notice:</b> ' + note;
   }
 
-  $('disease').addEventListener('input', run);
-  $('rho').addEventListener('input', function () {
-    $('rhoV').textContent = parseFloat($('rho').value).toFixed(2);
+  const EXPS = [
+    function () { $('disease').value = 'hetero'; },
+    function () { $('disease').value = 'auto'; $('rho').value = 0.9; $('rhoV').textContent = '0.90'; },
+    function () { $('disease').value = 'nonlin'; },
+    function () { $('disease').value = 'healthy'; }
+  ];
+
+  function init() {
+    $('disease').addEventListener('input', run);
+    $('rho').addEventListener('input', function () {
+      $('rhoV').textContent = parseFloat($('rho').value).toFixed(2);
+      run();
+    });
+    $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; run(); });
+    document.querySelectorAll('#p1 .setit').forEach(function (b) {
+      b.addEventListener('click', function () {
+        EXPS[parseInt(b.getAttribute('data-x'), 10)]();
+        seed = (Math.random() * 1e9) >>> 0;
+        run();
+      });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p1')) redraw(); });
     run();
+  }
+  M.registerPlatform('p1', { init: init, redraw: redraw });
+})();
+</script>
+
+<script>
+/* ===== Platform 2: Robust SE bench ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const REPS = 300, N = 100, BETA = 1.5;
+  let running = false, results = null;
+
+  function genSample(rng, dgp) {
+    const x = new Array(N), y = new Array(N);
+    if (dgp === 'ar') {
+      // persistent regressor + AR(1) errors
+      let xv = M.gauss(rng), u = 2 * M.gauss(rng);
+      const phx = 0.8, rho = 0.8;
+      for (let t = 0; t < N; t++) {
+        xv = phx * xv + Math.sqrt(1 - phx * phx) * M.gauss(rng);
+        u = rho * u + 2 * Math.sqrt(1 - rho * rho) * M.gauss(rng);
+        x[t] = 3 * xv;
+        y[t] = 2 + BETA * x[t] + u;
+      }
+    } else {
+      for (let t = 0; t < N; t++) {
+        x[t] = 10 * rng();
+        const u = (dgp === 'hetero') ? (0.2 + 0.12 * (x[t] - 5) * (x[t] - 5)) * M.gauss(rng) : 2 * M.gauss(rng);
+        y[t] = 2 + BETA * x[t] + u;
+      }
+    }
+    return { x: x, y: y };
+  }
+
+  function run() {
+    if (running) return;
+    running = true;
+    $('run2').disabled = true;
+    const dgp = $('dgp2').value;
+    const Lnw = parseInt($('L2').value, 10);
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    let done = 0;
+    const betas = [], seO = [], seW = [], seN = [];
+    let covO = 0, covW = 0, covN = 0;
+    function chunk() {
+      const lim = Math.min(done + 20, REPS);
+      for (; done < lim; done++) {
+        const s = genSample(rng, dgp);
+        const X = s.x.map(function (v) { return [1, v]; });
+        const f = M.olsK(X, s.y);
+        const b = f.beta[1];
+        betas.push(b);
+        const so = f.se[1];
+        const sw = M.robustSE(X, f.resid, f.XtXi, 'hc1', 0)[1];
+        const sn = M.robustSE(X, f.resid, f.XtXi, 'hac', Lnw)[1];
+        seO.push(so); seW.push(sw); seN.push(sn);
+        if (Math.abs(b - BETA) <= 1.96 * so) covO++;
+        if (Math.abs(b - BETA) <= 1.96 * sw) covW++;
+        if (Math.abs(b - BETA) <= 1.96 * sn) covN++;
+      }
+      $('prog2').textContent = done + '/' + REPS;
+      if (done < REPS) { setTimeout(chunk, 0); return; }
+      // summarise
+      let mb = 0; for (const b of betas) mb += b; mb /= REPS;
+      let vb = 0; for (const b of betas) vb += (b - mb) * (b - mb); vb /= (REPS - 1);
+      const trueSD = Math.sqrt(vb);
+      function mean(a) { let s = 0; for (const v of a) s += v; return s / a.length; }
+      results = {
+        dgp: dgp, L: Lnw, trueSD: trueSD,
+        mO: mean(seO), mW: mean(seW), mN: mean(seN),
+        cO: covO / REPS, cW: covW / REPS, cN: covN / REPS
+      };
+      running = false;
+      $('run2').disabled = false;
+      $('prog2').textContent = 'done';
+      redraw();
+    }
+    chunk();
+  }
+
+  function redraw() {
+    if (!results) {
+      const c0 = M.fitCanvas($('covC'));
+      M.frame(c0.ctx, c0.W, c0.H, 0, 1, 0, 1, { title: 'Coverage results appear here — pick a DGP and press ▶' });
+      return;
+    }
+    const r = results;
+    const dgpName = { healthy: 'Healthy (iid errors)', hetero: 'Heteroscedastic', ar: 'AR(1) errors, ρ = 0.8' }[r.dgp];
+    let html = '<table class="reg"><tr><th>method</th><th>mean reported SE(β̂)</th><th>true sd(β̂) across reps</th><th>SE honest?</th><th>95% CI coverage</th></tr>';
+    const rows = [
+      ['OLS (naive)', r.mO, r.cO],
+      ['White HC1', r.mW, r.cW],
+      ['Newey–West (L=' + r.L + ')', r.mN, r.cN]
+    ];
+    rows.forEach(function (row) {
+      const ratio = row[1] / r.trueSD;
+      const ok = Math.abs(row[2] - 0.95) < 0.035;
+      html += '<tr><td>' + row[0] + '</td><td>' + row[1].toFixed(4) + '</td><td>' + r.trueSD.toFixed(4) +
+        '</td><td class="' + (ratio > 0.9 && ratio < 1.15 ? 'sig' : 'insig') + '">' + (100 * ratio).toFixed(0) + '% of truth</td>' +
+        '<td class="' + (ok ? 'sig' : 'insig') + '">' + (100 * row[2]).toFixed(1) + '%</td></tr>';
+    });
+    html += '</table>';
+    $('tbl2').innerHTML = html;
+    // coverage bar chart
+    const c = M.fitCanvas($('covC'));
+    const ctx = c.ctx, W = c.W, H = c.H;
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(0, 0, W, H);
+    const padL = 46, padR = 10, padT = 24, padB = 34;
+    const Y = v => H - padB - v * (H - padT - padB);
+    ctx.font = '11px Segoe UI, sans-serif';
+    for (let i = 0; i <= 4; i++) {
+      const v = i / 4;
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padL, Y(v)); ctx.lineTo(W - padR, Y(v)); ctx.stroke();
+      ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'right';
+      ctx.fillText((v * 100).toFixed(0) + '%', padL - 6, Y(v) + 4);
+    }
+    ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'left';
+    ctx.fillText('Empirical coverage of nominal 95% CIs — ' + dgpName, padL, 14);
+    ctx.strokeStyle = '#fbbf24'; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(padL, Y(0.95)); ctx.lineTo(W - padR, Y(0.95)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText('95%', W - padR - 28, Y(0.95) - 5);
+    const names = ['OLS', 'White HC1', 'NW(L=' + r.L + ')'];
+    const vals = [r.cO, r.cW, r.cN];
+    const cols = ['#f87171', '#38bdf8', '#34d399'];
+    const slotW = (W - padL - padR) / 3;
+    vals.forEach(function (v, i) {
+      const cx = padL + slotW * (i + 0.5), bw = slotW * 0.45;
+      ctx.fillStyle = cols[i];
+      ctx.fillRect(cx - bw / 2, Y(v), bw, Y(0) - Y(v));
+      ctx.fillStyle = '#e2e8f0'; ctx.textAlign = 'center';
+      ctx.fillText((100 * v).toFixed(1) + '%', cx, Y(v) - 6);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(names[i], cx, H - padB + 16);
+    });
+    // notice
+    let msg = '<b>What to notice:</b> ';
+    if (r.dgp === 'healthy') {
+      msg += 'with iid errors all three methods report SEs close to the true sd(β̂) = ' + r.trueSD.toFixed(4) +
+        ' and cover ≈95%. Robust SEs cost a little finite-sample noise but no validity — using them "just in case" is cheap insurance.';
+    } else if (r.dgp === 'hetero') {
+      msg += 'OLS reports SE ≈ ' + (100 * r.mO / r.trueSD).toFixed(0) + '% of the truth, so its "95%" CI only covers ' + (100 * r.cO).toFixed(1) +
+        '% of the time — White HC1 (' + (100 * r.cW).toFixed(1) + '%) repairs the inference without changing a single β̂. NW also works here (it nests HC).';
+    } else {
+      msg += 'autocorrelated errors + a persistent regressor is the lethal combination: OLS covers only ' + (100 * r.cO).toFixed(1) +
+        '% — its t-stats are roughly ' + (r.trueSD / r.mO).toFixed(1) + '× too large. Newey–West with L = ' + r.L + ' lifts coverage to ' +
+        (100 * r.cN).toFixed(1) + '%' + (r.L === 0 ? ' — but with L = 0 it IS just White, which ignores the autocorrelation entirely.' :
+        '. It rarely reaches a full 95% at n = 100 — HAC corrections are consistent, not magic.');
+    }
+    $('ntc2').innerHTML = msg;
+  }
+
+  const EXPS = [
+    function () { $('dgp2').value = 'healthy'; $('L2').value = 5; },
+    function () { $('dgp2').value = 'hetero'; $('L2').value = 5; },
+    function () { $('dgp2').value = 'ar'; $('L2').value = 8; },
+    function () { $('dgp2').value = 'ar'; $('L2').value = 0; }
+  ];
+
+  function init() {
+    $('L2').addEventListener('input', function () { $('L2V').textContent = $('L2').value; });
+    $('run2').addEventListener('click', run);
+    document.querySelectorAll('#p2 .setit').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (running) return;
+        EXPS[parseInt(b.getAttribute('data-x'), 10)]();
+        $('L2V').textContent = $('L2').value;
+        run();
+      });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p2')) redraw(); });
+    redraw();
+  }
+  M.registerPlatform('p2', { init: init, redraw: redraw });
+})();
+</script>
+
+<script>
+/* ===== Platform 3: Structural break lab ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const N = 200, WIN = 50, B1 = 1.0;
+  let seed = 4488, x = null, y = null;
+
+  function labels() {
+    $('bp3V').textContent = $('bp3').value;
+    $('mg3V').textContent = parseFloat($('mg3').value).toFixed(1);
+    $('cs3V').textContent = $('cs3').value;
+  }
+
+  function generate() {
+    const brk = Math.round(N * parseFloat($('bp3').value) / 100);
+    const dB = parseFloat($('mg3').value);
+    const rng = M.mulberry32(seed);
+    x = new Array(N); y = new Array(N);
+    for (let t = 0; t < N; t++) {
+      x[t] = M.gauss(rng);
+      const b = t < brk ? B1 : B1 + dB;
+      y[t] = 1 + b * x[t] + 1.5 * M.gauss(rng);
+    }
+    redraw();
+  }
+
+  function ols2arr(xs, ys) {
+    const n = xs.length;
+    let xb = 0, yb = 0;
+    for (let i = 0; i < n; i++) { xb += xs[i]; yb += ys[i]; }
+    xb /= n; yb /= n;
+    let sxx = 0, sxy = 0;
+    for (let i = 0; i < n; i++) { sxx += (xs[i] - xb) * (xs[i] - xb); sxy += (xs[i] - xb) * (ys[i] - yb); }
+    const b = sxy / sxx, a = yb - b * xb;
+    let rss = 0;
+    for (let i = 0; i < n; i++) { const e = ys[i] - a - b * xs[i]; rss += e * e; }
+    return { a: a, b: b, rss: rss };
+  }
+
+  function redraw() {
+    if (!x) return;
+    const brk = Math.round(N * parseFloat($('bp3').value) / 100);
+    const dB = parseFloat($('mg3').value);
+    const split = Math.round(N * parseFloat($('cs3').value) / 100);
+    // ---- rolling beta ----
+    const roll = new Array(N).fill(null);
+    for (let t = WIN - 1; t < N; t++) {
+      roll[t] = ols2arr(x.slice(t - WIN + 1, t + 1), y.slice(t - WIN + 1, t + 1)).b;
+    }
+    const c1 = M.fitCanvas($('rollC3'));
+    let lo = B1, hi = B1 + dB;
+    for (const v of roll) if (v !== null) { if (v < lo) lo = v; if (v > hi) hi = v; }
+    const pad = (hi - lo) * 0.15 + 0.05;
+    const f1 = M.frame(c1.ctx, c1.W, c1.H, 0, N, lo - pad, hi + pad, { title: 'Rolling β̂ (blue, 50d window) vs true β (gold step); red line = Chow split' });
+    M.drawLine(c1.ctx, f1, [0, brk, brk, N], [B1, B1, B1 + dB, B1 + dB], '#fbbf24', 2);
+    const xs = [], ys = [];
+    for (let t = 0; t < N; t++) if (roll[t] !== null) { xs.push(t); ys.push(roll[t]); }
+    M.drawLine(c1.ctx, f1, xs, ys, '#38bdf8', 1.6);
+    c1.ctx.strokeStyle = '#f87171'; c1.ctx.setLineDash([5, 4]);
+    c1.ctx.beginPath(); c1.ctx.moveTo(f1.X(split), f1.Y(lo - pad)); c1.ctx.lineTo(f1.X(split), f1.Y(hi + pad)); c1.ctx.stroke();
+    c1.ctx.setLineDash([]);
+    // ---- Chow test at chosen split ----
+    const pooled = ols2arr(x, y);
+    const f1h = ols2arr(x.slice(0, split), y.slice(0, split));
+    const f2h = ols2arr(x.slice(split), y.slice(split));
+    const k = 2;
+    const F = ((pooled.rss - f1h.rss - f2h.rss) / k) / ((f1h.rss + f2h.rss) / (N - 2 * k));
+    const crit = M.fCrit(k, N - 2 * k, 0.05);
+    const p = 1 - M.fCDF(F, k, N - 2 * k);
+    const rej = F > crit;
+    $('st3f').textContent = F.toFixed(2);
+    $('st3c').textContent = crit.toFixed(2);
+    $('st3p').textContent = p < 0.001 ? '<0.001' : p.toFixed(3);
+    const v = $('st3v');
+    v.textContent = rej ? 'BREAK detected' : 'no break found';
+    v.className = 'v ' + (rej ? 'bad' : 'good');
+    // ---- CUSUM of recursive residuals ----
+    // recursive residuals w_t for t = k+1..N (1-step-ahead forecast errors, standardised)
+    const w = [];
+    let Sx = 0, Sx2 = 0, Sy = 0, Sxy = 0, cnt = 0;
+    for (let t = 0; t < N; t++) {
+      if (cnt >= 2) {
+        const det = cnt * Sx2 - Sx * Sx;
+        if (Math.abs(det) > 1e-10) {
+          const bHat = (cnt * Sxy - Sx * Sy) / det;
+          const aHat = (Sy - bHat * Sx) / cnt;
+          // h_t = x_t' (X'X)^{-1} x_t  for [1, x]
+          const ht = (Sx2 - 2 * x[t] * Sx + cnt * x[t] * x[t]) / det;
+          const fe = y[t] - aHat - bHat * x[t];
+          w.push(fe / Math.sqrt(1 + ht));
+        } else { w.push(0); }
+      }
+      Sx += x[t]; Sx2 += x[t] * x[t]; Sy += y[t]; Sxy += x[t] * y[t]; cnt++;
+    }
+    let sw = 0; for (const v2 of w) sw += v2 * v2;
+    const sigW = Math.sqrt(sw / (w.length - 1));
+    const cusum = [];
+    let acc = 0;
+    for (const v2 of w) { acc += v2 / sigW; cusum.push(acc); }
+    const c2 = M.fitCanvas($('cusumC'));
+    const Tk = w.length;
+    const a948 = 0.948;
+    const bandU = [], bandL = [], tIdx = [];
+    let cmax = 5;
+    for (let i = 0; i < Tk; i++) {
+      const bu = a948 * (Math.sqrt(Tk) + 2 * i / Math.sqrt(Tk));
+      bandU.push(bu); bandL.push(-bu); tIdx.push(i + 2);
+      if (bu > cmax) cmax = bu;
+      if (Math.abs(cusum[i]) > cmax) cmax = Math.abs(cusum[i]);
+    }
+    cmax *= 1.1;
+    const f2 = M.frame(c2.ctx, c2.W, c2.H, 0, N, -cmax, cmax, { title: 'CUSUM of recursive residuals (blue) with 5% bands (red)' });
+    M.drawLine(c2.ctx, f2, tIdx, bandU, '#f87171', 1.5);
+    M.drawLine(c2.ctx, f2, tIdx, bandL, '#f87171', 1.5);
+    M.drawLine(c2.ctx, f2, tIdx, cusum, '#38bdf8', 2);
+    c2.ctx.strokeStyle = '#475569';
+    c2.ctx.beginPath(); c2.ctx.moveTo(f2.X(0), f2.Y(0)); c2.ctx.lineTo(f2.X(N), f2.Y(0)); c2.ctx.stroke();
+    // breach?
+    let breach = null;
+    for (let i = 0; i < Tk; i++) if (Math.abs(cusum[i]) > bandU[i]) { breach = tIdx[i]; break; }
+    // notice
+    $('ntc3').innerHTML = '<b>What to notice:</b> three detectors, three personalities. The <b>rolling line</b> shows you everything but late and noisy. ' +
+      'The <b>Chow F</b> = [(RSS<sub>pooled</sub> − RSS₁ − RSS₂)/2] ÷ [(RSS₁+RSS₂)/(n−4)] = ' + F.toFixed(2) +
+      (rej ? ' &gt; ' : ' &lt; ') + crit.toFixed(2) + ' — ' + (rej ? 'reject parameter stability' : 'no significant break at this split') +
+      ' (but it only tests the split YOU chose' + (Math.abs(split - brk) > 15 && dB > 0 ? ', and you are testing ' + Math.abs(split - brk) + ' days away from the true break — slide the red line!' : '') + '). ' +
+      'The <b>CUSUM</b> needs no date: recursive 1-step forecast errors drift once the old parameters stop describing new data — here it ' +
+      (breach ? 'breaches the 5% band around observation ' + breach + '.' : 'stays inside the bands' + (dB > 0 ? ' — pure-slope breaks with mean-zero x are exactly what CUSUM is weakest at (it watches the forecast LEVEL); the Chow test has the power here.' : ', as it should with no break.'));
+  }
+
+  const EXPS = [
+    function () { $('bp3').value = 60; $('mg3').value = 0.9; $('cs3').value = 60; },
+    function () { $('mg3').value = 0; },
+    function () { $('bp3').value = 40; $('mg3').value = 0.8; $('cs3').value = 70; },
+    function () { $('bp3').value = 50; $('mg3').value = 0.3; $('cs3').value = 50; }
+  ];
+
+  function init() {
+    ['bp3', 'mg3'].forEach(id => $(id).addEventListener('input', function () { labels(); generate(); }));
+    $('cs3').addEventListener('input', function () { labels(); redraw(); });
+    $('regen3').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; generate(); });
+    document.querySelectorAll('#p3 .setit').forEach(function (b) {
+      b.addEventListener('click', function () {
+        EXPS[parseInt(b.getAttribute('data-x'), 10)]();
+        labels();
+        seed = (Math.random() * 1e9) >>> 0;
+        generate();
+      });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p3')) redraw(); });
+    labels();
+    generate();
+  }
+  M.registerPlatform('p3', { init: init, redraw: redraw });
+})();
+</script>
+
+<script>
+/* ===== Platform 4: Autocorrelation workshop ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+  const N = 200, PHX = 0.8;
+  let seed = 6611, sample = null, curve = null, running = false;
+
+  function labels() { $('r4V').textContent = parseFloat($('r4').value).toFixed(2); }
+
+  function genSample(rng, rho) {
+    const x = new Array(N), y = new Array(N);
+    let xv = M.gauss(rng), u = 2 * M.gauss(rng);
+    for (let t = 0; t < N; t++) {
+      xv = PHX * xv + Math.sqrt(1 - PHX * PHX) * M.gauss(rng);
+      u = rho * u + 2 * Math.sqrt(1 - rho * rho) * M.gauss(rng);
+      x[t] = 3 * xv;
+      y[t] = 2 + 1.5 * x[t] + u;
+    }
+    return { x: x, y: y };
+  }
+
+  function analyse() {
+    const rho = parseFloat($('r4').value);
+    const rng = M.mulberry32(seed);
+    const s = genSample(rng, rho);
+    const X = s.x.map(function (v) { return [1, v]; });
+    const f = M.olsK(X, s.y);
+    const e = f.resid;
+    // ACF of residuals
+    let m = 0; for (const v of e) m += v; m /= N;
+    let v0 = 0; for (const v of e) v0 += (v - m) * (v - m);
+    const acf = [];
+    for (let l = 1; l <= 15; l++) {
+      let sxy = 0;
+      for (let t = l; t < N; t++) sxy += (e[t] - m) * (e[t - l] - m);
+      acf.push(sxy / v0);
+    }
+    // DW
+    let num = 0, den = 0;
+    for (let t = 1; t < N; t++) num += (e[t] - e[t - 1]) * (e[t] - e[t - 1]);
+    for (let t = 0; t < N; t++) den += e[t] * e[t];
+    const dw = num / den;
+    // BG with 3 lags: regress e_t on [1, x_t, e_{t-1..3}], LM = (n-p) R^2 ~ chi2(3)
+    const p = 3;
+    const Xb = [], yb = [];
+    for (let t = p; t < N; t++) {
+      Xb.push([1, s.x[t], e[t - 1], e[t - 2], e[t - 3]]);
+      yb.push(e[t]);
+    }
+    const fb = M.olsK(Xb, yb);
+    const lm = (N - p) * fb.r2;
+    const bgP = 1 - M.chiCDF(lm, p);
+    sample = { s: s, f: f, acf: acf, dw: dw, rhoHat: acf[0], bgP: bgP, lm: lm };
+    redraw();
+  }
+
+  function analyticRatio(rho) {
+    return Math.sqrt((1 + rho * PHX) / (1 - rho * PHX));
+  }
+
+  function redraw() {
+    if (!sample) return;
+    const rho = parseFloat($('r4').value);
+    // ---- ACF chart ----
+    const c1 = M.fitCanvas($('acfC'));
+    const f1 = M.frame(c1.ctx, c1.W, c1.H, 0, 16, -0.4, 1.0, { title: 'Residual ACF, lags 1–15 (dashed = ±1.96/√n); theory: ρᵏ' });
+    const bnd = 1.96 / Math.sqrt(N);
+    c1.ctx.strokeStyle = '#94a3b8'; c1.ctx.setLineDash([4, 4]);
+    c1.ctx.beginPath(); c1.ctx.moveTo(f1.X(0), f1.Y(bnd)); c1.ctx.lineTo(f1.X(16), f1.Y(bnd)); c1.ctx.stroke();
+    c1.ctx.beginPath(); c1.ctx.moveTo(f1.X(0), f1.Y(-bnd)); c1.ctx.lineTo(f1.X(16), f1.Y(-bnd)); c1.ctx.stroke();
+    c1.ctx.setLineDash([]);
+    c1.ctx.strokeStyle = '#475569';
+    c1.ctx.beginPath(); c1.ctx.moveTo(f1.X(0), f1.Y(0)); c1.ctx.lineTo(f1.X(16), f1.Y(0)); c1.ctx.stroke();
+    for (let l = 1; l <= 15; l++) {
+      const a = sample.acf[l - 1];
+      c1.ctx.fillStyle = Math.abs(a) > bnd ? '#f87171' : '#38bdf8';
+      c1.ctx.fillRect(f1.X(l) - 5, Math.min(f1.Y(0), f1.Y(a)), 10, Math.abs(f1.Y(a) - f1.Y(0)));
+    }
+    // theoretical rho^k overlay
+    const txs = [], tys = [];
+    for (let l = 1; l <= 15; l++) { txs.push(l); tys.push(Math.pow(rho, l)); }
+    M.drawLine(c1.ctx, f1, txs, tys, '#fbbf24', 1.5);
+    // ---- ratio curve ----
+    const c2 = M.fitCanvas($('ratioC'));
+    const f2 = M.frame(c2.ctx, c2.W, c2.H, 0, 0.95, 0.8, 3.2, { title: 'SE damage: true sd(β̂) ÷ reported SE, as ρ grows' });
+    // analytic curve
+    const axs = [], ays = [];
+    for (let i = 0; i <= 95; i++) { const r = i / 100; axs.push(r); ays.push(analyticRatio(r)); }
+    M.drawLine(c2.ctx, f2, axs, ays.map(v => Math.min(v, 3.2)), '#94a3b8', 1.5);
+    c2.ctx.fillStyle = '#94a3b8'; c2.ctx.font = '11px Segoe UI, sans-serif'; c2.ctx.textAlign = 'left';
+    c2.ctx.fillText('analytic √((1+ρφ)/(1−ρφ))', f2.X(0.02), f2.Y(3.05));
+    if (curve) {
+      M.drawLine(c2.ctx, f2, curve.rhos, curve.ols.map(v => Math.min(v, 3.2)), '#f87171', 2);
+      M.drawLine(c2.ctx, f2, curve.rhos, curve.nw.map(v => Math.min(v, 3.2)), '#fbbf24', 2);
+      c2.ctx.fillStyle = '#f87171'; c2.ctx.fillText('vs OLS SE (MC)', f2.X(0.6), f2.Y(curve.ols[6] || 2) - 10);
+      c2.ctx.fillStyle = '#fbbf24'; c2.ctx.fillText('vs NW(5) SE (MC)', f2.X(0.45), f2.Y(1.0) - 10);
+    } else {
+      c2.ctx.fillStyle = '#64748b';
+      c2.ctx.fillText('press ▶ Run damage curve MC for the simulated lines', f2.X(0.1), f2.Y(1.6));
+    }
+    // marker at current rho
+    c2.ctx.strokeStyle = '#38bdf8'; c2.ctx.setLineDash([5, 4]);
+    c2.ctx.beginPath(); c2.ctx.moveTo(f2.X(rho), f2.Y(0.8)); c2.ctx.lineTo(f2.X(rho), f2.Y(3.2)); c2.ctx.stroke();
+    c2.ctx.setLineDash([]);
+    // horizontal at 1
+    c2.ctx.strokeStyle = '#475569';
+    c2.ctx.beginPath(); c2.ctx.moveTo(f2.X(0), f2.Y(1)); c2.ctx.lineTo(f2.X(0.95), f2.Y(1)); c2.ctx.stroke();
+    // ---- stats ----
+    $('st4d').textContent = sample.dw.toFixed(2);
+    $('st4r').textContent = sample.rhoHat.toFixed(3);
+    const bgEl = $('st4b');
+    bgEl.textContent = sample.bgP < 0.001 ? '<0.001' : sample.bgP.toFixed(3);
+    bgEl.className = 'v ' + (sample.bgP < 0.05 ? 'bad' : 'good');
+    $('st4a').textContent = '×' + analyticRatio(rho).toFixed(2);
+    $('ntc4').innerHTML = '<b>What to notice:</b> with ρ = ' + rho.toFixed(2) + ' the residual ACF decays like ρᵏ (gold curve) and DW = ' +
+      sample.dw.toFixed(2) + ' ≈ 2(1−ρ̂) = ' + (2 * (1 - sample.rhoHat)).toFixed(2) + '. The damage formula: when BOTH the errors (ρ) and the regressor (φ<sub>x</sub> = 0.8) are persistent, ' +
+      'true Var(β̂) ≈ naive Var × (1+ρφ)/(1−ρφ), so reported t-stats are ×' + analyticRatio(rho).toFixed(2) +
+      ' too big. With iid x the damage would largely vanish — autocorrelated errors hurt most when the regressor is persistent too, which in finance (rates, spreads, valuations) it almost always is.';
+  }
+
+  function runMC() {
+    if (running) return;
+    running = true;
+    $('mc4').disabled = true;
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const rhos = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+    const PER = 60;
+    const out = { rhos: rhos, ols: [], nw: [] };
+    let gi = 0;
+    function chunk() {
+      if (gi >= rhos.length) {
+        curve = out;
+        running = false;
+        $('mc4').disabled = false;
+        $('prog4').textContent = 'done';
+        redraw();
+        return;
+      }
+      const r = rhos[gi];
+      const betas = [], so = [], sn = [];
+      for (let rep = 0; rep < PER; rep++) {
+        const s = genSample(rng, r);
+        const X = s.x.map(function (v) { return [1, v]; });
+        const f = M.olsK(X, s.y);
+        betas.push(f.beta[1]);
+        so.push(f.se[1]);
+        sn.push(M.robustSE(X, f.resid, f.XtXi, 'hac', 5)[1]);
+      }
+      let mb = 0; for (const b of betas) mb += b; mb /= PER;
+      let vb = 0; for (const b of betas) vb += (b - mb) * (b - mb); vb /= (PER - 1);
+      const sd = Math.sqrt(vb);
+      function mean(a) { let s2 = 0; for (const v of a) s2 += v; return s2 / a.length; }
+      out.ols.push(sd / mean(so));
+      out.nw.push(sd / mean(sn));
+      gi++;
+      $('prog4').textContent = 'ρ = ' + r.toFixed(1) + ' done (' + gi + '/' + rhos.length + ')';
+      setTimeout(chunk, 0);
+    }
+    chunk();
+  }
+
+  const EXPS = [
+    function () { $('r4').value = 0; },
+    function () { $('r4').value = 0.7; },
+    function () { $('r4').value = 0.95; },
+    function () { runMC(); return true; }
+  ];
+
+  function init() {
+    $('r4').addEventListener('input', function () { labels(); analyse(); });
+    $('regen4').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; analyse(); });
+    $('mc4').addEventListener('click', runMC);
+    document.querySelectorAll('#p4 .setit').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const handled = EXPS[parseInt(b.getAttribute('data-x'), 10)]();
+        labels();
+        if (!handled) { seed = (Math.random() * 1e9) >>> 0; analyse(); }
+      });
+    });
+    window.addEventListener('resize', function () { if (M.isActive('p4')) redraw(); });
+    labels();
+    analyse();
+  }
+  M.registerPlatform('p4', { init: init, redraw: redraw });
+  M.openPlatform('p1');
+})();
+</script>
+
+<script>
+/* ===== Problems clinic demos ===== */
+(function () {
+  'use strict';
+  const M = window.MANG;
+  const $ = id => document.getElementById(id);
+
+  // 2: overlapping returns ACF
+  $('c2btn').addEventListener('click', function () {
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const nD = 1500, K = 20;
+    const daily = [];
+    for (let t = 0; t < nD; t++) daily.push(M.gauss(rng));
+    const roll = [];
+    let s = 0;
+    for (let t = 0; t < K; t++) s += daily[t];
+    roll.push(s);
+    for (let t = K; t < nD; t++) { s += daily[t] - daily[t - K]; roll.push(s); }
+    const n = roll.length;
+    let m = 0; for (const v of roll) m += v; m /= n;
+    let v0 = 0; for (const v of roll) v0 += (v - m) * (v - m);
+    const acf = [];
+    for (let l = 1; l <= 30; l++) {
+      let sxy = 0;
+      for (let t = l; t < n; t++) sxy += (roll[t] - m) * (roll[t - l] - m);
+      acf.push(sxy / v0);
+    }
+    const cv = $('c2cv'); cv.style.display = 'block';
+    const c = M.fitCanvas(cv);
+    const f = M.frame(c.ctx, c.W, c.H, 0, 31, -0.2, 1.0, { title: 'ACF of 20-day OVERLAPPING returns from iid daily data; gold = theory (1−l/20)' });
+    const bnd = 1.96 / Math.sqrt(n);
+    c.ctx.strokeStyle = '#94a3b8'; c.ctx.setLineDash([4, 4]);
+    c.ctx.beginPath(); c.ctx.moveTo(f.X(0), f.Y(bnd)); c.ctx.lineTo(f.X(31), f.Y(bnd)); c.ctx.stroke();
+    c.ctx.setLineDash([]);
+    c.ctx.strokeStyle = '#475569';
+    c.ctx.beginPath(); c.ctx.moveTo(f.X(0), f.Y(0)); c.ctx.lineTo(f.X(31), f.Y(0)); c.ctx.stroke();
+    for (let l = 1; l <= 30; l++) {
+      c.ctx.fillStyle = '#38bdf8';
+      c.ctx.fillRect(f.X(l) - 4, Math.min(f.Y(0), f.Y(acf[l - 1])), 8, Math.abs(f.Y(acf[l - 1]) - f.Y(0)));
+    }
+    const txs = [], tys = [];
+    for (let l = 1; l <= 30; l++) { txs.push(l); tys.push(Math.max(0, 1 - l / 20)); }
+    M.drawLine(c.ctx, f, txs, tys, '#fbbf24', 2);
   });
-  $('regen').addEventListener('click', function () { seed = (Math.random() * 1e9) >>> 0; run(); });
-  window.addEventListener('resize', redraw);
-  run();
+
+  // 6: robust SEs don't fix bias
+  $('c6btn').addEventListener('click', function () {
+    const rng = M.mulberry32((Math.random() * 1e9) >>> 0);
+    const n = 150;
+    const x = [], y = [], X = [];
+    for (let t = 0; t < n; t++) {
+      x.push(10 * rng());
+      y.push(1 + 0.3 * x[t] * x[t] + 2 * M.gauss(rng)); // quadratic truth
+      X.push([1, x[t]]);
+    }
+    const f = M.olsK(X, y);
+    const seW = M.robustSE(X, f.resid, f.XtXi, 'hc1', 0);
+    // true average marginal effect at mean x=5 is 0.3*2*5=3.0; OLS slope estimates ~3 but predicts terribly at the edges; the real point: the MODEL is wrong
+    $('c6out').innerHTML = 'True model: y = 1 + 0.3x². Fitted LINE: β̂ = <b>' + f.beta[1].toFixed(2) +
+      '</b> with naive SE ' + f.se[1].toFixed(3) + ' and White SE <b>' + seW[1].toFixed(3) +
+      '</b>.<br>The robust SE changed the t-stat — but the model still predicts y = ' +
+      (f.beta[0] + f.beta[1] * 1).toFixed(1) + ' at x = 1 (truth: ' + (1 + 0.3).toFixed(1) + ') and y = ' +
+      (f.beta[0] + f.beta[1] * 10).toFixed(1) + ' at x = 10 (truth: ' + (1 + 30).toFixed(1) +
+      ').<br><b>Robust SEs made the inference about a wrong model more honest — they did not make the model right.</b> RESET would have caught this.';
+  });
 })();
 </script>
 
@@ -684,6 +1667,16 @@ window.MANG = (function () {
       prompt: 'Compute Variance Inflation Factors to sniff out multicollinearity (VIF > 10 = trouble).',
       py: { code: 'from statsmodels.stats.outliers_influence import ___\nvifs = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]', correct: 'variance_inflation_factor', opts: ['variance_inflation_factor', 'vif', 'VIF', 'inflation_factor'], expl: 'variance_inflation_factor(X, i) = 1/(1−R²ᵢ) from regressing column i on the others.' },
       r: { code: 'library(car)\n___(model)', correct: 'vif', opts: ['vif', 'VIF', 'vifs', 'vif.test'], expl: 'car::vif(model), lower-case — one number per regressor.' }
+    },
+    {
+      prompt: 'Run the Breusch–Godfrey test for autocorrelation up to 4 lags (valid even with lagged y).',
+      py: { code: 'from statsmodels.stats.diagnostic import ___\nlm, lm_pval, f, f_pval = acorr_breusch_godfrey(model, nlags=4)', correct: 'acorr_breusch_godfrey', opts: ['acorr_breusch_godfrey', 'breusch_godfrey', 'bg_test', 'acorr_lm'], expl: 'acorr_breusch_godfrey(model, nlags=p): LM = (n−p)·R² of the auxiliary regression of û on X and p lagged û’s.' },
+      r: { code: 'library(lmtest)\n___(model, order = 4)', correct: 'bgtest', opts: ['bgtest', 'bptest', 'dwtest', 'lbtest'], expl: 'lmtest::bgtest(model, order = 4) — bptest is heteroscedasticity, dwtest only does lag 1.' }
+    },
+    {
+      prompt: 'Test for a structural break: allow the slope to differ after a known break date (Chow via interaction).',
+      py: { code: "model = smf.ols('y ~ x + post + ___', data=df).fit()\n# post = 1 after the break date; F-test post and the interaction jointly", correct: 'x:post', opts: ['x:post', 'x+post', 'x^post', 'x@post'], expl: 'x:post adds the slope-shift term; testing post and x:post jointly = the Chow test. (x*post shorthand would re-add the mains you already wrote.)' },
+      r: { code: 'library(strucchange)\nsctest(y ~ x, type = "___", point = 100)', correct: 'Chow', opts: ['Chow', 'Break', 'CUSUM', 'QLR'], expl: 'strucchange::sctest(..., type = "Chow", point = ...) tests a break at a KNOWN point; CUSUM-type tests handle unknown dates.' }
     }
   ];
   let lang = 'py';
@@ -736,4 +1729,10 @@ window.MANG = (function () {
       wrap.appendChild(card);
     });
   }
-  $('ccPy').addEventListener('click', function () { lang = 'py'; $('c
+  $('ccPy').addEventListener('click', function () { lang = 'py'; $('ccPy').className = 'on'; $('ccR').className = 'alt'; render(); });
+  $('ccR').addEventListener('click', function () { lang = 'r'; $('ccR').className = 'on'; $('ccPy').className = 'alt'; render(); });
+  render();
+})();
+</script>
+</body>
+</html>

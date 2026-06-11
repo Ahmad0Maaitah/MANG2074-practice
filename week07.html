@@ -48,6 +48,26 @@ pre{background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px;o
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 footer{max-width:1000px;margin:30px auto 0;padding:0 20px 40px;color:var(--muted);font-size:.85rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
+/* ---- v2 upgrade ---- */
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.tabbar button{background:var(--panel2);color:var(--text);border:1px solid #334155;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:400;}
+.tabbar button.active{background:var(--accent);color:#0f172a;font-weight:600;}
+.plat{display:none;}
+.plat.active{display:block;}
+.plat h3{font-size:1.05rem;margin:4px 0 10px;}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
+.pcard{background:var(--panel2);border:1px solid #334155;border-radius:10px;padding:12px 14px;cursor:pointer;}
+.pcard .sym{font-size:1.12rem;font-weight:700;color:var(--accent);margin-right:8px;}
+.pcard .nm{font-weight:600;}
+.pcard .one{color:var(--muted);font-size:.87rem;margin-top:2px;}
+.pcard .more{display:none;font-size:.88rem;margin-top:9px;border-top:1px solid #334155;padding-top:8px;line-height:1.55;}
+.pcard.open .more{display:block;}
+.pcard .more b{color:var(--accent2);}
+.pcard .arrow{float:right;color:var(--muted);font-size:.78rem;}
+.try{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:10px 16px;margin-top:14px;font-size:.92rem;}
+.try ol{margin:6px 0 2px;padding-left:20px;}
+.try li{margin:7px 0;}
+.try button{font-size:.78rem;padding:2px 10px;margin-left:8px;background:transparent;color:var(--accent);border:1px solid var(--accent);}
 @media(max-width:720px){.grid2{grid-template-columns:1fr;}.choices{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -60,7 +80,87 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
 <p class="intro">Financial returns are roughly unpredictable in their <i>mean</i> — but wildly predictable in their <i>variance</i>: calm days cluster with calm days, crises with crises. This week you drive a GARCH(1,1) volatility engine, see why the ACF of r² (not r) exposes ARCH effects, and learn to spot crisis-prone markets from the returns alone.</p>
 
 <section class="card">
-<h2>🔬 Simulation — The volatility engine</h2>
+<h2>📚 Parameters &amp; concepts</h2>
+<p style="font-size:.92rem;color:var(--muted)">The GARCH cast. Click a card for the formula, the values real markets produce, the extremes, and the estimation traps.</p>
+<div class="pgrid">
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">ω</span><span class="nm">Variance constant</span>
+<div class="one">The baseline drip of variance that keeps σ² from collapsing to zero.</div>
+<div class="more"><b>Meaning.</b> The floor-setting intercept of the variance equation; with α and β it pins down the long-run variance.<br>
+<b>Formula.</b> σ²<sub>t</sub> = ω + α·r²<sub>t−1</sub> + β·σ²<sub>t−1</sub>; long-run σ̄² = ω/(1−α−β).<br>
+<b>Typical values.</b> Tiny: for daily % returns with σ̄ ≈ 1% and persistence 0.97, ω ≈ 0.03. Scale-dependent — multiply returns by 100 and ω changes by 10,000×.<br>
+<b>At the extremes.</b> ω → 0 with α+β &lt; 1: variance withers towards zero (degenerate). ω large: a high volatility floor that clustering can never dip below.<br>
+<b>Estimation problems.</b> Weakly identified when α+β ≈ 1 (the long-run level barely binds in-sample); optimisers drive ω̂ to its bound. The standard fix is <i>variance targeting</i>: fix σ̄² at the sample variance and estimate only α, β.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">α</span><span class="nm">ARCH / reaction</span>
+<div class="one">How violently volatility reacts to yesterday&rsquo;s news.</div>
+<div class="more"><b>Meaning.</b> The weight on yesterday&rsquo;s squared return — the &ldquo;news&rdquo; term. Big α = jumpy, spiky volatility.<br>
+<b>Formula.</b> The α·r²<sub>t−1</sub> term; it sets the curvature of the news-impact curve (Platform 2).<br>
+<b>Typical values.</b> 0.05–0.15 for daily equity indices; higher for commodities and crypto.<br>
+<b>At the extremes.</b> α = 0: volatility ignores news entirely and just decays deterministically. α large: kurtosis explodes — the fourth moment only exists if 3α² + 2αβ + β² &lt; 1.<br>
+<b>Estimation problems.</b> α̂ and β̂ trade off along the α+β ridge (their estimates are strongly negatively correlated); with Student-t errors α̂ typically drops because the t soaks up some outliers.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">β</span><span class="nm">GARCH / memory</span>
+<div class="one">How much of yesterday&rsquo;s variance carries straight into today.</div>
+<div class="more"><b>Meaning.</b> The autoregressive memory of the variance process — what makes calm and stormy spells <i>persist</i>.<br>
+<b>Formula.</b> The β·σ²<sub>t−1</sub> term. Substituting recursively: today&rsquo;s variance is a geometrically weighted average of ALL past squared returns with weights αβ<sup>j</sup>.<br>
+<b>Typical values.</b> 0.85–0.95 on daily data — memory dominates reaction.<br>
+<b>At the extremes.</b> β = 0: pure ARCH(1), which needs many lags to fit real data (the historical reason GARCH won). β → 1: volatility becomes a slow-moving, almost deterministic level.<br>
+<b>Estimation problems.</b> β̂ collapses or hits 1 when ω is mis-scaled or a variance break is present; always check the data scale (% vs decimal) before blaming the optimiser.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">α+β</span><span class="nm">Persistence</span>
+<div class="one">The AR(1) coefficient of the variance process — how slowly vol shocks fade.</div>
+<div class="more"><b>Meaning.</b> The single most-watched number in any GARCH output: the speed of mean reversion in risk.<br>
+<b>Formula.</b> E[σ²<sub>t+k</sub>] − σ̄² = (α+β)<sup>k</sup>(σ²<sub>t</sub> − σ̄²) — exponential decay at rate α+β (Platform 4 runs on exactly this).<br>
+<b>Typical values.</b> 0.95–0.99 on daily equity data. 0.97<sup>23</sup> ≈ 0.5: a 23-day half-life.<br>
+<b>At the extremes.</b> α+β ≥ 1: IGARCH territory — variance shocks never die and σ̄² does not exist. α+β ≈ 0: white noise, nothing for GARCH to do.<br>
+<b>Estimation problems.</b> Unmodelled breaks in the variance LEVEL masquerade as α+β ≈ 1 (Lamoureux–Lastrapes) — &ldquo;spurious IGARCH&rdquo; is the week&rsquo;s clinic classic.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">t<sub>½</sub></span><span class="nm">Half-life of volatility</span>
+<div class="one">Days until half of a volatility shock has decayed away.</div>
+<div class="more"><b>Meaning.</b> The practical translation of persistence: how long after a crisis does the market stay scared?<br>
+<b>Formula.</b> t<sub>½</sub> = ln(½)/ln(α+β).<br>
+<b>Typical values.</b> α+β = 0.95 → 13.5 days; 0.98 → 34 days; 0.99 → 69 days.<br>
+<b>At the extremes.</b> α+β → 1: half-life → ∞ (shocks permanent); α+β = 0.5: half-life of one day — clusters you can barely see.<br>
+<b>Estimation problems.</b> Brutally sensitive to persistence near 1: moving α̂+β̂ from 0.98 to 0.99 doubles the half-life, and the confidence interval around it is enormous.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">σ̄²</span><span class="nm">Unconditional variance ω/(1−α−β)</span>
+<div class="one">The long-run anchor that every variance forecast converges to.</div>
+<div class="more"><b>Meaning.</b> The average variance over a long horizon — the level the term structure of volatility forecasts flattens onto.<br>
+<b>Formula.</b> σ̄² = ω/(1−α−β); k-step forecast: σ²<sub>t+k</sub> = σ̄² + (α+β)<sup>k</sup>(σ²<sub>t</sub> − σ̄²).<br>
+<b>Typical values.</b> Daily equity index: σ̄ ≈ 0.8–1.5%; annualised by √252 that is roughly 13–24%.<br>
+<b>At the extremes.</b> Denominator → 0: σ̄² explodes (and at α+β = 1 it does not exist at all). With ω̂ ≈ 0 the implied σ̄ can come out absurdly small — sanity-check it against the sample sd.<br>
+<b>Estimation problems.</b> A ratio of two noisy estimates is itself noisy; variance targeting replaces it with the sample variance, usually a more stable choice for forecasting.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">ν</span><span class="nm">Student-t degrees of freedom</span>
+<div class="one">How fat the tails of the standardised shocks are — beyond what GARCH explains.</div>
+<div class="more"><b>Meaning.</b> Even after GARCH filtering, real standardised returns have fat tails; ν measures how fat. Small ν = wild tails.<br>
+<b>Formula.</b> z<sub>t</sub> ~ standardised t(ν); kurtosis = 3 + 6/(ν−4) for ν &gt; 4.<br>
+<b>Typical values.</b> ν̂ = 4–8 on daily equity returns; ν̂ &gt; 30 is effectively Gaussian.<br>
+<b>At the extremes.</b> ν → ∞: the normal. ν ≤ 4: infinite kurtosis; ν ≤ 2: infinite variance — the model&rsquo;s scaling breaks down.<br>
+<b>Estimation problems.</b> ν̂ is pinned down by a handful of extreme days, so it is fragile in short samples; it also trades off against α (both produce fat tails) — comparing fitted ν across subsamples is a good stability check.</div></div>
+
+<div class="pcard"><span class="arrow">▾ details</span><span class="sym">γ</span><span class="nm">GJR asymmetry / leverage</span>
+<div class="one">The extra kick that NEGATIVE shocks give to volatility.</div>
+<div class="more"><b>Meaning.</b> Markets fall harder than they rise: bad news raises future volatility more than good news of the same size (the leverage effect). γ measures the asymmetry.<br>
+<b>Formula.</b> GJR: σ²<sub>t</sub> = ω + (α + γ·1[r<sub>t−1</sub>&lt;0])·r²<sub>t−1</sub> + β·σ²<sub>t−1</sub>; persistence becomes α + γ/2 + β.<br>
+<b>Typical values.</b> Equity indices: γ̂ ≈ 0.05–0.15, often LARGER than α̂ — the asymmetry is not a side dish.<br>
+<b>At the extremes.</b> γ = 0: back to symmetric GARCH. α + γ/2 + β ≥ 1: non-stationary variance. γ &lt; 0 (rallies scarier than crashes) shows up for some commodities.<br>
+<b>Estimation problems.</b> Identified mainly by crash days, so short calm samples cannot find it; sign asymmetry and size asymmetry get confounded — compare GJR against EGARCH (Platform 2) as a robustness check.</div></div>
+
+</div>
+</section>
+
+<section class="card">
+<h2>🔬 Platforms — four volatility workbenches</h2>
+<div class="tabbar" id="tabbar">
+  <button class="active" data-plat="plat1">1 · Volatility engine</button>
+  <button data-plat="plat2">2 · Asymmetry lab</button>
+  <button data-plat="plat3">3 · ARCH-LM bench</button>
+  <button data-plat="plat4">4 · Vol forecasting desk</button>
+</div>
+<div class="plat active" id="plat1">
+<h3>The volatility engine</h3>
 <p style="font-size:.92rem;color:var(--muted)">GARCH(1,1): &nbsp;r&#8348; = σ&#8348;z&#8348;, &nbsp;z&#8348; ~ N(0,1), &nbsp;σ²&#8348; = ω + α·r²&#8348;&#8331;&#8321; + β·σ²&#8348;&#8331;&#8321;. &nbsp;α = reaction to news, β = memory of past volatility.</p>
 <div class="controls">
   <span class="ctl"><label>ω (constant)</label><input type="range" id="sOmega" min="0.01" max="0.5" step="0.01" value="0.05"><span class="val" id="vOmega">0.05</span></span>
@@ -77,6 +177,136 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
   <canvas id="cAcf"></canvas>
 </div>
 <div class="notice"><b>What to notice.</b> <span id="simNote"></span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>α = 0.10, β = 0.89 (persistence 0.99): the half-life readout hits ≈ 69 days — crisis regimes that last quarters. This is roughly what 2008 and 2020 estimates look like. <button onclick="MANG.exp1(0)">Set it up</button></li>
+<li>α = 0.30, β = 0.40: violent reaction, short memory — spiky, fast-forgetting volatility, more like a commodity or a meme stock. <button onclick="MANG.exp1(1)">Set it up</button></li>
+<li>α = 0.05, β = 0.94, n = 2000: a realistic equity index. Squint at panel (a): you can date the &ldquo;crises&rdquo; by eye, exactly as you can on a real S&amp;P 500 chart. <button onclick="MANG.exp1(2)">Set it up</button></li>
+<li>α = 0.10, β = 0.90 — persistence exactly 1 (IGARCH): the unconditional variance readout becomes ∞ and σₜ wanders instead of mean-reverting. <button onclick="MANG.exp1(3)">Set it up</button></li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat2">
+<h3>Asymmetry lab — news-impact curves &amp; the leverage effect</h3>
+<p style="font-size:.92rem;color:var(--muted)">A news-impact curve plots tomorrow&rsquo;s variance σ²<sub>t+1</sub> against today&rsquo;s return, holding σ²<sub>t</sub> at its long-run level (= 1 here). Symmetric GARCH treats −2% and +2% identically; GJR adds γ only when the return is negative; EGARCH makes the response exponential and asymmetric. Base parameters: α = 0.04, β = 0.82; the symmetric model gets α<sub>sym</sub> = α + γ/2 (what a symmetric fit would average out to on asymmetric data); the EGARCH curve is calibrated to match the others at zero — illustrative, not estimated. All three are anchored to the same long-run variance σ̄² = 1.</p>
+<div class="controls">
+  <span class="ctl"><label>γ (asymmetry, GJR)</label><input type="range" id="ajGam" min="0" max="0.24" step="0.01" value="0.10"><span class="val" id="ajVGam">0.10</span></span>
+  <button id="ajNew">🎲 New simulation</button>
+</div>
+<div class="statgrid" id="ajStats"></div>
+<div class="grid2">
+  <canvas id="ajNic"></canvas>
+  <canvas id="ajSim"></canvas>
+</div>
+<div class="notice"><b>What to notice.</b> <span id="ajNote"></span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>γ = 0: all three curves (nearly) coincide and the &ldquo;after −2% vs after +2%&rdquo; chips agree — no leverage effect, no need for the fancier models. <button onclick="MANG.expA(0)">Set it up</button></li>
+<li>γ = 0.24: a −2% day now hits tomorrow&rsquo;s variance 7× harder than a +2% day (check the ratio chip) — that asymmetry is what equity options desks call &ldquo;the skew&rdquo;. <button onclick="MANG.expA(1)">Set it up</button></li>
+<li>Press 🎲 a few times at γ = 0.15 and watch the highlighted worst day: the volatility line jumps hardest exactly after the big negative return — never after an equally big positive one.</li>
+<li>Why &ldquo;leverage&rdquo;? A price fall raises a firm&rsquo;s debt/equity ratio, making the equity riskier — plus risk-aversion feedback. The name stuck even though leverage is only part of the story.</li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat3">
+<h3>ARCH-LM testing bench — size and power, live</h3>
+<p style="font-size:.92rem;color:var(--muted)">Engle&rsquo;s ARCH-LM test: regress r²<sub>t</sub> on its own first 5 lags and compute LM = T·R² ~ χ²(5) under H₀: no ARCH. We Monte-Carlo it: 300 simulated samples from your chosen DGP, testing each at 5%. The bars accumulate so you can compare DGPs and sample sizes.</p>
+<div class="controls">
+  <span class="ctl"><label>True DGP</label>
+    <select id="lmDgp">
+      <option value="iid">iid normal — H₀ true (size check)</option>
+      <option value="low">GARCH, α = 0.15, β = 0.35 (persistence 0.5)</option>
+      <option value="high" selected>GARCH, α = 0.15, β = 0.82 (persistence 0.97)</option>
+    </select></span>
+  <span class="ctl"><label>n (sample size)</label><input type="range" id="lmN" min="100" max="1000" step="100" value="300"><span class="val" id="lmVN">300</span></span>
+  <button id="lmRun">▶ Run 300 tests</button>
+</div>
+<div class="statgrid" id="lmStats"></div>
+<canvas id="lmBars"></canvas>
+<div class="notice"><b>What to notice.</b> <span id="lmNote">Run the bench for each DGP — the bars stay on screen so you can compare.</span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>iid, n = 300: the rejection rate sits near 5% — the test&rsquo;s SIZE. A test that rejects a true H₀ more than its nominal level is broken. <button onclick="MANG.expL(0)">Run it</button></li>
+<li>High persistence, n = 300: rejection (POWER) jumps to ~90%. Volatility clustering this strong is hard to miss. <button onclick="MANG.expL(1)">Run it</button></li>
+<li>High persistence, n = 100: power collapses to ~20% — in short samples, failing the ARCH-LM test is NOT evidence of no ARCH. <button onclick="MANG.expL(2)">Run it</button></li>
+<li>Low persistence, n = 1000: weak clustering becomes detectable once the sample is long enough — power rises with both persistence and n. <button onclick="MANG.expL(3)">Run it</button></li>
+</ol></div>
+</div>
+
+<div class="plat" id="plat4">
+<h3>Vol forecasting desk — term structures from calm and crisis days</h3>
+<p style="font-size:.92rem;color:var(--muted)">No fitting here — pure forecasting mechanics. Given today&rsquo;s conditional variance σ²<sub>t</sub>, the k-step GARCH forecast is σ²<sub>t+k</sub> = σ̄² + (α+β)<sup>k</sup>(σ²<sub>t</sub> − σ̄²): exponential reversion to the long-run anchor. We simulate a 500-day GARCH market (σ̄ = 1%/day, α = 0.05), find its calmest and most stressed day, and launch forecasts from each.</p>
+<div class="controls">
+  <span class="ctl"><label>α+β (persistence)</label><input type="range" id="vdP" min="0.80" max="0.99" step="0.01" value="0.95"><span class="val" id="vdVP">0.95</span></span>
+  <button id="vdNew">🎲 New market</button>
+</div>
+<div class="statgrid" id="vdStats"></div>
+<div class="grid2">
+  <canvas id="vdFc"></canvas>
+  <canvas id="vdPath"></canvas>
+</div>
+<div class="notice"><b>What to notice.</b> <span id="vdNote"></span></div>
+<div class="try"><b>🧪 Try this.</b>
+<ol>
+<li>Persistence 0.99: from the crisis day, even 60 days is not enough to get back to σ̄ — the vol term structure stays inverted for months. <button onclick="MANG.expV(0)">Set it up</button></li>
+<li>Persistence 0.85: both curves collapse onto σ̄ within a fortnight — vol forecasts beyond two weeks are just the long-run number. <button onclick="MANG.expV(1)">Set it up</button></li>
+<li>Compare the &ldquo;10-day average vol&rdquo; chips from the calm vs crisis day: that gap is exactly why option implied vols differ across maturities (the term structure of volatility).</li>
+<li>Annualisation check: σ̄ = 1%/day ⇒ √252 × 1% ≈ 15.9%/yr — the chip computes it live. Next week this machinery prices the VaR desk.</li>
+</ol></div>
+</div>
+</section>
+
+<section class="card clinic">
+<h2>⚠️ Problems clinic</h2>
+<p style="font-size:.92rem;color:var(--muted)">Six ways GARCH modelling goes wrong in practice. Click each card; three have live demos.</p>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">The IGARCH boundary: α+β ≥ 1</span>
+<div class="one">Persistence estimates that hit 1 — and what dies when they do.</div>
+<div class="more"><b>What it is.</b> At α+β = 1 the unconditional variance ω/(1−α−β) no longer exists; variance shocks are permanent and the k-step forecast grows linearly: σ²<sub>t+k</sub> = σ²<sub>t</sub> + kω.<br>
+<b>How it bites.</b> Long-horizon risk numbers explode or become meaningless; optimisers stall on the boundary with non-convergence warnings; capital calculations downstream inherit the nonsense.<br>
+<b>How to detect.</b> α̂+β̂ ≥ 0.999, parameters pinned at constraint bounds, enormous standard errors on ω̂; persistence that JUMPS when a crisis enters the estimation window.<br>
+<b>Remedy.</b> First suspect a variance break (see below) rather than true IGARCH; try Student-t errors; use variance targeting; or accept the EWMA/RiskMetrics special case (ω = 0, α+β = 1) knowingly, for short horizons only.
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('ig','dcIG')">▦ Demo: forecasts at α+β = 1 vs 0.97</button></div>
+<canvas id="dcIG" style="display:none"></canvas></div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">ω ≈ 0 and variance targeting</span>
+<div class="one">The optimiser drives ω̂ to zero and the long-run variance becomes fiction.</div>
+<div class="more"><b>What it is.</b> When persistence is high, the likelihood is almost flat in ω — the sample barely visits the long run, so the long-run parameter is weakly identified.<br>
+<b>How it bites.</b> Implied σ̄ = √(ω̂/(1−α̂−β̂)) comes out at silly values (0.01% or 400% annualised); long-horizon forecasts anchor on fiction; refitting tomorrow gives a different fiction.<br>
+<b>How to detect.</b> ω̂ at its lower bound with a huge standard error; implied σ̄ wildly different from the sample standard deviation; results that change with the data&rsquo;s scaling (% vs decimals).<br>
+<b>Remedy.</b> Variance targeting: set ω = σ̂²<sub>sample</sub>(1−α−β) and estimate only α and β; always feed GARCH percentage returns (scale ≈ 1), not raw decimals.</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Squared returns as a &ldquo;realised vol&rdquo; proxy</span>
+<div class="one">r²ₜ is an unbiased — but spectacularly noisy — estimate of σ²ₜ.</div>
+<div class="more"><b>What it is.</b> r²<sub>t</sub> = σ²<sub>t</sub>z²<sub>t</sub>, and z² has mean 1 but variance 2: the proxy&rsquo;s noise dwarfs the signal on any given day.<br>
+<b>How it bites.</b> Regress r² on a GARCH forecast and the R² is 5–10% even when the GARCH model is EXACTLY right (Andersen &amp; Bollerslev 1998). Managers junk good models because the evaluation proxy is rubbish.<br>
+<b>How to detect.</b> Run the demo: the gold true σ² is smooth, the blue r² is a hailstorm around it. If your &ldquo;model vs realised&rdquo; scatter looks like that, blame the proxy first.<br>
+<b>Remedy.</b> Evaluate against realised variance built from intraday data (sum of 5-minute squared returns), use QLIKE loss rather than MSE, and never judge a vol model by its R² against r² alone.
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('prx','dcPRX')">▦ Demo: r²ₜ (noise) vs true σ²ₜ (signal)</button></div>
+<canvas id="dcPRX" style="display:none"></canvas></div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Normal errors underestimate the tails</span>
+<div class="one">GARCH explains a lot of the fat tails — but never all of them.</div>
+<div class="more"><b>What it is.</b> Even with time-varying σ, the standardised residuals ẑ = r/σ̂ of real returns are leptokurtic: extreme days are more common than the normal allows.<br>
+<b>How it bites.</b> Gaussian-GARCH 99% VaR gets breached roughly twice as often as designed (week 8 will count them); tail events get declared &ldquo;impossible&rdquo; right up until they happen.<br>
+<b>How to detect.</b> Kurtosis of standardised residuals &gt; 3; QQ-plot tails peeling away; Jarque–Bera rejecting on ẑ; 99% backtest breaches ≫ 1%.<br>
+<b>Remedy.</b> Estimate with Student-t errors (dist='t' / distribution.model="std") and let the data pick ν̂; for the deepest tail, extreme-value methods on the standardised residuals.</div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">Structural breaks inflating persistence</span>
+<div class="one">A one-off shift in the variance LEVEL masquerades as α+β ≈ 1.</div>
+<div class="more"><b>What it is.</b> Splice a calm regime onto a stormy one and the model can only reconcile them with near-permanent persistence (Lamoureux &amp; Lastrapes 1990). The ACF of r² decays slowly even when, within each regime, returns are iid.<br>
+<b>How it bites.</b> Estimate over 2019–2021 and α̂+β̂ ≈ 0.999: risk forecasts stay crisis-level for years; half-life estimates become &ldquo;forever&rdquo;.<br>
+<b>How to detect.</b> Subsample estimates differ sharply; persistence jumps when a crisis window enters; break tests (ICSS) on squared returns flag variance change-points.<br>
+<b>Remedy.</b> Allow a break (dummies, split samples), use shorter/rolling estimation windows, or regime-switching volatility models (week 9).
+<div class="controls"><button class="alt" onclick="MANG.clinicDemo('brk','dcBRK7')">▦ Demo: ACF of r² when only the LEVEL of σ broke</button></div>
+<canvas id="dcBRK7" style="display:none"></canvas></div></div>
+
+<div class="pcard"><span class="arrow">▾ open</span><span class="nm">GARCH on low-frequency data</span>
+<div class="one">Monthly returns barely cluster — aggregation kills the ARCH effect.</div>
+<div class="more"><b>What it is.</b> Temporal aggregation averages volatility clustering away: daily GARCH(1,1) with persistence 0.97 implies only weak monthly ARCH effects, and quarterly ones are nearly invisible.<br>
+<b>How it bites.</b> Fitting GARCH to a fund&rsquo;s 120 monthly observations: α̂ ≈ 0 or wildly unstable, β̂ unidentified, and the &ldquo;volatility forecasts&rdquo; are noise dressed as science.<br>
+<b>How to detect.</b> ARCH-LM on the monthly returns is insignificant (try Platform 3 with small n and weak persistence — that is the monthly world); parameter estimates flip sign across subsamples.<br>
+<b>Remedy.</b> Estimate volatility on daily (or intraday) data and aggregate the forecasts up; at genuinely low frequencies, accept a constant-variance model — an honest σ̂ beats a fictional GARCH.</div></div>
 </section>
 
 <section class="card">
@@ -95,7 +325,7 @@ footer a{color:var(--accent);text-decoration:none;margin:0 6px;}
 
 <section class="card">
 <h2>⌨️ Code challenges</h2>
-<p>Fill the blank in each snippet. Toggle Python (<code>arch</code>, statsmodels) / R (<code>rugarch</code>, FinTS). Score: <span style="color:var(--accent2)">x/6</span> top-right.</p>
+<p>Fill the blank in each snippet. Toggle Python (<code>arch</code>, statsmodels) / R (<code>rugarch</code>, FinTS). Score: <span style="color:var(--accent2)">x/8</span> top-right.</p>
 <div id="quiz"></div>
 </section>
 </main>
@@ -434,9 +664,400 @@ window.MANG = (function(){
          why:'Variances scale with time, so volatility scales with √time: multiply daily σ by √252 (trading days, not calendar days).'},
      r:{code:'daily_vol  <- tail(sigma(fit), 1)\nannual_vol <- daily_vol * sqrt(___)',
         opts:['252','365','12','252^2'],correct:0,
-        why:'√252 ≈ 15.9: a 1% daily vol is roughly 16% a year. Using 365 would mix trading and calendar time.'}}
+        why:'√252 ≈ 15.9: a 1% daily vol is roughly 16% a year. Using 365 would mix trading and calendar time.'}},
+    {title:'Asymmetric volatility: the GJR model',
+     py:{code:"# Bad news should hit harder than good news (leverage effect):\nam_gjr = arch_model(returns, vol='GARCH', p=1, ___, q=1)\nres_gjr = am_gjr.fit(disp='off')   # adds gamma on negative shocks",
+         opts:['o=1','gamma=1','asym=True','leverage=1'],correct:0,
+         why:"In the arch package, o sets the order of the asymmetric (GJR) term: σ²ₜ = ω + α·ε²ₜ₋₁ + γ·ε²ₜ₋₁·1[εₜ₋₁<0] + β·σ²ₜ₋₁. A significant γ̂ > 0 is the leverage effect."},
+     r:{code:'spec_gjr <- ugarchspec(variance.model = list(model = ___,\n                       garchOrder = c(1, 1)))\nfit_gjr <- ugarchfit(spec_gjr, returns)',
+        opts:['"gjrGARCH"','"sGARCH"','"asymGARCH"','"tGARCH"'],correct:0,
+        why:'The rugarch name for Glosten–Jagannathan–Runkle is "gjrGARCH" ("eGARCH" is the exponential alternative). On equity indices γ̂ is often LARGER than α̂.'}},
+    {title:'Diagnosing the standardised residuals',
+     py:{code:'std_resid = res.resid / res.___\n# then: Ljung-Box on std_resid**2 should find NOTHING left\nacorr_ljungbox(std_resid**2, lags=[10], return_df=True)',
+         opts:['conditional_volatility','params','scale','std_err'],correct:0,
+         why:'ẑₜ = εₜ/σ̂ₜ should be (approximately) iid if the GARCH model captured the clustering. Autocorrelation surviving in ẑ² means the variance equation is wrong or incomplete.'},
+     r:{code:'z <- residuals(fit, ___)\nBox.test(z^2, lag = 10, type = "Ljung-Box")\n# want a LARGE p-value: no clustering left in z²',
+        opts:['standardize = TRUE','scale = TRUE','norm = TRUE','std = 1'],correct:0,
+        why:'standardize = TRUE divides each residual by its conditional σ̂ₜ. Testing the SQUARED standardised residuals is the post-fit mirror of the pre-fit ARCH-LM test.'}}
   ];
   MANG.quiz('quiz',Q);
+})();
+
+/* ---------- v2 shared helpers ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  function logGamma(x){
+    var c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.001208650973866179,-0.000005395239384953];
+    var y=x,tmp=x+5.5;tmp-=(x+0.5)*Math.log(tmp);var ser=1.000000000190015;
+    for(var j=0;j<6;j++){y+=1;ser+=c[j]/y;}
+    return -tmp+Math.log(2.5066282746310005*ser/x);
+  }
+  function gammaP(a,x){
+    if(x<=0)return 0;
+    var i;
+    if(x<a+1){
+      var ap=a,sum=1/a,del=sum;
+      for(i=0;i<500;i++){ap++;del*=x/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-13)break;}
+      return sum*Math.exp(-x+a*Math.log(x)-logGamma(a));
+    }
+    var b=x+1-a,c=1e300,d=1/b,h=d;
+    for(i=1;i<500;i++){
+      var an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;
+      c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;var del2=d*c;h*=del2;
+      if(Math.abs(del2-1)<1e-13)break;
+    }
+    return 1-Math.exp(-x+a*Math.log(x)-logGamma(a))*h;
+  }
+  M.chi2cdf=function(x,k){return x<=0?0:gammaP(k/2,x/2);};
+  M.chi2inv=function(p,k){var lo=0,hi=1000;for(var i=0;i<200;i++){var mid=(lo+hi)/2;if(M.chi2cdf(mid,k)<p)lo=mid;else hi=mid;}return (lo+hi)/2;};
+  function solve(A,b){var n=b.length,i,j,k,Mx=[];
+    for(i=0;i<n;i++){Mx.push(A[i].slice());Mx[i].push(b[i]);}
+    for(i=0;i<n;i++){var p=i;for(j=i+1;j<n;j++)if(Math.abs(Mx[j][i])>Math.abs(Mx[p][i]))p=j;
+      var tmp=Mx[i];Mx[i]=Mx[p];Mx[p]=tmp;
+      for(j=i+1;j<n;j++){var f=Mx[j][i]/Mx[i][i];for(k=i;k<=n;k++)Mx[j][k]-=f*Mx[i][k];}}
+    var x=new Array(n);
+    for(i=n-1;i>=0;i--){var s=Mx[i][n];for(j=i+1;j<n;j++)s-=Mx[i][j]*x[j];x[i]=s/Mx[i][i];}
+    return x;}
+  M.ols=function(X,y){var k=X[0].length,A=[],b=[],i,j,t;
+    for(i=0;i<k;i++){A.push(new Array(k).fill(0));b.push(0);}
+    for(t=0;t<y.length;t++){for(i=0;i<k;i++){b[i]+=X[t][i]*y[t];for(j=0;j<k;j++)A[i][j]+=X[t][i]*X[t][j];}}
+    var beta=solve(A,b),sse=0;
+    for(t=0;t<y.length;t++){var f=0;for(i=0;i<k;i++)f+=beta[i]*X[t][i];sse+=(y[t]-f)*(y[t]-f);}
+    return {beta:beta,sse:sse};};
+  M.setCtl=function(map){Object.keys(map).forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.value=String(map[id]);el.dispatchEvent(new Event('input'));});};
+  M.chip=function(k,v,warn){return '<span class="stat"><span class="v'+(warn?' warn':'')+'">'+v+'</span><br><span class="k">'+k+'</span></span>';};
+  M.exp1=function(k){
+    if(k===0)M.setCtl({sAlpha:0.10,sBeta:0.89,sOmega:0.05,sN:750});
+    else if(k===1)M.setCtl({sAlpha:0.30,sBeta:0.40,sOmega:0.30,sN:750});
+    else if(k===2)M.setCtl({sAlpha:0.05,sBeta:0.94,sOmega:0.02,sN:2000});
+    else M.setCtl({sAlpha:0.10,sBeta:0.90,sOmega:0.05,sN:750});
+  };
+})();
+
+/* ---------- v2 platform 2: asymmetry lab ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat2=function(){
+    var sG=document.getElementById('ajGam'),vG=document.getElementById('ajVGam'),
+        stats=document.getElementById('ajStats'),note=document.getElementById('ajNote');
+    var seed=20260707,ALPHA=0.04,BETA=0.82,K=Math.sqrt(2/Math.PI);
+    function nicGarch(e,aS,wS){return wS+aS*e*e+BETA;}
+    function nicGjr(e,gam,wJ){return wJ+(ALPHA+(e<0?gam:0))*e*e+BETA;}
+    function nicEgarch(z,gam,anchor){
+      var aE=ALPHA+gam/2;
+      var wE=Math.log(anchor)+aE*K;
+      return Math.exp(wE+aE*(Math.abs(z)-K)-gam*z);
+    }
+    function genGJR(omega,alpha,gam,beta,n,sd){
+      var rng=M.mulberry32(sd),g=M.gauss(rng);
+      var s2=omega/(1-alpha-gam/2-beta),burn=200,r=[],sig=[],eps=0;
+      for(var t=0;t<n+burn;t++){
+        s2=omega+(alpha+(eps<0?gam:0))*eps*eps+beta*s2;
+        var s=Math.sqrt(s2);
+        eps=s*g();
+        if(t>=burn){r.push(eps);sig.push(s);}
+      }
+      return {r:r,sigma:sig};
+    }
+    function draw(){
+      var gam=+sG.value;
+      vG.textContent=M.fmt(gam,2);
+      var aS=ALPHA+gam/2,wS=1-aS-BETA;   /* anchored so E[sigma^2]=1 for all three */
+      var anchor=wS+BETA;                 /* common value at e=0 */
+      /* news impact curves */
+      var ex=[],yG=[],yJ=[],yE=[],i;
+      for(i=0;i<=120;i++){
+        var e=-4+8*i/120;
+        ex.push(e);
+        yG.push(nicGarch(e,aS,wS));
+        yJ.push(nicGjr(e,gam,wS));
+        yE.push(nicEgarch(e,gam,anchor));
+      }
+      var hi=Math.max(Math.max.apply(null,yG),Math.max.apply(null,yJ),Math.max.apply(null,yE))*1.1;
+      var c=M.Chart(document.getElementById('ajNic'),230);
+      c.range(-4,4,0,hi).clear();
+      c.axes(M.ticks(-4,4,5),M.ticks(0,hi,4),function(v){return M.fmt(v,0)+'%';},function(v){return M.fmt(v,1);});
+      c.vline(0,'#334155');
+      c.line(ex,yG,'#38bdf8',2);
+      c.line(ex,yJ,'#fbbf24',2);
+      c.line(ex,yE,'#34d399',2);
+      c.text('News impact: tomorrow’s σ² vs today’s return',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      c.text('— GARCH',c.w-c.pad.r-220,c.pad.t+4,'#38bdf8');
+      c.text('— GJR',c.w-c.pad.r-150,c.pad.t+4,'#fbbf24');
+      c.text('— EGARCH',c.w-c.pad.r-95,c.pad.t+4,'#34d399');
+      /* simulated GJR path with worst day highlighted */
+      var omega=1-ALPHA-gam/2-BETA;
+      var sim=genGJR(omega,ALPHA,gam,BETA,250,seed);
+      var worst=0;
+      for(i=0;i<sim.r.length-5;i++)if(sim.r[i]<sim.r[worst])worst=i;
+      var lo2=Math.min.apply(null,sim.r),hi2=Math.max(Math.max.apply(null,sim.r),Math.max.apply(null,sim.sigma)),m2=(hi2-lo2)*0.08;
+      var c2=M.Chart(document.getElementById('ajSim'),230);
+      c2.range(0,sim.r.length-1,lo2-m2,hi2+m2).clear();
+      c2.axes(M.ticks(0,sim.r.length-1,5),M.ticks(lo2-m2,hi2+m2,4),null,function(v){return M.fmt(v,0);});
+      c2.hline(0,'#334155');
+      var xs=[];for(i=0;i<sim.r.length;i++)xs.push(i);
+      c2.line(xs,sim.r,'#38bdf8',1.1);
+      c2.line(xs,sim.sigma,'#fbbf24',1.8);
+      c2.vline(worst,'#f87171',[4,3]);
+      c2.dots([worst],[sim.r[worst]],'#f87171',5);
+      c2.text('Simulated GJR market · gold = σₜ · red = worst day ('+M.fmt(sim.r[worst],1)+'%)',c2.pad.l+6,c2.pad.t+4,'#e2e8f0');
+      /* chips: sigma after -2% vs +2% */
+      var sGm=Math.sqrt(nicGarch(-2,aS,wS)),sGp=Math.sqrt(nicGarch(2,aS,wS));
+      var sJm=Math.sqrt(nicGjr(-2,gam,wS)),sJp=Math.sqrt(nicGjr(2,gam,wS));
+      var sEm=Math.sqrt(nicEgarch(-2,gam,anchor)),sEp=Math.sqrt(nicEgarch(2,gam,anchor));
+      var ratio=(nicGjr(-2,gam,wS)-BETA-wS)/Math.max(1e-9,nicGjr(2,gam,wS)-BETA-wS);
+      stats.innerHTML=
+        M.chip('GARCH σ after −2% | +2%',M.fmt(sGm,2)+' | '+M.fmt(sGp,2))+
+        M.chip('GJR σ after −2% | +2%',M.fmt(sJm,2)+' | '+M.fmt(sJp,2))+
+        M.chip('EGARCH σ after −2% | +2%',M.fmt(sEm,2)+' | '+M.fmt(sEp,2))+
+        M.chip('GJR news ratio (α+γ)/α',M.fmt((ALPHA+gam)/ALPHA,1)+'×');
+      note.innerHTML=(gam<0.01?
+        'With γ = 0 there is no asymmetry: all three curves are U-shaped around zero and a −2% day is no scarier than a +2% day. Equity data firmly reject this.':
+        'With γ = '+M.fmt(gam,2)+', a −2% day pushes tomorrow’s GJR variance to '+M.fmt(nicGjr(-2,gam,wS),2)+' versus '+M.fmt(nicGjr(2,gam,wS),2)+' after +2% — the news term reacts '+M.fmt((ALPHA+gam)/ALPHA,1)+'× harder to bad news. That tilt is the <b>leverage effect</b>: a price fall raises debt/equity (mechanically riskier equity) and triggers risk-aversion feedback. EGARCH (green) achieves asymmetry smoothly in logs — and can never produce a negative variance, so it needs no parameter constraints.')+
+        ' Persistence here is β + α + γ/2 = '+M.fmt(BETA+ALPHA+gam/2,2)+' — the γ/2 appears because only half of all days are down days.';
+    }
+    sG.addEventListener('input',draw);
+    document.getElementById('ajNew').onclick=function(){seed=(Math.random()*4294967296)>>>0;draw();};
+    window.addEventListener('resize',function(){if(document.getElementById('plat2').classList.contains('active'))draw();});
+    M.expA=function(k){M.setCtl({ajGam:k===0?0:0.24});};
+    draw();
+  };
+})();
+
+/* ---------- v2 platform 3: ARCH-LM bench ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat3=function(){
+    var dgpSel=document.getElementById('lmDgp'),sN=document.getElementById('lmN'),vN=document.getElementById('lmVN'),
+        stats=document.getElementById('lmStats'),note=document.getElementById('lmNote'),runBtn=document.getElementById('lmRun');
+    var CRIT=M.chi2inv(0.95,5);
+    var DGPS={iid:{om:1,al:0,be:0,lab:'iid (H₀ true)'},low:{om:0.5,al:0.15,be:0.35,lab:'GARCH p = 0.5'},high:{om:0.03,al:0.15,be:0.82,lab:'GARCH p = 0.97'}};
+    var results={};       /* dgp -> {n, rate} latest */
+    var runId=0;
+    sN.addEventListener('input',function(){vN.textContent=sN.value;});
+    vN.textContent=sN.value;
+    function archLM(r,m){
+      var n=r.length,r2=r.map(function(v){return v*v;}),X=[],Y=[],t,j;
+      for(t=m;t<n;t++){var row=[1];for(j=1;j<=m;j++)row.push(r2[t-j]);X.push(row);Y.push(r2[t]);}
+      var f=M.ols(X,Y),ybar=M.mean(Y),tss=0;
+      for(var i=0;i<Y.length;i++)tss+=(Y[i]-ybar)*(Y[i]-ybar);
+      return Y.length*(1-f.sse/tss);
+    }
+    function run(){
+      var my=++runId,key=dgpSel.value,n=+sN.value,D=DGPS[key],NREP=300;
+      var baseSeed=(Math.random()*4294967296)>>>0;
+      var rej=0,done=0;
+      runBtn.disabled=true;
+      function chunk(){
+        if(my!==runId)return;
+        var stop=Math.min(NREP,done+25);
+        for(;done<stop;done++){
+          var sim=M.genGARCH(D.om,D.al,D.be,n,(baseSeed+done*7)>>>0);
+          if(archLM(sim.r,5)>CRIT)rej++;
+        }
+        runBtn.textContent='Testing… '+done+'/'+NREP;
+        if(done<NREP){setTimeout(chunk,0);return;}
+        runBtn.disabled=false;runBtn.textContent='▶ Run 300 tests';
+        results[key]={n:n,rate:rej/NREP};
+        finish(key);
+      }
+      chunk();
+    }
+    function finish(key){
+      var keys=['iid','low','high'];
+      var c=M.Chart(document.getElementById('lmBars'),220);
+      c.range(0,3,0,1.08).clear();
+      c.axes([],[0,0.25,0.5,0.75,1],null,function(v){return M.fmt(100*v,0)+'%';});
+      c.hline(0.05,'#f87171',[5,4]);
+      c.text('5% nominal size',c.w-c.pad.r-90,c.py(0.05)-5,'#f87171');
+      keys.forEach(function(k2,i){
+        var res=results[k2];
+        var bw=(c.px(0.6)-c.px(0));
+        if(res){
+          c.bars([i+0.5],[res.rate],k2===key?'#fbbf24':'#38bdf8',bw);
+          c.text(M.fmt(100*res.rate,1)+'%',c.px(i+0.5),c.py(res.rate)-6,'#e2e8f0','center');
+          c.text(DGPS[k2].lab+' · n='+res.n,c.px(i+0.5),c.h-8,'#94a3b8','center');
+        }else{
+          c.text(DGPS[k2].lab+' — not run',c.px(i+0.5),c.h-8,'#475569','center');
+        }
+      });
+      c.text('ARCH-LM(5) rejection rate at the 5% level — 300 Monte Carlo samples per bar',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      var res=results[key],D=DGPS[key];
+      stats.innerHTML=
+        M.chip('latest run',D.lab+', n = '+res.n)+
+        M.chip('rejection rate',M.fmt(100*res.rate,1)+'%')+
+        M.chip('χ²(5) 5% critical value',M.fmt(CRIT,2))+
+        M.chip('true persistence α+β',M.fmt(D.al+D.be,2));
+      note.innerHTML=(key==='iid'?
+        'H₀ is TRUE here, so this '+M.fmt(100*res.rate,1)+'% is the test’s <b>size</b> — it should sit near 5%, and it does: the test only "discovers" ARCH in iid data about 1 time in 20, exactly as advertised.':
+        'H₀ is FALSE here, so '+M.fmt(100*res.rate,1)+'% is the test’s <b>power</b> with n = '+res.n+'. '+
+        (res.rate>0.7?'Clustering this persistent is easy to catch at this sample size.':'Notice how weak the test is here — failing to reject is NOT evidence that ARCH is absent, just that this sample is too short or the clustering too faint.'))+
+        ' Run the other DGPs and sample sizes; the bars persist for comparison.';
+    }
+    runBtn.onclick=run;
+    M.expL=function(k){
+      if(k===0){dgpSel.value='iid';M.setCtl({lmN:300});}
+      else if(k===1){dgpSel.value='high';M.setCtl({lmN:300});}
+      else if(k===2){dgpSel.value='high';M.setCtl({lmN:100});}
+      else {dgpSel.value='low';M.setCtl({lmN:1000});}
+      run();
+    };
+    run();
+  };
+})();
+
+/* ---------- v2 platform 4: vol forecasting desk ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.init_plat4=function(){
+    var sP=document.getElementById('vdP'),vP=document.getElementById('vdVP'),
+        stats=document.getElementById('vdStats'),note=document.getElementById('vdNote');
+    var seed=987123;
+    function draw(){
+      var p=+sP.value;
+      vP.textContent=M.fmt(p,2);
+      var alpha=Math.min(0.05,p),beta=p-alpha,omega=1-p;  /* sbar2 = 1 */
+      var sim=M.genGARCH(omega,alpha,beta,500,seed);
+      var s2=sim.sigma.map(function(s){return s*s;});
+      var calm=0,crisis=0,i;
+      for(i=0;i<s2.length;i++){if(s2[i]<s2[calm])calm=i;if(s2[i]>s2[crisis])crisis=i;}
+      var K=60,ks=[],fc=[],fk=[];
+      for(var k=1;k<=K;k++){
+        ks.push(k);
+        fk.push(Math.sqrt(1+Math.pow(p,k)*(s2[calm]-1)));
+        fc.push(Math.sqrt(1+Math.pow(p,k)*(s2[crisis]-1)));
+      }
+      var hi=Math.max(Math.max.apply(null,fc),1.1)*1.1;
+      var c=M.Chart(document.getElementById('vdFc'),230);
+      c.range(0,K,0,hi).clear();
+      c.axes(M.ticks(0,K,6),M.ticks(0,hi,4),function(v){return 'k='+M.fmt(v,0);},function(v){return M.fmt(v,1)+'%';});
+      c.hline(1,'#94a3b8',[5,4]);
+      c.text('σ̄ = 1% — long-run anchor',c.w-c.pad.r-150,c.py(1)-5,'#94a3b8');
+      c.line(ks,fc,'#f87171',2);
+      c.line(ks,fk,'#38bdf8',2);
+      c.text('k-day-ahead σ forecast: σ²ₜ₊ₖ = σ̄² + (α+β)ᵏ(σ²ₜ − σ̄²)',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+      c.text('— from crisis day',c.w-c.pad.r-260,c.pad.t+4,'#f87171');
+      c.text('— from calm day',c.w-c.pad.r-130,c.pad.t+4,'#38bdf8');
+      /* sigma path */
+      var lo2=Math.min.apply(null,sim.sigma)*0.9,hi2=Math.max.apply(null,sim.sigma)*1.08;
+      var c2=M.Chart(document.getElementById('vdPath'),230);
+      c2.range(0,sim.sigma.length-1,Math.max(0,lo2),hi2).clear();
+      c2.axes(M.ticks(0,sim.sigma.length-1,5),M.ticks(Math.max(0,lo2),hi2,4),null,function(v){return M.fmt(v,1);});
+      var xs=[];for(i=0;i<sim.sigma.length;i++)xs.push(i);
+      c2.hline(1,'#94a3b8',[5,4]);
+      c2.line(xs,sim.sigma,'#fbbf24',1.4);
+      c2.dots([calm],[sim.sigma[calm]],'#38bdf8',6);
+      c2.dots([crisis],[sim.sigma[crisis]],'#f87171',6);
+      c2.text('The simulated σₜ path · blue dot = calmest day · red dot = most stressed day',c2.pad.l+6,c2.pad.t+4,'#e2e8f0');
+      /* chips */
+      function avgVol(s20){
+        var s=0;for(var k2=1;k2<=10;k2++)s+=1+Math.pow(p,k2)*(s20-1);
+        return Math.sqrt(s/10);
+      }
+      var hl=Math.log(0.5)/Math.log(p);
+      stats.innerHTML=
+        M.chip('σ on calm day',M.fmt(sim.sigma[calm],2)+'%')+
+        M.chip('σ on crisis day',M.fmt(sim.sigma[crisis],2)+'%')+
+        M.chip('half-life ln(½)/ln(α+β)',M.fmt(hl,1)+' days')+
+        M.chip('10-day avg σ: calm | crisis',M.fmt(avgVol(s2[calm]),2)+' | '+M.fmt(avgVol(s2[crisis]),2)+'%')+
+        M.chip('annualised σ̄ (√252)',M.fmt(Math.sqrt(252),1)+'%');
+      note.innerHTML='Both curves decay towards σ̄ at rate (α+β)ᵏ — after the half-life of '+M.fmt(hl,1)+' days, half the gap is gone. From the calm day the forecast curve slopes UP (an upward vol term structure); from the crisis day it slopes DOWN (inverted). Option markets quote exactly these shapes in implied volatility across maturities. '+
+        (p>=0.97?'At persistence '+M.fmt(p,2)+' the crisis forecast is still visibly elevated at k = 60 — risk stays priced for months.':'At persistence '+M.fmt(p,2)+' everything converges within a few weeks: beyond that horizon, your best vol forecast is simply σ̄.');
+    }
+    sP.addEventListener('input',draw);
+    document.getElementById('vdNew').onclick=function(){seed=(Math.random()*4294967296)>>>0;draw();};
+    window.addEventListener('resize',function(){if(document.getElementById('plat4').classList.contains('active'))draw();});
+    M.expV=function(k){M.setCtl({vdP:k===0?0.99:0.85});};
+    draw();
+  };
+})();
+
+/* ---------- v2 clinic demos ---------- */
+(function(){
+  'use strict';
+  var M=window.MANG;
+  M.clinicDemo=function(kind,cid){
+    var cv=document.getElementById(cid);
+    cv.style.display='block';
+    var rng=M.mulberry32((Math.random()*4294967296)>>>0),g=M.gauss(rng),i;
+    if(kind==='ig'){
+      /* k-step variance forecasts: IGARCH vs stationary, both from sigma2_t = 3, omega chosen alike */
+      var K=60,ks=[],fIG=[],fST=[];
+      for(var k=1;k<=K;k++){
+        ks.push(k);
+        fIG.push(3+k*0.03);                       /* alpha+beta = 1: sigma2 + k*omega, omega = 0.03 */
+        fST.push(1+Math.pow(0.97,k)*(3-1));        /* alpha+beta = 0.97, sbar2 = 1 */
+      }
+      var hi=Math.max.apply(null,fIG)*1.1;
+      var c=M.Chart(cv,190);
+      c.range(0,K,0,hi).clear();
+      c.axes(M.ticks(0,K,6),M.ticks(0,hi,4),null,function(v){return M.fmt(v,1);});
+      c.hline(1,'#94a3b8',[4,4]);
+      c.line(ks,fST,'#38bdf8',2);
+      c.line(ks,fIG,'#f87171',2);
+      c.text('σ²ₜ₊ₖ forecasts from σ²ₜ = 3: stationary (blue) reverts to σ̄² = 1; IGARCH (red) = σ²ₜ + kω grows forever',c.pad.l+6,c.pad.t+4,'#e2e8f0');
+    }else if(kind==='prx'){
+      var sim=M.genGARCH(0.05,0.08,0.89,250,(Math.random()*4294967296)>>>0);
+      var r2=sim.r.map(function(v){return v*v;}),s2=sim.sigma.map(function(s){return s*s;});
+      var hi2=Math.max.apply(null,r2)*1.05;
+      var c2=M.Chart(cv,190);
+      c2.range(0,249,0,hi2).clear();
+      c2.axes(M.ticks(0,249,5),M.ticks(0,hi2,4),null,function(v){return M.fmt(v,0);});
+      var xs=[];for(i=0;i<250;i++)xs.push(i);
+      c2.line(xs,r2,'#38bdf8',1);
+      c2.line(xs,s2,'#fbbf24',2);
+      c2.text('Blue: r²ₜ (the "realised vol" proxy) · Gold: the TRUE σ²ₜ — same process, very different stories',c2.pad.l+6,c2.pad.t+4,'#e2e8f0');
+    }else{
+      /* variance-level break: iid with sigma 1 then 3; ACF of r^2 */
+      var n=400,r=[];
+      for(i=0;i<n;i++)r.push((i<n/2?1:3)*g());
+      var r2b=r.map(function(v){return v*v;});
+      var ac=M.acf(r2b,20).slice(1);
+      var c3=M.Chart(cv,190);
+      c3.range(0,21,-0.3,1).clear();
+      c3.hband(-1.96/Math.sqrt(n),1.96/Math.sqrt(n),'rgba(56,189,248,0.13)');
+      c3.axes([0,5,10,15,20],[-0.3,0,0.3,0.6,0.9],null,function(v){return M.fmt(v,1);});
+      c3.hline(0,'#94a3b8');
+      var lx=[],j;for(j=0;j<20;j++)lx.push(j+1);
+      var bw=Math.max(3,(c3.px(1)-c3.px(0))*0.5);
+      c3.bars(lx,ac.map(function(v){return Math.max(-0.3,Math.min(1,v));}),'#fbbf24',bw);
+      c3.text('ACF of r² for iid returns whose σ jumped 1 → 3 mid-sample: fake "persistence" at every lag',c3.pad.l+6,c3.pad.t+4,'#e2e8f0');
+    }
+  };
+})();
+
+/* ---------- v2 tabs + accordions ---------- */
+(function(){
+  'use strict';
+  document.querySelectorAll('.pcard').forEach(function(card){
+    card.addEventListener('click',function(e){
+      var tag=e.target.tagName;
+      if(tag==='BUTTON'||tag==='CANVAS'||tag==='SELECT'||tag==='INPUT'||tag==='OPTION')return;
+      card.classList.toggle('open');
+      var ar=card.querySelector('.arrow');
+      if(ar)ar.textContent=card.classList.contains('open')?'▴ close':'▾ details';
+    });
+  });
+  var bar=document.getElementById('tabbar');
+  if(!bar)return;
+  var btns=Array.prototype.slice.call(bar.querySelectorAll('button'));
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      btns.forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      document.querySelectorAll('.plat').forEach(function(p){p.classList.remove('active');});
+      var id=b.getAttribute('data-plat');
+      document.getElementById(id).classList.add('active');
+      var init=window.MANG['init_'+id];
+      if(init&&!init._done){init._done=true;init();}
+    });
+  });
 })();
 </script>
 </body>
